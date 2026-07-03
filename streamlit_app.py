@@ -22,6 +22,7 @@ selection = st.sidebar.radio("請選擇前往的區域：", list(nav_options.key
 # 頁面主體渲染邏輯
 st.title(f"歡迎來到：{selection}")
 
+# 針對不同區域顯示內容
 if selection == "照顧服務":
     st.write("這裡是您的照服專業知識庫。")
 elif selection == "食品科技":
@@ -34,13 +35,19 @@ elif selection == "生活農場":
     st.write("這裡是您的生活農場。")
 elif selection == "訓練農場":
     st.header("🏗️ 訓練農場")
-    # 建立三個分頁
+    
+    # 建立三個分頁 (模擬資料夾)
     tab1, tab2, tab3 = st.tabs(["測試數據", "草稿區", "實驗紀錄"])
+    
     with tab1:
-        st.write("這裡是測試數據區")
+        st.subheader("📁 測試數據")
+        st.write("這裡是存放測試數據的空間，之後可以放表格或圖表。")
     with tab2:
-        st.write("這裡是草稿區")
+        st.subheader("📁 草稿區")
+        st.write("這裡是存放靈感草稿的地方。")
     with tab3:
-        st.write("這裡是實驗紀錄區")
+        st.subheader("📁 實驗紀錄")
+        st.write("這裡是記錄每一次開發農場實驗的地方。")
+        
 else:
     st.write(f"歡迎來到 {selection}，這裡目前正在施工中。")
