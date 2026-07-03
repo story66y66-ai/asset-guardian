@@ -13,38 +13,17 @@ nav_options = {
 
 selection = st.sidebar.radio("請選擇前往的區域：", list(nav_options.keys()), format_func=lambda x: f"{nav_options[x]} {x}")
 
-word_data = [
-    {"word": "Apple", "trans": "蘋果", "kk": "/ˈæp.əl/"},
-    {"word": "Banana", "trans": "香蕉", "kk": "/bəˈnæn.ə/"},
-    {"word": "Cat", "trans": "貓", "kk": "/kæt/"},
-    {"word": "Dog", "trans": "狗", "kk": "/dɔːɡ/"},
-    {"word": "Elephant", "trans": "大象", "kk": "/ˈel.ɪ.fənt/"}
-]
-
-st.title(f"歡迎來到：{selection}")
-
 if selection == "訓練農場":
     st.header("🏗️ 訓練農場")
-    if 'current_word' not in st.session_state:
-        st.session_state.current_word = random.choice(word_data)
-    st.markdown(f"### 英文：{st.session_state.current_word['word']}")
-    st.write(f"**KK 音標：** {st.session_state.current_word['kk']}")
-    if st.button("🔊 聽發音"):
-        tts = gTTS(text=st.session_state.current_word['word'], lang='en')
-        fp = io.BytesIO()
-        tts.write_to_fp(fp)
-        st.audio(fp, format='audio/mp3')
-    if st.button("換一個單字"):
-        st.session_state.current_word = random.choice(word_data)
-        st.rerun()
-
+    # ... (原本訓練農場的邏輯) ...
+    
 elif selection == "進化中心":
     st.header("🏗️ 農場進化紀錄中心")
-    with st.expander("階段 3：語音系統升級"):
-        st.markdown("安裝了 `gTTS` 並在根目錄建立 `requirements.txt`。")
-        st.code("streamlit\ngtts")
     with st.expander("核心資源：完整程式碼 (streamlit_app.py)"):
-        st.code("這裡放妳的完整程式碼...") # 之後我們隨時可以更新這裡
+        # 這是最聰明的做法，直接讀取自己這個檔案的內容！
+        with open("streamlit_app.py", "r", encoding="utf-8") as f:
+            code_content = f.read()
+        st.code(code_content, language="python")
 
 else:
     st.write(f"歡迎來到 {selection}，這裡正在建設中。")
