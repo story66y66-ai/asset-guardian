@@ -10,7 +10,7 @@ st.sidebar.title("🌱 澄玄的農場導航")
 
 nav_options = {
     "照顧服務": "🦺", "食品科技": "🧪", "創作農場": "🎨", 
-    "學習農場": "📚", "生活農場": "🏠", "訓練農場": "🏗️"
+    "學習農場": "📚", "生活農場": "🏠", "訓練農場": "🏗️","進化中心": "💡"
 }
 
 selection = st.sidebar.radio("請選擇前往的區域：", list(nav_options.keys()), format_func=lambda x: f"{nav_options[x]} {x}")
