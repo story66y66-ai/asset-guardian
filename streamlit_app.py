@@ -1,58 +1,41 @@
 import streamlit as st
+import pandas as pd
 import random
 from gtts import gTTS
 import io
 
 st.set_page_config(page_title="澄玄的農場", layout="wide")
-st.sidebar.title("🌱 澄玄的農場導航")
 
-# 1. 導航選單
-nav_options = {
-    "訓練農場": "🏗️", "測驗中心": "🎮", "進化中心": "💡",
-    "照顧服務": "🦺", "食品科技": "🧪", "創作農場": "🎨", "學習農場": "📚", "生活農場": "🏠"
-}
-selection = st.sidebar.radio("請選擇區域：", list(nav_options.keys()), format_func=lambda x: f"{nav_options[x]} {x}")
+# 讀取 CSV 檔案
+@st.cache_data
+def load_data():
+    # 這會讀取妳剛剛建立的 words.csv
+    df = pd.read_csv("words.csv")
+    return df.to_dict('records')
 
-# 2. 嚴謹的單字庫 (請注意：每一行最後的逗號都很重要！)
-word_data = [
-    {"word": "Apple", "trans": "蘋果", "kk": "/ˈæp.əl/"},
-    {"word": "Banana", "trans": "香蕉", "kk": "/bəˈnæn.ə/"},
-    {"word": "Cat", "trans": "貓", "kk": "/kæt/"},
-    {"word": "Dog", "trans": "狗", "kk": "/dɔːɡ/"},
-    {"word": "Elephant", "trans": "大象", "kk": "/ˈel.ɪ.fənt/"}
-]
+word_data = load_data()
 
-# 3. 邏輯區
+# 導航與邏輯
+st.sidebar.title("🌱 澄玄的農場")
+nav_options = {"訓練農場": "🏗️", "測驗中心": "🎮", "進化中心": "💡"}
+selection = st.sidebar.radio("選擇區域：", list(nav_options.keys()))
+
 if selection == "訓練農場":
-    st.header("🏗️ 訓練農場 (學習區)")
-    if 'train_word' not in st.session_state: st.session_state.train_word = random.choice(word_data)
-    word = st.session_state.train_word
-    st.write(f"### 英文：{word['word']} | 中文：{word['trans']} | KK：{word['kk']}")
+    st.header("🏗️ 訓練農場")
+    word = random.choice(word_data)
+    st.write(f"### {word['word']} ({word['trans']})")
     if st.button("🔊 聽發音"):
         tts = gTTS(text=word['word'], lang='en')
         fp = io.BytesIO(); tts.write_to_fp(fp); st.audio(fp, format='audio/mp3')
-    if st.button("換一個單字"): del st.session_state.train_word; st.rerun()
 
 elif selection == "測驗中心":
     st.header("🎮 測驗中心")
-    mode = st.radio("模式：", ["中文輸入挑戰", "拼字挑戰"], horizontal=True)
-    if 'quiz_word' not in st.session_state: st.session_state.quiz_word = random.choice(word_data)
-    word = st.session_state.quiz_word
-    
-    if mode == "中文輸入挑戰":
-        st.write(f"請輸入 **{word['word']}** 的中文：")
-        user_in = st.text_input("輸入：")
-        if st.button("確認") and user_in == word['trans']:
-            st.success("✅ 答對！"); del st.session_state.quiz_word; st.rerun()
-    else:
-        st.write(f"請拼出 **{word['trans']}** 的英文：")
-        user_in = st.text_input("輸入：")
-        if st.button("確認") and user_in.lower() == word['word'].lower():
-            st.success("✅ 答對！"); del st.session_state.quiz_word; st.rerun()
+    word = random.choice(word_data)
+    st.write(f"請拼出 **{word['trans']}** 的英文：")
+    ans = st.text_input("輸入拼寫：")
+    if st.button("確認"):
+        if ans.lower() == word['word'].lower(): st.success("✅ 對了！")
+        else: st.error(f"❌ 錯了，正確是 {word['word']}")
 
 elif selection == "進化中心":
-    st.header("💡 進化中心")
-    with open("streamlit_app.py", "r", encoding="utf-8") as f: st.code(f.read())
-
-else:
-    st.write(f"歡迎來到 {selection}，這裡正在建設中。")
+    st.write("單字庫已分離，現在可以輕鬆擴充至 50 個！")
