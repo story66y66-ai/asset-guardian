@@ -15,7 +15,7 @@ nav_options = {
 }
 selection = st.sidebar.radio("請選擇前往的區域：", list(nav_options.keys()), format_func=lambda x: f"{nav_options[x]} {x}")
 
-# 2. 自動讀取 CSV (這是農場的核心書庫)
+# 2. 自動讀取 CSV
 @st.cache_data
 def load_data():
     try:
@@ -29,11 +29,24 @@ word_data = load_data()
 # 3. 完整導航邏輯
 if selection == "訓練農場":
     st.header("🏗️ 訓練農場 (學習區)")
-    word = random.choice(word_data)
+    
+    # 記住當前單字的狀態，確保切換順暢
+    if 'current_word' not in st.session_state:
+        st.session_state.current_word = random.choice(word_data)
+    
+    word = st.session_state.current_word
     st.write(f"### 英文：{word['word']} | 中文：{word['trans']} | KK：{word['kk']}")
-    if st.button("🔊 聽發音"):
-        tts = gTTS(text=word['word'], lang='en')
-        fp = io.BytesIO(); tts.write_to_fp(fp); st.audio(fp, format='audio/mp3')
+    
+    # 按鈕區
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🔊 聽發音"):
+            tts = gTTS(text=word['word'], lang='en')
+            fp = io.BytesIO(); tts.write_to_fp(fp); st.audio(fp, format='audio/mp3')
+    with col2:
+        if st.button("➡️ 下一張"):
+            st.session_state.current_word = random.choice(word_data)
+            st.rerun()
 
 elif selection == "測驗中心":
     st.header("🎮 測驗中心")
