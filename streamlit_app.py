@@ -30,14 +30,12 @@ word_data = load_data()
 if selection == "訓練農場":
     st.header("🏗️ 訓練農場 (學習區)")
     
-    # 記住當前單字的狀態，確保切換順暢
     if 'current_word' not in st.session_state:
         st.session_state.current_word = random.choice(word_data)
     
     word = st.session_state.current_word
     st.write(f"### 英文：{word['word']} | 中文：{word['trans']} | KK：{word['kk']}")
     
-    # 按鈕區
     col1, col2 = st.columns(2)
     with col1:
         if st.button("🔊 聽發音"):
@@ -52,11 +50,14 @@ elif selection == "測驗中心":
     st.header("🎮 測驗中心")
     mode = st.radio("測驗模式：", ["中文輸入挑戰", "單字排列挑戰"], horizontal=True)
     word = random.choice(word_data)
+    
     if mode == "中文輸入挑戰":
         st.write(f"請輸入 **{word['word']}** 的中文意思：")
         user_in = st.text_input("輸入中文：")
         if st.button("確認答案") and user_in == word['trans']: st.success("✅ 答對了！")
     else:
+        # 新增：單字排列挑戰時，顯示中文名稱作為提示
+        st.write(f"### 提示中文：{word['trans']}")
         st.write(f"請拼出：{''.join(random.sample(word['word'].upper(), len(word['word'])))}")
         ans = st.text_input("輸入拼寫：")
         if st.button("確認"):
