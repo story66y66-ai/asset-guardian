@@ -28,7 +28,7 @@ elif selection == "食品科技":
     st.write("這裡是您的食品科技筆記。")
 elif selection == "訓練農場":
     st.header("🏗️ 訓練農場")
-    tab1, tab2, tab3 = st.tabs(["測試數據", "草稿區", "實驗紀錄"])
+    tab1, tab2, tab3 = st.tabs(["英文單字王", "草稿區", "實驗紀錄"])
     with tab1:
         st.write("這裡是測試數據區")
     with tab2:
