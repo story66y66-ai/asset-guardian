@@ -14,59 +14,30 @@ nav_options = {
 
 selection = st.sidebar.radio("請選擇前往的區域：", list(nav_options.keys()), format_func=lambda x: f"{nav_options[x]} {x}")
 
-# 單字庫
+# 50 個單字庫
 word_data = [
-    {"word": "Apple", "trans": "蘋果", "kk": "/ˈæp.əl/"},
-    {"word": "Banana", "trans": "香蕉", "kk": "/bəˈnæn.ə/"},
-    {"word": "Cat", "trans": "貓", "kk": "/kæt/"},
-    {"word": "Dog", "trans": "狗", "kk": "/dɔːɡ/"},
-    {"word": "Elephant", "trans": "大象", "kk": "/ˈel.ɪ.fənt/"},
-    {"word": "Fish", "trans": "魚", "kk": "/fɪʃ/"},
-    {"word": "Girl", "trans": "女孩", "kk": "/ɡɜːrl/"},
-    {"word": "House", "trans": "房子", "kk": "/haʊs/"},
-    {"word": "Ice", "trans": "冰", "kk": "/aɪs/"},
-    {"word": "Jump", "trans": "跳", "kk": "/dʒʌmp/"}
-]
-
-st.title(f"歡迎來到：{selection}")
-
-# 訓練農場邏輯
-if selection == "訓練農場":
-    st.header("🏗️ 訓練農場")
-    tab1, tab2, tab3 = st.tabs(["測試數據 (單字挑戰)", "草稿區", "實驗紀錄"])
-    
-    with tab1:
-        st.subheader(f"🔤 英文單字挑戰 (目前庫存: {len(word_data)} 個單字)")
-        if 'current_word' not in st.session_state:
-            st.session_state.current_word = random.choice(word_data)
-        
-        st.markdown(f"### 英文：{st.session_state.current_word['word']}")
-        st.write(f"**KK 音標：** {st.session_state.current_word['kk']}")
-        
-        if st.button("🔊 聽發音"):
-            tts = gTTS(text=st.session_state.current_word['word'], lang='en')
-            fp = io.BytesIO()
-            tts.write_to_fp(fp)
-            st.audio(fp, format='audio/mp3')
-            
-        if st.button("顯示中文"):
-            st.success(f"中文意思：{st.session_state.current_word['trans']}")
-            
-        if st.button("換一個單字"):
-            st.session_state.current_word = random.choice(word_data)
-            st.rerun()
-
-    with tab2: st.write("這裡是草稿區。")
-    with tab3: st.write("這裡是實驗紀錄區。")
-
-# 進化中心邏輯
-elif selection == "進化中心":
-    st.header("🏗️ 農場進化紀錄中心")
-    with st.expander("核心資源：完整程式碼 (streamlit_app.py)"):
-        with open("streamlit_app.py", "r", encoding="utf-8") as f:
-            code_content = f.read()
-        st.code(code_content, language="python")
-
-# 其他建設中區域
-else:
-    st.write(f"歡迎來到 {selection}，這裡正在建設中。")
+    {"word": "Apple", "trans": "蘋果", "kk": "/ˈæp.əl/"}, {"word": "Banana", "trans": "香蕉", "kk": "/bəˈnæn.ə/"},
+    {"word": "Cat", "trans": "貓", "kk": "/kæt/"}, {"word": "Dog", "trans": "狗", "kk": "/dɔːɡ/"},
+    {"word": "Elephant", "trans": "大象", "kk": "/ˈel.ɪ.fənt/"}, {"word": "Fish", "trans": "魚", "kk": "/fɪʃ/"},
+    {"word": "Girl", "trans": "女孩", "kk": "/ɡɜːrl/"}, {"word": "House", "trans": "房子", "kk": "/haʊs/"},
+    {"word": "Ice", "trans": "冰", "kk": "/aɪs/"}, {"word": "Jump", "trans": "跳", "kk": "/dʒʌmp/"},
+    {"word": "Key", "trans": "鑰匙", "kk": "/kiː/"}, {"word": "Lion", "trans": "獅子", "kk": "/ˈlaɪ.ən/"},
+    {"word": "Moon", "trans": "月亮", "kk": "/muːn/"}, {"word": "Note", "trans": "筆記", "kk": "/noʊt/"},
+    {"word": "Orange", "trans": "橘子", "kk": "/ˈɔːr.ɪndʒ/"}, {"word": "Pen", "trans": "筆", "kk": "/pen/"},
+    {"word": "Queen", "trans": "皇后", "kk": "/kwiːn/"}, {"word": "Rain", "trans": "雨", "kk": "/reɪn/"},
+    {"word": "Sun", "trans": "太陽", "kk": "/sʌn/"}, {"word": "Tree", "trans": "樹", "kk": "/triː/"},
+    {"word": "Umbrella", "trans": "雨傘", "kk": "/ʌmˈbrel.ə/"}, {"word": "Van", "trans": "貨車", "kk": "/væn/"},
+    {"word": "Water", "trans": "水", "kk": "/ˈwɔː.tər/"}, {"word": "Box", "trans": "盒子", "kk": "/bɑːks/"},
+    {"word": "Yellow", "trans": "黃色", "kk": "/ˈjel.oʊ/"}, {"word": "Zoo", "trans": "動物園", "kk": "/zuː/"},
+    {"word": "Bird", "trans": "鳥", "kk": "/bɜːrd/"}, {"word": "Cake", "trans": "蛋糕", "kk": "/keɪk/"},
+    {"word": "Duck", "trans": "鴨子", "kk": "/dʌk/"}, {"word": "Egg", "trans": "蛋", "kk": "/eɡ/"},
+    {"word": "Frog", "trans": "青蛙", "kk": "/frɑːɡ/"}, {"word": "Goat", "trans": "山羊", "kk": "/ɡoʊt/"},
+    {"word": "Hat", "trans": "帽子", "kk": "/hæt/"}, {"word": "Ink", "trans": "墨水", "kk": "/ɪŋk/"},
+    {"word": "Jet", "trans": "噴射機", "kk": "/dʒet/"}, {"word": "Kite", "trans": "風箏", "kk": "/kaɪt/"},
+    {"word": "Lamp", "trans": "燈", "kk": "/læmp/"}, {"word": "Milk", "trans": "牛奶", "kk": "/mɪlk/"},
+    {"word": "Net", "trans": "網", "kk": "/net/"}, {"word": "Owl", "trans": "貓頭鷹", "kk": "/aʊl/"},
+    {"word": "Pig", "trans": "豬", "kk": "/pɪɡ/"}, {"word": "Quilt", "trans": "被子", "kk": "/kwɪlt/"},
+    {"word": "Rat", "trans": "老鼠", "kk": "/ræt/"}, {"word": "Ship", "trans": "船", "kk": "/ʃɪp/"},
+    {"word": "Toy", "trans": "玩具", "kk": "/tɔɪ/"}, {"word": "Up", "trans": "向上", "kk": "/ʌp/"},
+    {"word": "Vest", "trans": "背心", "kk": "/vest/"}, {"word": "Wolf", "trans": "狼", "kk": "/wʊlf/"},
+    {"word": "Yard", "trans": "庭院", "kk": "/jɑːrd/"}, {"word": "Zip", "trans": "拉鍊",
