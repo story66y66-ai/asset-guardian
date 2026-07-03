@@ -31,7 +31,7 @@ elif selection == "食品科技":
 elif selection == "創作農場":
     st.write("記錄您的創作靈感與心情點滴。")
 elif selection == "學習農場":
-    st.write("記錄各學科的學習路徑。")
+    st.記錄各學科的學習路徑。
 elif selection == "生活農場":
     st.write("管理您的生活瑣事。")
 elif selection == "訓練農場":
@@ -42,10 +42,13 @@ elif selection == "訓練農場":
     
     with tab1:
         st.write("### 英文單字王")
-        st.write("這是您正在練習的單字 App。")
-        # 連結至 Google Play 商店頁面
-        st.link_button("🚀 開啟/前往英文單字王", "https://play.google.com/store/apps/details?id=com.chaos.lwk")
-        st.info("提示：若您已安裝此 App，點擊上方按鈕將會嘗試開啟它；若尚未安裝，則會前往商店頁面。")
+        st.write("您已安裝此 App，點擊下方按鈕即可快速開啟練習：")
+        
+        # 使用意圖連結 (intent link) 嘗試直接呼叫 App
+        # 格式為 market://details?id=com.chaos.lwk，在手機瀏覽器上會優先嘗試呼叫已安裝的 App
+        st.link_button("🎮 開始練習：小小單字王", "intent://details?id=com.chaos.lwk#Intent;scheme=market;package=com.google.android.gms;end")
+        
+        st.caption("備註：若手機無法自動開啟，請直接從桌面點擊圖示進入。")
         
     with tab2:
         st.write("### 草稿區")
