@@ -6,9 +6,8 @@ import io
 st.set_page_config(page_title="澄玄的農場", layout="wide")
 st.sidebar.title("🌱 澄玄的農場導航")
 
-# 1. 這是妳原本完整的農場導航區域
 nav_options = {
-    "訓練農場": "🏗️", "進化中心": "💡", "測驗中心": "🎮",
+    "訓練農場": "🏗️", "測驗中心": "🎮", "進化中心": "💡",
     "照顧服務": "🦺", "食品科技": "🧪", "創作農場": "🎨", "學習農場": "📚", "生活農場": "🏠"
 }
 
@@ -22,32 +21,36 @@ word_data = [
     {"word": "Elephant", "trans": "大象", "kk": "/ˈel.ɪ.fənt/"}
 ]
 
-# 2. 這是各區域的邏輯
-if selection == "測驗中心":
+# 區域邏輯
+if selection == "訓練農場":
+    st.header("🏗️ 訓練農場 (學習區)")
+    if 'current_word' not in st.session_state: st.session_state.current_word = random.choice(word_data)
+    st.markdown(f"### 正在學習：{st.session_state.current_word['word']} ({st.session_state.current_word['trans']})")
+    if st.button("換一個單字學習"): st.session_state.current_word = random.choice(word_data); st.rerun()
+
+elif selection == "測驗中心":
     st.header("🎮 測驗中心")
     sub_nav = st.radio("選擇測驗等級：", ["等級 1：中文輸入挑戰", "等級 2：單字排列挑戰"], horizontal=True)
     
     if sub_nav == "等級 1：中文輸入挑戰":
-        if 'quiz_word' not in st.session_state:
-            st.session_state.quiz_word = random.choice(word_data)
-        st.write(f"請輸入英文單字 **{st.session_state.quiz_word['word']}** 的中文意思：")
-        user_input = st.text_input("輸入中文：")
+        if 'q1' not in st.session_state: st.session_state.q1 = random.choice(word_data)
+        st.write(f"請輸入 **{st.session_state.q1['word']}** 的中文：")
+        user_input = st.text_input("輸入中文：", key="input1")
         if st.button("確認答案"):
-            if user_input == st.session_state.quiz_word['trans']:
-                st.success("✅ 答對了！")
-                st.session_state.quiz_word = random.choice(word_data)
-            else:
-                st.error("❌ 答錯了，再試一次！")
+            if user_input == st.session_state.q1['trans']:
+                st.success("✅ 答對了！"); st.session_state.q1 = random.choice(word_data)
+            else: st.error("❌ 答錯了，再試一次！")
 
-elif selection == "訓練農場":
-    st.header("🏗️ 訓練農場")
-    st.write("這裡是原本的單字練習區。")
+    elif sub_nav == "等級 2：單字排列挑戰":
+        st.write("這是單字拼寫挑戰！(功能開發中，目前顯示單字供練習)")
+        target = random.choice(word_data)['word'].upper()
+        st.subheader(f"請拼出：{''.join(random.sample(target, len(target)))}")
+        st.write(f"正確答案應該是：{target}")
 
 elif selection == "進化中心":
     st.header("🏗️ 農場進化紀錄中心")
-    with st.expander("核心資源：完整程式碼"):
-        with open("streamlit_app.py", "r", encoding="utf-8") as f:
-            st.code(f.read(), language="python")
+    with st.expander("核心資源：查看完整程式碼"):
+        with open("streamlit_app.py", "r", encoding="utf-8") as f: st.code(f.read(), language="python")
 
 else:
     st.write(f"歡迎來到 {selection}，這裡正在建設中。")
