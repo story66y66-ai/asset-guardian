@@ -1,4 +1,5 @@
 import streamlit as st
+import random
 
 # 設定頁面配置
 st.set_page_config(page_title="澄玄的農場", layout="wide")
@@ -6,7 +7,6 @@ st.set_page_config(page_title="澄玄的農場", layout="wide")
 # 側邊欄導航系統
 st.sidebar.title("🌱 澄玄的農場導航")
 
-# 定義導航選項
 nav_options = {
     "照顧服務": "🦺",
     "食品科技": "🧪",
@@ -16,38 +16,47 @@ nav_options = {
     "訓練農場": "🏗️"
 }
 
-# 建立選擇器
 selection = st.sidebar.radio("請選擇前往的區域：", list(nav_options.keys()), format_func=lambda x: f"{nav_options[x]} {x}")
 
-# 頁面主體渲染邏輯
+# 單字庫資料 (國小程度)
+word_data = [
+    {"word": "Apple", "trans": "蘋果"},
+    {"word": "Banana", "trans": "香蕉"},
+    {"word": "Cat", "trans": "貓"},
+    {"word": "Dog", "trans": "狗"},
+    {"word": "Elephant", "trans": "大象"},
+    {"word": "Flower", "trans": "花"}
+]
+
+# 頁面主體
 st.title(f"歡迎來到：{selection}")
 
-# 針對不同區域顯示內容
-if selection == "照顧服務":
-    st.write("這裡是您的照服專業知識庫。")
-elif selection == "食品科技":
-    st.write("這裡是您的食品科技筆記。")
-elif selection == "創作農場":
-    st.write("這裡是您的創作區。")
-elif selection == "學習農場":
-    st.write("這裡是您的學習筆記。")
-elif selection == "生活農場":
-    st.write("這裡是您的生活農場。")
-elif selection == "訓練農場":
+if selection == "訓練農場":
     st.header("🏗️ 訓練農場")
-    
-    # 建立三個分頁 (模擬資料夾)
-    tab1, tab2, tab3 = st.tabs(["測試數據", "草稿區", "實驗紀錄"])
+    tab1, tab2, tab3 = st.tabs(["測試數據 (單字挑戰)", "草稿區", "實驗紀錄"])
     
     with tab1:
-        st.subheader("📁 測試數據")
-        st.write("這裡是存放測試數據的空間，之後可以放表格或圖表。")
-    with tab2:
-        st.subheader("📁 草稿區")
-        st.write("這裡是存放靈感草稿的地方。")
-    with tab3:
-        st.subheader("📁 實驗紀錄")
-        st.write("這裡是記錄每一次開發農場實驗的地方。")
+        st.subheader("🔤 英文單字練習")
         
+        # 使用 session_state 來記住當前的單字，這樣按按鈕時才不會消失
+        if 'current_word' not in st.session_state:
+            st.session_state.current_word = random.choice(word_data)
+        
+        # 顯示單字
+        st.markdown(f"### 英文：{st.session_state.current_word['word']}")
+        
+        # 點擊顯示中文按鈕
+        if st.button("顯示中文"):
+            st.success(f"中文意思：{st.session_state.current_word['trans']}")
+            
+        # 下一個單字按鈕
+        if st.button("換一個單字"):
+            st.session_state.current_word = random.choice(word_data)
+            st.rerun() # 重新載入畫面
+            
+    with tab2:
+        st.write("這裡是草稿區。")
+    with tab3:
+        st.write("這裡是實驗紀錄區。")
 else:
-    st.write(f"歡迎來到 {selection}，這裡目前正在施工中。")
+    st.write(f"歡迎來到 {selection}，這裡正在建設中。")
