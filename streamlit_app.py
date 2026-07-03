@@ -3,9 +3,7 @@ import random
 from gtts import gTTS
 import io
 
-# 設定頁面配置
 st.set_page_config(page_title="澄玄的農場", layout="wide")
-
 st.sidebar.title("🌱 澄玄的農場導航")
 
 nav_options = {
@@ -15,7 +13,6 @@ nav_options = {
 
 selection = st.sidebar.radio("請選擇前往的區域：", list(nav_options.keys()), format_func=lambda x: f"{nav_options[x]} {x}")
 
-# 單字庫
 word_data = [
     {"word": "Apple", "trans": "蘋果", "kk": "/ˈæp.əl/"},
     {"word": "Banana", "trans": "香蕉", "kk": "/bəˈnæn.ə/"},
@@ -28,27 +25,26 @@ st.title(f"歡迎來到：{selection}")
 
 if selection == "訓練農場":
     st.header("🏗️ 訓練農場")
-    tab1, tab2, tab3 = st.tabs(["測試數據 (單字挑戰)", "草稿區", "實驗紀錄"])
-    with tab1:
-        if 'current_word' not in st.session_state:
-            st.session_state.current_word = random.choice(word_data)
-        st.markdown(f"### 英文：{st.session_state.current_word['word']}")
-        st.write(f"**KK 音標：** {st.session_state.current_word['kk']}")
-        if st.button("🔊 聽發音"):
-            tts = gTTS(text=st.session_state.current_word['word'], lang='en')
-            fp = io.BytesIO()
-            tts.write_to_fp(fp)
-            st.audio(fp, format='audio/mp3')
-        if st.button("換一個單字"):
-            st.session_state.current_word = random.choice(word_data)
-            st.rerun()
+    if 'current_word' not in st.session_state:
+        st.session_state.current_word = random.choice(word_data)
+    st.markdown(f"### 英文：{st.session_state.current_word['word']}")
+    st.write(f"**KK 音標：** {st.session_state.current_word['kk']}")
+    if st.button("🔊 聽發音"):
+        tts = gTTS(text=st.session_state.current_word['word'], lang='en')
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        st.audio(fp, format='audio/mp3')
+    if st.button("換一個單字"):
+        st.session_state.current_word = random.choice(word_data)
+        st.rerun()
 
 elif selection == "進化中心":
     st.header("🏗️ 農場進化紀錄中心")
     with st.expander("階段 3：語音系統升級"):
         st.markdown("安裝了 `gTTS` 並在根目錄建立 `requirements.txt`。")
         st.code("streamlit\ngtts")
-    st.success("農場已具備發音功能！")
+    with st.expander("核心資源：完整程式碼 (streamlit_app.py)"):
+        st.code("這裡放妳的完整程式碼...") # 之後我們隨時可以更新這裡
 
 else:
     st.write(f"歡迎來到 {selection}，這裡正在建設中。")
