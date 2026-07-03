@@ -25,7 +25,16 @@ word_data = [
 if selection == "訓練農場":
     st.header("🏗️ 訓練農場 (學習區)")
     if 'current_word' not in st.session_state: st.session_state.current_word = random.choice(word_data)
-    st.markdown(f"### 正在學習：{st.session_state.current_word['word']} ({st.session_state.current_word['trans']})")
+    
+    st.markdown(f"### 英文：{st.session_state.current_word['word']}")
+    st.write(f"**KK 音標：** {st.session_state.current_word['kk']}")
+    
+    if st.button("🔊 聽發音"):
+        tts = gTTS(text=st.session_state.current_word['word'], lang='en')
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        st.audio(fp, format='audio/mp3')
+    
     if st.button("換一個單字學習"): st.session_state.current_word = random.choice(word_data); st.rerun()
 
 elif selection == "測驗中心":
@@ -42,10 +51,18 @@ elif selection == "測驗中心":
             else: st.error("❌ 答錯了，再試一次！")
 
     elif sub_nav == "等級 2：單字排列挑戰":
-        st.write("這是單字拼寫挑戰！(功能開發中，目前顯示單字供練習)")
-        target = random.choice(word_data)['word'].upper()
-        st.subheader(f"請拼出：{''.join(random.sample(target, len(target)))}")
-        st.write(f"正確答案應該是：{target}")
+        if 'q2' not in st.session_state: 
+            target = random.choice(word_data)['word'].upper()
+            st.session_state.q2 = target
+            st.session_state.q2_shuffled = list(target)
+            random.shuffle(st.session_state.q2_shuffled)
+            
+        st.write(f"請拼出正確單字：{' '.join(st.session_state.q2_shuffled)}")
+        user_ans = st.text_input("輸入拼寫結果：", key="input2")
+        if st.button("確認拼寫"):
+            if user_ans.upper() == st.session_state.q2:
+                st.success("✅ 拼寫正確！"); del st.session_state.q2; st.rerun()
+            else: st.error("❌ 錯了，再試一次！")
 
 elif selection == "進化中心":
     st.header("🏗️ 農場進化紀錄中心")
