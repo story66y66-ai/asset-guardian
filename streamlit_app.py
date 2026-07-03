@@ -1,47 +1,46 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <title>澄玄的訓練農場</title>
-    <style>
-        body { background-color: #f0f7f4; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: 'Segoe UI', sans-serif; }
-        #farm-card { width: 80%; max-width: 500px; padding: 40px; background: white; border-radius: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); text-align: center; cursor: pointer; }
-        .word { font-size: 3rem; color: #2c3e50; margin-bottom: 10px; }
-        .translation { font-size: 1.8rem; color: #27ae60; margin-top: 20px; display: none; border-top: 2px solid #eee; padding-top: 20px; }
-        .hint { margin-top: 30px; color: #7f8c8d; font-size: 1rem; }
-    </style>
-</head>
-<body>
+import streamlit as st
 
-    <div id="farm-card" onclick="toggle()">
-        <div class="word" id="word">Loading...</div>
-        <div class="translation" id="translation"></div>
-    </div>
-    <div class="hint">點擊卡片，翻開農場作物</div>
+# 設定頁面配置
+st.set_page_config(page_title="澄玄的農場", layout="wide")
 
-    <script>
-        // 這裡就是您農場的單字庫，Sister 會幫您整理
-        const farmData = [
-            { word: "Seed", trans: "種子" },
-            { word: "Harvest", trans: "收穫" }
-        ];
+# 側邊欄導航系統
+st.sidebar.title("🌱 澄玄的農場導航")
 
-        let index = 0;
-        function update() {
-            document.getElementById('word').innerText = farmData[index].word;
-            document.getElementById('translation').innerText = farmData[index].trans;
-            document.getElementById('translation').style.display = 'none';
-        }
-        function toggle() {
-            const trans = document.getElementById('translation');
-            if (trans.style.display === 'none') {
-                trans.style.display = 'block';
-            } else {
-                index = (index + 1) % farmData.length;
-                update();
-            }
-        }
-        update();
-    </script>
-</body>
-</html>
+# 定義導航選項
+nav_options = {
+    "照顧服務": "🦺",
+    "食品科技": "🧪",
+    "創作農場": "🎨",
+    "學習農場": "📚",
+    "生活農場": "🏠",
+    "訓練農場": "🏗️"
+}
+
+# 建立選擇器
+selection = st.sidebar.radio("請選擇前往的區域：", list(nav_options.keys()), format_func=lambda x: f"{nav_options[x]} {x}")
+
+# 頁面主體渲染邏輯
+st.title(f"歡迎來到：{selection}")
+
+if selection == "照顧服務":
+    st.write("這裡是您的照服專業知識庫。")
+elif selection == "食品科技":
+    st.write("這裡是您的食品科技筆記。")
+elif selection == "創作農場":
+    st.write("這裡是您的創作區。")
+elif selection == "學習農場":
+    st.write("這裡是您的學習筆記。")
+elif selection == "生活農場":
+    st.write("這裡是您的生活農場。")
+elif selection == "訓練農場":
+    st.header("🏗️ 訓練農場")
+    # 建立三個分頁
+    tab1, tab2, tab3 = st.tabs(["測試數據", "草稿區", "實驗紀錄"])
+    with tab1:
+        st.write("這裡是測試數據區")
+    with tab2:
+        st.write("這裡是草稿區")
+    with tab3:
+        st.write("這裡是實驗紀錄區")
+else:
+    st.write(f"歡迎來到 {selection}，這裡目前正在施工中。")
