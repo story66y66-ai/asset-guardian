@@ -7,7 +7,7 @@ import io
 # 頁面基本設定
 st.set_page_config(page_title="澄玄的農場", layout="wide")
 
-# 1. 導航選單
+# 1. 導航選單設定
 st.sidebar.title("🌱 澄玄的農場導航")
 nav_options = {
     "訓練農場": "🏗️", "測驗中心": "🎮", "進化中心": "💡",
@@ -26,9 +26,10 @@ def load_data():
 
 word_data = load_data()
 
-# 3. 完整導航邏輯
+# 3. 各區域邏輯
 if selection == "訓練農場":
     st.header("🏗️ 訓練農場 (學習區)")
+    # 使用 session_state 來確保題目穩定
     if 'train_word' not in st.session_state: st.session_state.train_word = random.choice(word_data)
     word = st.session_state.train_word
     st.write(f"### 英文：{word['word']} | 中文：{word['trans']} | KK：{word['kk']}")
@@ -46,19 +47,19 @@ elif selection == "測驗中心":
     st.header("🎮 測驗中心")
     mode = st.radio("測驗模式：", ["中文輸入挑戰", "單字排列挑戰"], horizontal=True)
     
-    # 強制重置機制：每次切換模式或題目時，清空輸入框
+    # 建立一個唯一的識別碼，每次換題都改變它，強制輸入框重置
+    if 'quiz_key' not in st.session_state: st.session_state.quiz_key = random.random()
     if 'quiz_word' not in st.session_state: st.session_state.quiz_word = random.choice(word_data)
+    
     word = st.session_state.quiz_word
     
+    # 測驗區域邏輯
     if mode == "中文輸入挑戰":
         st.write(f"請輸入 **{word['word']}** 的中文意思：")
-        user_in = st.text_input("輸入中文：", key="c_input") # key 確保自動刷新
-        if st.button("確認答案"):
+        user_in = st.text_input("輸入中文：", key=f"c_{st.session_state.quiz_key}")
+        if st.button("確認"):
             if user_in == word['trans']:
-                st.success("✅ 答對了！恭喜！")
-                st.balloons()
-                if st.button("點此進入下一題"): 
-                    del st.session_state.quiz_word; st.rerun()
+                st.success("✅ 答對了！恭喜！"); st.balloons()
             else: st.error("❌ 錯了，再試試看！")
     
     else:
@@ -66,24 +67,22 @@ elif selection == "測驗中心":
         letters = list(word['word'].upper())
         random.shuffle(letters)
         st.write(f"請拼出：{''.join(letters)}")
-        
-        # 關鍵：這裡的 key 讓輸入框在 rerun 後自動清空
-        ans = st.text_input("輸入拼寫：", key="e_input")
+        ans = st.text_input("輸入拼寫：", key=f"e_{st.session_state.quiz_key}")
         
         if st.button("確認"):
             if ans.upper() == word['word'].upper():
-                st.success("✅ 答對！太棒了！")
-                st.balloons()
-                if st.button("點此進入下一題"): del st.session_state.quiz_word; st.rerun()
-            else: 
-                st.error(f"❌ 錯了，正確是 {word['word']}，再挑戰一次！")
+                st.success("✅ 答對！太棒了！"); st.balloons()
+            else: st.error(f"❌ 錯了，正確是 {word['word']}")
     
+    # 強制重置按鈕
     if st.button("🔄 跳過/換一題"):
-        del st.session_state.quiz_word; st.rerun()
+        st.session_state.quiz_key = random.random() # 改變 key，強制輸入框清空
+        st.session_state.quiz_word = random.choice(word_data)
+        st.rerun()
 
 elif selection == "進化中心":
     st.header("💡 進化中心")
-    st.write(f"農場書庫已連結，目前載入了 {len(word_data)} 個單字。")
+    st.write(f"農場書庫已連結，共有 {len(word_data)} 個單字。")
     st.subheader("📝 當前運作程式碼 (streamlit_app.py)")
     with open("streamlit_app.py", "r", encoding="utf-8") as f: st.code(f.read(), language="python")
 
