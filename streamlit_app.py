@@ -29,10 +29,8 @@ word_data = load_data()
 # 3. 完整導航邏輯
 if selection == "訓練農場":
     st.header("🏗️ 訓練農場 (學習區)")
-    
     if 'current_word' not in st.session_state:
         st.session_state.current_word = random.choice(word_data)
-    
     word = st.session_state.current_word
     st.write(f"### 英文：{word['word']} | 中文：{word['trans']} | KK：{word['kk']}")
     
@@ -56,7 +54,6 @@ elif selection == "測驗中心":
         user_in = st.text_input("輸入中文：")
         if st.button("確認答案") and user_in == word['trans']: st.success("✅ 答對了！")
     else:
-        # 新增：單字排列挑戰時，顯示中文名稱作為提示
         st.write(f"### 提示中文：{word['trans']}")
         st.write(f"請拼出：{''.join(random.sample(word['word'].upper(), len(word['word'])))}")
         ans = st.text_input("輸入拼寫：")
@@ -67,7 +64,10 @@ elif selection == "測驗中心":
 elif selection == "進化中心":
     st.header("💡 進化中心")
     st.write(f"農場書庫已連結，目前載入了 {len(word_data)} 個單字。")
-    st.info("透過 words.csv，農場將能無限制擴充。")
+    st.write("---")
+    st.subheader("📝 當前運作程式碼 (streamlit_app.py)")
+    with open("streamlit_app.py", "r", encoding="utf-8") as f:
+        st.code(f.read(), language="python")
 
 else:
     st.header(f"{selection}")
