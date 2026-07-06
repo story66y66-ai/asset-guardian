@@ -2,8 +2,8 @@ import streamlit as st
 
 st.set_page_config(page_title="澄玄大學", layout="wide")
 
-st.title("🎓 歡迎來到澄玄大學")
-st.subheader("每一門專業，都是妳未來的一塊拼圖")
+st.title("🎓 歡迎來到《澄玄大學》")
+st.subheader("每一門專業，都是你未來的一塊拼圖")
 
 # 學院卡片設計
 col1, col2, col3 = st.columns(3)
