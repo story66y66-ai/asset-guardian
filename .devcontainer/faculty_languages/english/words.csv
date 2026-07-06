@@ -1,4 +1,3 @@
-# 50 個單字庫
 word_data = [
     {"word": "Apple", "trans": "蘋果", "kk": "/ˈæp.əl/"}, {"word": "Banana", "trans": "香蕉", "kk": "/bəˈnæn.ə/"},
     {"word": "Cat", "trans": "貓", "kk": "/kæt/"}, {"word": "Dog", "trans": "狗", "kk": "/dɔːɡ/"},
