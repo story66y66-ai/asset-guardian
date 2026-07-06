@@ -13,8 +13,8 @@ with col1:
     st.write("單字記憶與拼字訓練")
     # 這裡我們直接幫妳連結到該學院的程式碼路徑
     if st.button("進入 語言學院"):
-        st.switch_page("faculty_languages/english/english_class.py"
-        st.switch_page("faculty_languages/japanese/japanese_class.py"
+        st.switch_page("faculty_languages/english/english_class.py")
+        st.switch_page("faculty_languages/japanese/japanese_class.py")
 
 with col2:
     st.markdown("### ❤️ 照服學院")
