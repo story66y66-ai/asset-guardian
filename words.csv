@@ -1,20 +1,143 @@
-word,trans,kk
-Apple,蘋果,/ˈæp.əl/
-Banana,香蕉,/bəˈnæn.ə/
-Cat,貓,/kæt/
-Dog,狗,/dɔːɡ/
-Elephant,大象,/ˈel.ɪ.fənt/
-Fish,魚,/fɪʃ/
-Girl,女孩,/ɡɜːrl/
-House,房子,/haʊs/
-Ice,冰,/aɪs/
-Jump,跳,/dʒʌmp/
-Key,鑰匙,/kiː/
-Lion,獅子,/ˈlaɪ.ən/
-Moon,月亮,/muːn/
-Note,筆記,/noʊt/
-Orange,橘子,/ˈɔːr.ɪndʒ/
-Pen,筆,/pen/
-Queen,皇后,/kwiːn/
-Rain,雨,/reɪn/
-Sun,太陽,/sn/
+word,trans,kk,level
+a/an,一,/æ n/,1
+able,能，可以,/ˋeb!/,1
+about,關於,/əˋbaʊt/,1
+above,在…上面,/əˋbʌv/,1
+according to,根據,/əˋkɔrdɪŋ tu/,1
+across,穿過,/əˋkrɔs/,1
+act,扮演,/æ kt/,1
+action,行動,/ˋækʃən/,1
+actor/actress,男演員/女演員,/ˋæktɚ/ /ˋæktrɪs/,1
+add,添加,/æ d/,1
+address,地址,/əˋdrɛs/,1
+adult,成人,/ˋdʌlt/,1
+afraid,害怕,/əˋfred/,1
+after,在…以後,/ˋæftɚ/,1
+afternoon,午後,/ˋæftɚˋnun/,1
+again,再,/əˋgɛn/,1
+against,反對,/əˋgɛnst/,1
+age,年齡,/edʒ/,1
+ago,在…之前,/əˋgo/,1
+agree(ment),同意,/əˋgrimənt/,1
+ahead,在前,/əˋhɛd/,1
+air,空氣,/ɛr/,1
+airmail,航空郵政,/ˋɛr͵mel/,1
+airplane/plane,飛機,/ˋɛr͵plen/,1
+airport,機場,/ˋɛr͵port/,1
+all,一切的,/ɔl/,1
+allow,允許,/əˋlaʊ/,1
+almost,幾乎,/ˋɔl͵most/,1
+alone,單獨的,/əˋlon/,1
+along,沿著,/əˋlɔŋ/,1
+already,已經,/ɔlˋrɛdɪ/,1
+also,也,/ˋɔlso/,1
+always,總是,/ˋɔlwez/,1
+am,是,/æ m/,1
+among,在…之中,/əˋmʌŋ/,1
+and,和,/æ nd/,1
+anger,憤怒,/ˋæŋgɚ/,1
+angry,生氣的,/ˋæŋgrɪ/,1
+animal,動物,/ˋænəm!/,1
+another,另外的,/əˋnʌðɚ/,1
+answer,回答,/ˋænsɚ/,1
+ant,螞蟻,/æ nt/,1
+any,任何的,/ˋɛnɪ/,1
+anything,任何東西,/ˋɛnɪ͵θɪŋ/,1
+ape,大猩猩,/ep/,1
+appear,出現,/əˋpɪr/,1
+apple,蘋果,/ˋæp!/,1
+April/Apr.,四月,/ˋeprəl/,1
+are,是,/ɑr/,1
+area,面積,/ˋɛrɪə/,1
+arm (1),手臂,/ɑrm/,1
+army,軍隊,/ˋɑrmɪ/,1
+around,到處,/əˋraʊnd/,1
+art,藝術,/ɑrt/,1
+as,當作、如同,/æ z/,1
+ask,詢問,/æ sk/,1
+at,在…地點,/æ t/,1
+August/Aug.,八月,/ɔˋgʌst/,1
+aunt/auntie/aunty,伯母,/æ nt/,1
+autumn/fall,秋天,/ˋɔtəm/ /fɔl/,1
+away,隔開,/əˋwe/,1
+baby,嬰兒,/ˋbebɪ/,1
+back,背部,/bæ k/,1
+bad,壞的,/bæ d/,1
+bag,袋子,/bæ g/,1
+ball,球,/bɔl/,1
+balloon,氣球,/bəˋlun/,1
+banana,香蕉,/bəˋnænə/,1
+band,綁帶,/bæ nd/,1
+bank,銀行或河堤,/bæŋk/,1
+bar,棒；酒吧,/bɑr/,1
+barber,理髮師,/ˋbɑrbɚ/,1
+base,基底,/bes/,1
+baseball,棒球,/ˋbes͵bɔl/,1
+basic,基礎的,/ˋbesɪk/,1
+basket,籃子,/ˋbæskɪt/,1
+basketball,籃球,/ˋbæskɪt͵bɔl/,1
+bat,球棒或蝙蝠,/bæ t/,1
+bath,沐浴；浴缸,/bæθ/,1
+bathe,浸洗,/beð/,1
+bathroom,浴室,/ˋbæθ͵rum/,1
+be,是,/bi/,1
+beach,海灘,/bitʃ/,1
+bear,熊,/bɛr/,1
+beat,打、擊,/bit/,1
+beautiful,美麗的,/ˋbjutəfəl/,1
+beauty,美麗,/ˋbjutɪ/,1
+because,因為,/bɪˋkɔz/,1
+become,成為,/bɪˋkʌm/,1
+bed,床,/bɛd/,1
+bee,蜜蜂,/bi/,1
+before,在…之前,/bɪˋfor/,1
+begin,開始,/bɪˋgɪn/,1
+behind,在…後面,/bɪˋhaɪnd/,1
+believe,相信,/bɪˋliv/,1
+bell,鈴,/bɛl/,1
+belong,屬於,/bəˋlɔŋ/,1
+below,在…下面,/bəˋlo/,1
+beside,在旁邊,/bɪˋsaɪd/,1
+best,最好的,/bɛst/,1
+better,較好的,/ˋbɛtɚ/,1
+between,在…之間,/bɪˋtwin/,1
+bicycle/bike,腳踏車,/ˋbaɪsɪk!/ /baɪk/,1
+big,大的,/bɪg/,1
+bird,鳥,/bɝd/,1
+birth,出生,/bɝθ/,1
+bit,一點,/bɪt/,1
+bite,咬,/baɪt/,1
+black,黑色的,/blæ k/,1
+block,街區,/blɑk/,1
+blood,血,/blʌd/,1
+blow,吹,/blo/,1
+blue,藍色的,/blu/,1
+boat,小船,/bot/,1
+body,身體,/ˋbɑdɪ/,1
+bone,骨頭,/bon/,1
+book,書或預定,/bʊk/,1
+born,出生的,/bɔrn/,1
+both,兩者都,/boθ/,1
+bottom,底部,/ˋɑtəm/,1
+bowl,碗,/bol/,1
+box,箱子,/bɑks/,1
+boy,男孩,/bɔɪ/,1
+brave,勇敢的,/brev/,1
+bread,麵包,/brɛd/,1
+break,打破,/brek/,1
+breakfast,早餐,/ˋbrɛkfəst/,1
+bridge,橋,/brɪdʒ/,1
+bright,明亮的,/braɪt/,1
+bring,帶來,/brɪŋ/,1
+brother,兄弟,/ˋbrʌðɚ/,1
+brown,褐色,/braʊn/,1
+bug,蟲子,/bʌg/,1
+build,建造,/bɪld/,1
+building,建築物,/ˋbɪldɪŋ/,1
+bus,巴士,/bʌs/,1
+busy,忙碌的,/ˋbɪzɪ/,1
+but,但是,/bʌt/,1
+butter,奶油,/ˋbʌtɚ/,1
+butterfly,蝴蝶,/ˋbʌtɚ͵flaɪ/,1
+buy,買,/baɪ/,1
+by,透過；在…旁邊,/baɪ/,1
