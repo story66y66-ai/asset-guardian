@@ -5,36 +5,45 @@ import io
 
 st.title("📖 澄玄大學 - 語言學院")
 
+# 讀取資料
 @st.cache_data
 def load_data():
     return pd.read_csv("words.csv")
 
 df = load_data()
-selected_level = st.selectbox("請選擇學習等級：", sorted(df['level'].unique()))
 
-# 篩選並固定隨機排序
-filtered_df = df[df['level'] == selected_level].copy()
-filtered_df = filtered_df.sample(frac=1, random_state=42).reset_index(drop=True)
+# 初始化 Session State，用來同步單字
+if 'selected_word' not in st.session_state:
+    st.session_state.selected_word = df['word'].iloc[0]
 
-# 顯示帶有選擇框的編輯器
-st.subheader(f"Level {selected_level} 學習清單")
-# 建立一個包含選取欄位的 DataFrame
-df_to_show = filtered_df[['word', 'trans', 'kk']].copy()
-# 使用 data_editor 來產生左邊的勾選框
-edited_df = st.data_editor(
-    df_to_show, 
-    column_config={"_index": None}, 
-    disabled=["word", "trans", "kk"], 
-    use_container_width=True
+# 1. 顯示表格（包含 level 欄位以確保索引對齊）
+st.subheader("點選表格中的單字：")
+event = st.dataframe(
+    df[['word', 'trans', 'kk', 'level']], 
+    use_container_width=True, 
+    hide_index=True, 
+    on_select="rerun",
+    selection_mode="single-row"
 )
 
-# 偵測是否有勾選，並提取選取的單字
-# 這裡我們模擬之前您習慣的操作方式
-st.subheader("🔊 單字聽力練習")
-selected_word = st.selectbox("請確認您想播放的單字：", filtered_df['word'].tolist())
+# 如果使用者點了表格，自動同步更新選單變數
+if len(event.selection.rows) > 0:
+    selected_index = event.selection.rows[0]
+    st.session_state.selected_word = df.iloc[selected_index]['word']
 
-if st.button("播放發音"):
+# 2. 同步的選單
+selected_word = st.selectbox(
+    "目前選取的單字：", 
+    df['word'].tolist(), 
+    index=df['word'].tolist().index(st.session_state.selected_word)
+)
+
+# 更新 Session State
+st.session_state.selected_word = selected_word
+
+# 3. 自動發音
+if selected_word:
     tts = gTTS(text=selected_word, lang='en')
     fp = io.BytesIO()
     tts.write_to_fp(fp)
-    st.audio(fp)
+    st.audio(fp, format='audio/mp3', autoplay=True)
