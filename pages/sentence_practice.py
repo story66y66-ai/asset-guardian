@@ -56,7 +56,7 @@ st.subheader("📝 請輸入您的句子：")
 user_input = st.text_area("請在此輸入句子，字體已放大...", height=200)
 
 # 4. 檢查區 (按鈕已透過 CSS 放大)
-col_a, col_b = st.columns(2)
+col_a, col_b = st.columns(4)
 with col_a:
     if st.button("✅ 檢查句子"):
         is_correct = all(w.lower() in user_input.lower() for w in words)
@@ -67,5 +67,5 @@ with col_a:
             st.error("## ❌ 缺少關鍵字，請再試試！")
 with col_b:
     if st.button("🔄 重新抽籤"):
-        st.session_state.challenge = df.sample(n=3)
+        st.session_state.challenge = df.sample(n=4)
         st.rerun()
