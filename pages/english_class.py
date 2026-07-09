@@ -5,45 +5,31 @@ import io
 
 st.title("📖 澄玄大學 - 語言學院")
 
-# 讀取資料
+# 1. 讀取資料
 @st.cache_data
 def load_data():
     return pd.read_csv("words.csv")
 
 df = load_data()
 
-# 初始化 Session State，用來同步單字
-if 'selected_word' not in st.session_state:
-    st.session_state.selected_word = df['word'].iloc[0]
+# 2. 讓使用者選擇等級
+selected_level = st.selectbox("請選擇學習等級：", sorted(df['level'].unique()))
 
-# 1. 顯示表格（使用 on_select 偵測點擊）
-st.subheader("點選表格中的單字：")
-event = st.dataframe(
-    df[['word', 'trans', 'kk']], 
-    use_container_width=True, 
-    hide_index=True, 
-    on_select="rerun",
-    selection_mode="single-row"
-)
+# 3. 篩選該等級，並使用 'random_state' 固定排序
+# 這樣做會打亂 A-Z，但每次重開頁面順序都會維持一樣，看起來像精心安排的順序
+filtered_df = df[df['level'] == selected_level].copy()
+filtered_df = filtered_df.sample(frac=1, random_state=42).reset_index(drop=True)
 
-# 如果使用者點了表格，自動同步更新選單變數
-if len(event.selection.rows) > 0:
-    selected_index = event.selection.rows[0]
-    st.session_state.selected_word = df.iloc[selected_index]['word']
+# 4. 顯示表格
+st.subheader(f"Level {selected_level} 學習清單")
+st.dataframe(filtered_df[['word', 'trans', 'kk']], use_container_width=True, hide_index=True)
 
-# 2. 同步的選單（會自動跳轉）
-selected_word = st.selectbox(
-    "目前選取的單字：", 
-    df['word'].tolist(), 
-    index=df['word'].tolist().index(st.session_state.selected_word)
-)
+# 5. 發音功能
+word_list = filtered_df['word'].tolist()
+selected_word = st.selectbox("請選擇一個單字：", word_list)
 
-# 更新 Session State
-st.session_state.selected_word = selected_word
-
-# 3. 自動發音
-if selected_word:
+if st.button("播放發音"):
     tts = gTTS(text=selected_word, lang='en')
     fp = io.BytesIO()
     tts.write_to_fp(fp)
-    st.audio(fp, format='audio/mp3', autoplay=True)
+    st.audio(fp)
