@@ -3,6 +3,20 @@ import pandas as pd
 from gtts import gTTS
 import io
 
+# 強制調整整體字體與側邊欄位字體
+st.markdown("""
+    <style>
+    /* 放大左側選單欄位的字體 */
+    [data-testid="stSidebar"] {
+        font-size: 28px !important;
+    }
+    /* 放大選單內部的選項文字 */
+    [data-testid="stSidebar"] div, [data-testid="stSidebar"] a {
+        font-size: 28px !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 st.title("📖 澄玄大學 - 語言學院")
 
 # 讀取資料
@@ -16,12 +30,12 @@ df = load_data()
 if 'selected_word' not in st.session_state:
     st.session_state.selected_word = df['word'].iloc[0]
 
-# 1. 顯示表格（包含 level 欄位以確保索引對齊）
+# 1. 顯示表格
 st.subheader("點選表格中的單字：")
 event = st.dataframe(
-    df[['word', 'trans', 'kk', 'level']], 
-    use_container_width=True, 
-    hide_index=True, 
+    df[['word', 'trans', 'kk', 'level']],
+    use_container_width=True,
+    hide_index=True,
     on_select="rerun",
     selection_mode="single-row"
 )
@@ -33,8 +47,8 @@ if len(event.selection.rows) > 0:
 
 # 2. 同步的選單
 selected_word = st.selectbox(
-    "目前選取的單字：", 
-    df['word'].tolist(), 
+    "目前選取的單字：",
+    df['word'].tolist(),
     index=df['word'].tolist().index(st.session_state.selected_word)
 )
 
@@ -46,4 +60,4 @@ if selected_word:
     tts = gTTS(text=selected_word, lang='en')
     fp = io.BytesIO()
     tts.write_to_fp(fp)
-    st.audio(fp, format='audio/mp3', autoplay=True)
+    st.audio(fp, autoplay=True)
