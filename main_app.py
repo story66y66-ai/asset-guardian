@@ -1,10 +1,10 @@
 import streamlit as st
+import english_class  # 這是直接把語言學院的程式「請」進來
 
 st.set_page_config(page_title="澄玄大學", layout="wide", page_icon="🎓")
 st.title("🎓 歡迎來到《澄玄大學》")
 
 st.write("---")
 
-# 這裡我們用一個簡單的文字按鈕，點擊後會引導系統去執行 english_class.py
-if st.button("進入語言學院"):
-    st.switch_page("english_class.py")
+# 直接把語言學院的內容顯示在首頁，這樣就不用切換頁面，就不會報錯了！
+english_class.show_app()
