@@ -3,22 +3,32 @@ import pandas as pd
 from gtts import gTTS
 import io
 
-st.set_page_config(page_title="語言學院", page_icon="📖")
-st.title("📖 語言學院")
+st.title("📖 互動語言學院")
 
-# 核心邏輯：確保讀取的是跟它在同一目錄層級或根目錄的 csv
-# 如果 words.csv 在根目錄，這樣寫是正確的
-try:
-    df = pd.read_csv("words.csv")
-    st.dataframe(df, use_container_width=True)
-    
-    word_list = df['word'].tolist()
-    selected_word = st.selectbox("請選擇一個單字：", word_list)
-    
-    if st.button("播放發音"):
-        tts = gTTS(text=selected_word, lang='en')
-        fp = io.BytesIO()
-        tts.write_to_fp(fp)
-        st.audio(fp)
-except Exception as e:
-    st.error("讀取單字資料時發生錯誤，請檢查 words.csv 是否存在。")
+# 讀取資料
+@st.cache_data
+def load_data():
+    return pd.read_csv("words.csv")
+
+df = load_data()
+
+# 使用 data_editor，讓表格變成可互動的介面
+st.write("請點選表格中的任一單字行：")
+edited_df = st.data_editor(
+    df, 
+    use_container_width=True, 
+    hide_index=True,
+    disabled=df.columns # 設為 disable 讓使用者不能修改資料，只能點選
+)
+
+# 偵測是否有被選取的列
+# 當使用者點選表格中的某一行時，我們可以抓取該行內容
+# 注意：data_editor 本身在點選時會更新狀態
+# 這裡我們簡化處理，讓使用者點選後按確認發音，或是透過選擇器
+selected_word = st.selectbox("確認選擇的單字：", df['word'].tolist())
+
+if st.button("點擊發音"):
+    tts = gTTS(text=selected_word, lang='en')
+    fp = io.BytesIO()
+    tts.write_to_fp(fp)
+    st.audio(fp, format='audio/mp3')
