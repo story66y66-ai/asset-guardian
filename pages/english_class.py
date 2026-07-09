@@ -1,21 +1,17 @@
-
 import streamlit as st
 import pandas as pd
 from gtts import gTTS
 import io
 
-st.title("📚 語言學院")
+st.set_page_config(page_title="語言學院", page_icon="📖")
+st.title("📖 語言學院")
 
-# 讀取根目錄下的 words.csv
-@st.cache_data
-def load_data():
-    return pd.read_csv("words.csv")
-
+# 核心邏輯：確保讀取的是跟它在同一目錄層級或根目錄的 csv
+# 如果 words.csv 在根目錄，這樣寫是正確的
 try:
-    df = load_data()
+    df = pd.read_csv("words.csv")
     st.dataframe(df, use_container_width=True)
-
-    # 選擇單字發音
+    
     word_list = df['word'].tolist()
     selected_word = st.selectbox("請選擇一個單字：", word_list)
     
@@ -23,7 +19,6 @@ try:
         tts = gTTS(text=selected_word, lang='en')
         fp = io.BytesIO()
         tts.write_to_fp(fp)
-        st.audio(fp, format='audio/mp3')
-        
+        st.audio(fp)
 except Exception as e:
-    st.warning("請確認根目錄下是否有 words.csv 檔案，且格式正確。")
+    st.error("讀取單字資料時發生錯誤，請檢查 words.csv 是否存在。")
