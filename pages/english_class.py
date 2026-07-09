@@ -3,7 +3,7 @@ import pandas as pd
 from gtts import gTTS
 import io
 
-st.title("📖 互動語言學院")
+st.title("📖 澄玄大學 - 語言學院")
 
 # 讀取資料
 @st.cache_data
@@ -12,23 +12,24 @@ def load_data():
 
 df = load_data()
 
-# 使用 data_editor，讓表格變成可互動的介面
-st.write("請點選表格中的任一單字行：")
-edited_df = st.data_editor(
-    df, 
-    use_container_width=True, 
-    hide_index=True,
-    disabled=df.columns # 設為 disable 讓使用者不能修改資料，只能點選
-)
+# 選擇等級（保持分級功能）
+levels = sorted(df['level'].unique())
+selected_level = st.selectbox("請選擇學習等級：", levels)
 
-# 偵測是否有被選取的列
-# 當使用者點選表格中的某一行時，我們可以抓取該行內容
-# 注意：data_editor 本身在點選時會更新狀態
-# 這裡我們簡化處理，讓使用者點選後按確認發音，或是透過選擇器
-selected_word = st.selectbox("確認選擇的單字：", df['word'].tolist())
+# 篩選資料
+filtered_df = df[df['level'] == selected_level].copy()
+# 為了避免 A-Z 排序，這裡不執行 sort_values，保持原始 CSV 順序
 
-if st.button("點擊發音"):
+# 顯示表格
+st.dataframe(filtered_df[['word', 'trans', 'kk']], use_container_width=True, hide_index=True)
+
+# 優化互動：將選單作為核心輸入，一旦選單變更，音訊會自動更新
+selected_word = st.selectbox("請點選或輸入想聽的單字：", filtered_df['word'].tolist())
+
+# 核心改善：將自動播放邏輯封裝，不再需要「發音按鈕」
+if selected_word:
     tts = gTTS(text=selected_word, lang='en')
     fp = io.BytesIO()
     tts.write_to_fp(fp)
-    st.audio(fp, format='audio/mp3')
+    # 將 autoplay 設為 True，讓它自動開始播放
+    st.audio(fp, format='audio/mp3', autoplay=True)
