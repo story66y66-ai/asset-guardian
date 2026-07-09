@@ -6,4 +6,5 @@ st.title("🎓 歡迎來到《澄玄大學》")
 st.write("---")
 
 # 這裡我們改用最基礎的連結方式，確保絕對能運作
-st.markdown("[進入語言學院（點擊進入單字農場）](https://asset-guardian-neznwjhvypu7cjoboe8dpz.streamlit.app/english_class)")
+if st.button("進入語言學院"):
+    st.write("請直接從左側選單點擊 english_class.py 進入")
