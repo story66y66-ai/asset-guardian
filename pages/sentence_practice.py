@@ -9,7 +9,7 @@ st.markdown("""
     .stTextArea textarea { font-size: 32px !important; color: #000000 !important; font-weight: bold !important; }
     div.stButton > button { font-size: 24px !important; padding: 15px 30px !important; }
     h1, h2, h3, h4 { font-weight: bold !important; }
-    p { font-size: 24px !important; }
+    p { font-size: 28px !important; } /* 加大一般文字與翻譯大小 */
     </style>
     """, unsafe_allow_html=True)
 
@@ -48,11 +48,13 @@ if st.button("🔊 播放示範句"):
     st.audio(fp, autoplay=True)
 st.markdown(f"### {example_sentence}")
 
+# 補回中文翻譯並放大字體
+st.write(f"*(中文：我必須注意 {words[0]}，穿上 {words[1]}，並到 {words[2]} 的地方去。)*")
+
 st.divider()
 st.subheader("📝 請輸入您的句子：")
 user_input = st.text_area("在這裡輸入...", height=150)
 
-# 這裡是關鍵：確保這裡的變數與 col_a, col_b 一致
 col_a, col_b = st.columns(2)
 with col_a:
     if st.button("✅ 檢查句子"):
