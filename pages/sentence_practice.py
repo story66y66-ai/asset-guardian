@@ -39,8 +39,7 @@ else:
 if len(filtered_df) < 3:
     filtered_df = df
 
-# 💡 口語化英文好句庫 (句子, 中文翻譯, 對應的中文詞彙對照清單, 三個英文單字)
-# 這樣可以百分之百精準對應到中文括號！
+# 💡 口語化英文好句庫
 CONV_SENTENCE_POOL = [
     (
         "Could you please help me check if this order is ready?",
@@ -121,15 +120,32 @@ for w in words:
     pattern = re.compile(re.escape(w), re.IGNORECASE)
     colored_sentence = pattern.sub(f"<span class='red-word'>{w}</span>", colored_sentence)
 
-# 💡 結合：中文裡面已經內建括號英文，後面再加上完整的總結清單
+# 中文翻譯帶括號與總結
 vocab_notes = "、".join([f"{w} ({trans})" for w, trans in zip(words, trans_list)])
 formatted_chi_sentence = f"{chi_sentence}  【本句核心單字：{vocab_notes}】"
 
 st.subheader("💡 助教示範句：")
+
+# 🎛️ 新增語速選擇按鈕
+speed_option = st.radio(
+    "🐢 選擇語音播放速度：",
+    ["正常速", "慢速 (適合跟讀)", "快速 (挑戰流利度)"],
+    horizontal=True,
+    key="audio_speed_radio"
+)
+
 if st.button("🔊 播放示範句", key="play_demo_sentence"):
-    tts = gTTS(text=eng_sentence, lang='en')
+    # 根據選擇設定 gTTS 的 slow 參數
+    is_slow = (speed_option == "慢速 (適合跟讀)")
+    
+    tts = gTTS(text=eng_sentence, lang='en', slow=is_slow)
     fp = io.BytesIO()
     tts.write_to_fp(fp)
+    
+    # 如果選擇快速，利用 HTML5 audio 屬性外加一點播放速度調整的小提示
+    if speed_option == "快速 (挑戰流利度)":
+        st.info("💡 小提示：您可以直接點擊下方語音播放器右側的三個點 (...) 來調整成 1.25 倍或 1.5 倍速！")
+        
     st.audio(fp, autoplay=True)
 
 # 顯示紅字英文口語句
