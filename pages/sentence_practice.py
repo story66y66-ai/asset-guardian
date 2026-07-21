@@ -46,66 +46,36 @@ else:
     target_lvl = int(selected_level.split(" ")[1])
     filtered_df = df[df['level'] == target_lvl]
 
+# 防呆：如果該等級選不到 3 個字，就退回使用全部資料庫
 if len(filtered_df) < 3:
     filtered_df = df
 
-# 💡 口語化英文好句庫
-CONV_SENTENCE_POOL = [
-    (
-        "Could you please help me check if this order is ready?",
-        "可以請幫忙 (help) 我確認 (check) 一下這筆訂單 (order) 準備好了嗎？",
-        ["order", "help", "check"]
-    ),
-    (
-        "I really need to focus on my study plan for this semester.",
-        "我真的需要專注於 (focus) 我這學期的讀書計畫 (plan) 與學習 (study) 上。",
-        ["focus", "study", "plan"]
-    ),
-    (
-        "Let us take a short break before we start the next task.",
-        "我們在開始 (start) 下一個任務 (task) 之前，先休息 (break) 一下吧。",
-        ["break", "start", "task"]
-    ),
-    (
-        "She always brings a positive energy to everyone around her.",
-        "她總是為身邊周圍 (around) 的每個人 (everyone) 帶來積極的正能量 (energy)。",
-        ["energy", "everyone", "around"]
-    ),
-    (
-        "Finding a good balance between work and life is truly important.",
-        "在工作 (work) 和生活 (life) 之間找到良好的平衡 (balance) 真得很重要。",
-        ["balance", "work", "life"]
-    ),
-    (
-        "Do you remember where we parked our car this morning?",
-        "妳記得 (remember) 我們今天早晨 (morning) 把車子 (car) 停在哪裡嗎？",
-        ["remember", "car", "morning"]
-    )
-]
-
-# 初始化題目狀態（只在第一次進來或主動按換一題時才抽新題目）
-def generate_new_challenge():
-    chosen_sentence, chosen_chinese, target_words = random.choice(CONV_SENTENCE_POOL)
-    sub_df_list = []
-    for tw in target_words:
-        match_row = df[df['word'].str.lower() == tw.lower()]
-        if not match_row.empty:
-            sub_df_list.append(match_row.iloc[0])
-        else:
-            sub_df_list.append(df.sample(n=1).iloc[0])
-            
-    st.session_state.challenge = pd.DataFrame(sub_df_list)
+# 動態產生題目函式：直接從當前過濾後的等級隨機抽 3 個字，並自動組成造句練習
+def generate_new_challenge(pool_df):
+    # 從當前等級隨機抽 3 個單字列
+    sample_rows = pool_df.sample(n=min(3, len(pool_df)))
+    words_list = sample_rows['word'].tolist()
+    
+    # 自動組合出一句練習句與中文提示
+    chosen_sentence = f"Please use {' , '.join(words_list)} to make a meaningful sentence."
+    chosen_chinese = f"請運用以下單字造句：{'、'.join(words_list)}"
+    
+    st.session_state.challenge = sample_rows
     st.session_state.raw_eng_sentence = chosen_sentence
     st.session_state.raw_chi_sentence = chosen_chinese
 
-if 'challenge' not in st.session_state:
-    generate_new_challenge()
+# 如果切換了等級，或者第一次進來，或手動按換一題，就重新出題
+if ('current_selected_level' not in st.session_state 
+    or st.session_state.current_selected_level != selected_level
+    or 'challenge' not in st.session_state):
+    st.session_state.current_selected_level = selected_level
+    generate_new_challenge(filtered_df)
 
 # 取得目前的目標單字清單與相關資訊
 words = st.session_state.challenge['word'].tolist()
 trans_list = st.session_state.challenge['trans'].tolist()
 
-# 檢查 CSV 中是否有 kk 音標欄位（相容常見的欄位名稱 kk 或 phonetic）
+# 檢查 CSV 中是否有 kk 音標欄位
 kk_col = None
 for col in ['kk', 'phonetic', 'KK', '音標']:
     if col in st.session_state.challenge.columns:
@@ -115,10 +85,10 @@ for col in ['kk', 'phonetic', 'KK', '音標']:
 # 頂部區塊：目標單字與「換一題」按鈕並排
 col_top1, col_top2 = st.columns([3, 1])
 with col_top1:
-    st.subheader("🎯 今日目標單字（來自實用口語句）：")
+    st.subheader(f"🎯 今日目標單字（來自 {selected_level}）：")
 with col_top2:
     if st.button("🔄 換一題", key="top_refresh_btn"):
-        generate_new_challenge()
+        generate_new_challenge(filtered_df)
         st.rerun()
 
 for idx, row in st.session_state.challenge.iterrows():
@@ -126,7 +96,7 @@ for idx, row in st.session_state.challenge.iterrows():
     word_str = str(row['word'])
     trans_str = str(row['trans'])
     
-    # 取得 KK 音標（如果有的話）
+    # 取得 KK 音標
     kk_str = ""
     if kk_col and pd.notna(row[kk_col]):
         kk_str = f" [{row[kk_col]}]"
@@ -213,5 +183,5 @@ with col_a:
 
 with col_b:
     if st.button("🔄 換一題", key="refresh_challenge_bottom"):
-        generate_new_challenge()
+        generate_new_challenge(filtered_df)
         st.rerun()
