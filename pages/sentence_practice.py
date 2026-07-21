@@ -65,8 +65,12 @@ def generate_new_challenge(pool_df):
     eng_sent, chi_sent = "", ""
     
     try:
-        # 讀取 Streamlit Secrets 裡的 GOOGLE_API_KEY
-        api_key = st.secrets["GOOGLE_API_KEY"]
+        # 更安全與相容的 Streamlit Secrets 讀取方式
+        if "GOOGLE_API_KEY" in st.secrets:
+            api_key = st.secrets["GOOGLE_API_KEY"]
+        else:
+            api_key = st.secrets.get("general", {}).get("GOOGLE_API_KEY", "")
+            
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-1.5-flash')
         
