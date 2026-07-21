@@ -36,23 +36,72 @@ else:
     target_lvl = int(selected_level.split(" ")[1])
     filtered_df = df[df['level'] == target_lvl]
 
-# 防呆機制：若選取的等級裡面單字不足 3 個，就降級以防報錯
 if len(filtered_df) < 3:
-    st.warning(f"⚠️ {selected_level} 目前資料庫裡的單字少於 3 個，已自動開啟全庫抽籤喔！")
     filtered_df = df
 
-# 關鍵邏輯：切換等級、第一次載入、或按下重新抽籤時重新選取單字與新句型
-if ('challenge' not in st.session_state 
-    or st.session_state.get('need_refresh', False)
-    or st.session_state.get('current_level') != selected_level):
-    
-    st.session_state.challenge = filtered_df.sample(n=3)
-    st.session_state.current_level = selected_level
-    # 每次換單字或按重新整理，就強制隨機挑選不同的句型！
-    st.session_state.chosen_pattern_idx = random.randint(0, 4)
-    st.session_state.need_refresh = False # 重置刷新狀態
+# 💡 核心創新：準備一套「口語化、生動實用」的現成英文好句庫
+# 每個元素格式：(英文完整好句, 中文翻譯, [包含的三個單字英文原名])
+# 系統會從我們的 words.csv 裡面去撈出對應的資料來顯示！
+CONV_SENTENCE_POOL = [
+    (
+        "Could you please help me check if this order is ready?",
+        "可以請幫我確認一下這筆訂單準備好了嗎？",
+        ["order", "help", "check"]
+    ),
+    (
+        "I really need to focus on my study plan for this semester.",
+        "我真的需要專注在我這學期的讀書計畫上。",
+        ["focus", "study", "plan"]
+    ),
+    (
+        "Let us take a short break before we start the next task.",
+        "我們在開始下一個任務之前，先休息一下吧。",
+        ["break", "start", "task"]
+    ),
+    (
+        "She always brings a positive energy to everyone around her.",
+        "她總是為身邊的每個人帶來積極的正能量。",
+        ["energy", "everyone", "around"]
+    ),
+    (
+        "Finding a good balance between work and life is truly important.",
+        "在工作和生活之間找到良好的平衡真的很重要。",
+        ["balance", "work", "life"]
+    ),
+    (
+        "Do you remember where we parked our car this morning?",
+        "妳記得我們今天早上把車停在哪裡嗎？",
+        ["remember", "car", "morning"]
+    )
+]
 
-st.subheader("🎯 今日目標單字：")
+# 當切換等級、初次載入、或按重新抽籤時，隨機選一句口語好句
+if ('chosen_conv_item' not in st.session_state 
+    or st.session_state.get('need_refresh', False)):
+    
+    # 隨機挑選一句好句
+    chosen_sentence, chosen_chinese, target_words = random.choice(CONV_SENTENCE_POOL)
+    
+    # 從 CSV 資料庫中把這三個單字的詳細資料（中文翻譯、等級）找出來
+    sub_df_list = []
+    for tw in target_words:
+        match_row = df[df['word'].str.lower() == tw.lower()]
+        if not match_row.empty:
+            sub_df_list.append(match_row.iloc[0])
+        else:
+            # 萬一 CSV 找不到，就隨機從資料庫補一個
+            sub_df_list.append(df.sample(n=1).iloc[0])
+            
+    st.session_state.challenge = pd.DataFrame(sub_df_list)
+    st.session_state.raw_eng_sentence = chosen_sentence
+    st.session_state.raw_chi_sentence = chosen_chinese
+    st.session_state.need_refresh = False
+
+# 取得目前的目標單字清單
+words = st.session_state.challenge['word'].tolist()
+trans_list = st.session_state.challenge['trans'].tolist()
+
+st.subheader("🎯 今日目標單字（來自實用口語句）：")
 for _, row in st.session_state.challenge.iterrows():
     col1, col2 = st.columns([1, 4])
     with col1:
@@ -66,68 +115,27 @@ for _, row in st.session_state.challenge.iterrows():
 
 st.divider()
 
-# 取得單字與中文翻譯清單
-words = st.session_state.challenge['word'].tolist()
-trans_list = st.session_state.challenge['trans'].tolist()
+# 處理助教示範句的紅字標註
+eng_sentence = st.session_state.raw_eng_sentence
+chi_sentence = st.session_state.raw_chi_sentence
 
-# 💡 智慧句型庫：準備多種不同情境的英文與中文句型模板
-PATTERN_POOL = [
-    (
-        "When we look at {w0}, we can easily connect it with {w1} through {w2}.",
-        "當我們看到 {w0} 時，可以透過 {w2} 輕鬆把它和 {w1} 連結起來。"
-    ),
-    (
-        "People often find that {w0} plays a key role when dealing with {w1} and {w2}.",
-        "人們常發現，在處理 {w1} 與 {w2} 時，{w0} 扮演著關鍵的角色。"
-    ),
-    (
-        "If you are interested in {w0}, you should also pay attention to {w1} and {w2}.",
-        "如果你對 {w0} 感興趣，你也應該同時關注 {w1} 和 {w2}。"
-    ),
-    (
-        "Instead of ignoring {w0}, we started to explore {w1} alongside {w2}.",
-        "我們沒有忽視 {w0}，而是開始同時探索 {w1} 以及 {w2}。"
-    ),
-    (
-        "The expert explained how {w0} affects both {w1} and {w2} in daily life.",
-        "專家解釋了 {w0} 如何在日常生活中影響 {w1} 與 {w2}。"
-    )
-]
-
-# 確保每次都有索引可用
-if 'chosen_pattern_idx' not in st.session_state:
-    st.session_state.chosen_pattern_idx = random.randint(0, len(PATTERN_POOL) - 1)
-
-eng_template, chi_template = PATTERN_POOL[st.session_state.chosen_pattern_idx]
-
-# 將抽到的單字塞進範本中
-raw_sentence = eng_template.format(w0=words[0], w1=words[1], w2=words[2])
-chi_sentence = chi_template.format(
-    w0=f"<b>{words[0]}</b> ({trans_list[0]})",
-    w1=f"<b>{words[1]}</b> ({trans_list[1]})",
-    w2=f"<b>{words[2]}</b> ({trans_list[2]})"
-)
-
-# 🎯 英文示範句：目標單字帶紅色
-red_word_0 = f"<span class='red-word'>{words[0]}</span>"
-red_word_1 = f"<span class='red-word'>{words[1]}</span>"
-red_word_2 = f"<span class='red-word'>{words[2]}</span>"
-
-colored_sentence = raw_sentence
-colored_sentence = colored_sentence.replace(words[0], red_word_0)
-colored_sentence = colored_sentence.replace(words[1], red_word_1)
-colored_sentence = colored_sentence.replace(words[2], red_word_2)
+colored_sentence = eng_sentence
+for w in words:
+    # 忽略大小寫替換成紅字
+    import re
+    pattern = re.compile(re.escape(w), re.IGNORECASE)
+    colored_sentence = pattern.sub(f"<span class='red-word'>{w}</span>", colored_sentence)
 
 st.subheader("💡 助教示範句：")
 if st.button("🔊 播放示範句", key="play_demo_sentence"):
-    tts = gTTS(text=raw_sentence, lang='en')
+    tts = gTTS(text=eng_sentence, lang='en')
     fp = io.BytesIO()
     tts.write_to_fp(fp)
     st.audio(fp, autoplay=True)
 
-# 顯示紅字英文句
+# 顯示紅字英文口語句
 st.markdown(f"### {colored_sentence}", unsafe_allow_html=True)
-# 顯示中文對應句
+# 顯示中文意思
 st.markdown(f"*(中文：{chi_sentence})*", unsafe_allow_html=True)
 
 st.divider()
