@@ -5,7 +5,7 @@ import io
 import random
 import base64
 
-# 強制調整整體字體大小
+# 強制調整整體字體大小與超大播放按鈕樣式
 st.markdown("""
     <style>
     .stTextArea textarea { font-size: 32px !important; color: #000000 !important; font-weight: bold !important; }
@@ -22,6 +22,13 @@ st.markdown("""
     div[role="listbox"] div {
         font-size: 26px !important;
         font-weight: bold !important;
+    }
+    
+    /* 自訂超大好按的音訊播放器外觀 */
+    audio.big-audio {
+        width: 100%;
+        height: 55px;
+        filter: contrast(120%);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -117,10 +124,10 @@ with col_top2:
         st.rerun()
 
 for idx, row in st.session_state.challenge.iterrows():
-    col1, col2 = st.columns([1, 4])
+    col1, col2 = st.columns([1.2, 3.8])
     word_str = str(row['word'])
     
-    # 產生音檔並轉成網頁可以直接播放的 HTML5 語音元件（絕對不會觸發畫面重新整理、也不會切換題目！）
+    # 產生音檔並轉成超大好按的 HTML5 播放器（絕不重新整理、按鈕放大好操作）
     tts = gTTS(text=word_str, lang='en')
     fp = io.BytesIO()
     tts.write_to_fp(fp)
@@ -128,17 +135,18 @@ for idx, row in st.session_state.challenge.iterrows():
     audio_base64 = base64.b64encode(audio_bytes).decode()
     
     with col1:
-        # 使用原生 HTML audio 播放器，按下去只會發音，完全不會重新整理網頁！
         audio_html = f"""
-            <audio controls style="height: 40px; width: 100%;">
-                <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
-                您的瀏覽器不支援語音播放
-            </audio>
+            <div style="background-color: #f0f2f6; padding: 5px; border-radius: 10px; text-align: center;">
+                <audio controls class="big-audio">
+                    <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
+                    您的瀏覽器不支援語音播放
+                </audio>
+            </div>
         """
         st.markdown(audio_html, unsafe_allow_html=True)
         
     with col2:
-        st.markdown(f"### {word_str}  ({row['trans']}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
+        st.markdown(f"### 🔊 {word_str}  ({row['trans']}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
 
 st.divider()
 
