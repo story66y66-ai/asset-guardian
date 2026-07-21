@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
+from gtts import gTTS
+import io
 import random
-import html
 
 # 強制調整整體字體大小
 st.markdown("""
@@ -20,27 +21,6 @@ st.markdown("""
     div[role="listbox"] div {
         font-size: 26px !important;
         font-weight: bold !important;
-    }
-    
-    /* 完美好按的網頁語音發音按鈕 */
-    .sound-btn {
-        background-color: #ff4b4b;
-        color: white;
-        padding: 10px 20px;
-        font-size: 22px;
-        font-weight: bold;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        transition: 0.2s;
-    }
-    .sound-btn:hover {
-        background-color: #ff2b2b;
-        transform: scale(1.05);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -93,7 +73,7 @@ CONV_SENTENCE_POOL = [
     ),
     (
         "Finding a good balance between work and life is truly important.",
-        "在工作 (work) 和生活 (life) 之間找到良好的平衡 (balance) 真得很重要。",
+        "在工作 (work) and 生活 (life) 之間找到良好的平衡 (balance) 真得很重要。",
         ["balance", "work", "life"]
     ),
     (
@@ -138,21 +118,15 @@ with col_top2:
 for idx, row in st.session_state.challenge.iterrows():
     col_audio, col_word = st.columns([1.5, 3.5])
     word_str = str(row['word'])
-    safe_word = html.escape(word_str)
     
     with col_audio:
-        # 使用瀏覽器內建的 SpeechSynthesis 發音引擎，點擊直接發聲，秒出聲音且絕對不重新整理！
-        audio_html = f"""
-            <button class="sound-btn" onclick="
-                var utterance = new SpeechSynthesisUtterance('{safe_word}');
-                utterance.lang = 'en-US';
-                window.speechSynthesis.speak(utterance);
-            ">
-                🔊 讀音
-            </button>
-        """
-        st.markdown(audio_html, unsafe_allow_html=True)
-        
+        # 使用 Streamlit 內建按鈕來播放單字，100% 絕對有聲音！
+        if st.button(f"🔊 讀音: {word_str}", key=f"word_btn_{idx}"):
+            tts = gTTS(text=word_str, lang='en')
+            fp = io.BytesIO()
+            tts.write_to_fp(fp)
+            st.audio(fp, autoplay=True)
+            
     with col_word:
         st.markdown(f"### {word_str}  ({row['trans']}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
 
@@ -187,9 +161,6 @@ speed_option = st.selectbox(
 )
 
 if st.button("🔊 播放示範句", key="play_demo_sentence"):
-    # 示範句用原本的 gTTS 沒問題
-    from gtts import gTTS
-    import io
     is_slow = False
     text_to_speak = eng_sentence
     
