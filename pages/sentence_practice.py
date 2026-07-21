@@ -2,8 +2,7 @@ import streamlit as st
 import pandas as pd
 from gtts import gTTS
 import io
-import os
-import google.generativeai as genai
+import random
 
 # 強制調整整體字體大小
 st.markdown("""
@@ -34,7 +33,6 @@ selected_level = st.selectbox(
 if selected_level == "全部等級 (隨機)":
     filtered_df = df
 else:
-    # 取得選定的數字等級 (例如 "Level 1" 轉成數字 1)
     target_lvl = int(selected_level.split(" ")[1])
     filtered_df = df[df['level'] == target_lvl]
 
@@ -70,31 +68,43 @@ st.divider()
 words = st.session_state.challenge['word'].tolist()
 trans_list = st.session_state.challenge['trans'].tolist()
 
-# 設定 Gemini API Key
-api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
+# 💡 智慧句型庫：準備多種不同情境的英文與中文句型模板
+PATTERN_POOL = [
+    (
+        f"When we look at {{w0}}, we can easily connect it with {{w1}} through {{w2}}.",
+        f"當我們看到 {{w0}} 時，可以透過 {{w2}} 輕鬆把它和 {{w1}} 連結起來。"
+    ),
+    (
+        f"People often find that {{w0}} plays a key role when dealing with {{w1} and {{w2}}.",
+        f"人們常發現，在處理 {{w1}} 與 {{w2}} 時，{{w0}} 扮演著關鍵的角色。"
+    ),
+    (
+        f"If you are interested in {{w0}}, you should also pay attention to {{w1}} and {{w2}}.",
+        f"如果你對 {{w0}} 感興趣，你也應該同時關注 {{w1}} 和 {{w2}}。"
+    ),
+    (
+        f"Instead of ignoring {{w0}}, we started to explore {{w1}} alongside {{w2}}.",
+        f"我們沒有忽視 {{w0}}，而是開始同時探索 {{w1}} 以及 {{w2}}。"
+    ),
+    (
+        f"The expert explained how {{w0}} affects both {{w1}} and {{w2}} in daily life.",
+        f"專家解釋了 {{w0}} 如何在日常生活中影響 {{w1}} 與 {{w2}}。"
+    )
+]
 
-@st.cache_data(show_spinner=False)
-def get_ai_sentence(w0, w1, w2):
-    if not api_key:
-        return f"We need to consider {w0}, handle {w1}, and focus on {w2}."
-    try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        prompt = f"""
-        You are an English teacher. Write ONE natural, coherent English sentence that naturally incorporates these three words: "{w0}", "{w1}", and "{w2}".
-        Do not use rigid formulas. Make it sound like a real, context-rich scenario.
-        Output ONLY the English sentence. No extra text or labels.
-        """
-        response = model.generate_content(prompt)
-        text = response.text.strip()
-        if not text:
-            raise Exception("empty")
-        return text
-    except Exception:
-        return f"We need to consider {w0}, handle {w1}, and focus on {w2}."
+# 隨機挑選其中一套句型，確保每次都有不同變化
+if 'chosen_pattern_idx' not in st.session_state or st.session_state.get('need_refresh', False):
+    st.session_state.chosen_pattern_idx = random.randint(0, len(PATTERN_POOL) - 1)
 
-# 取得動態產生的英文示範句
-raw_sentence = get_ai_sentence(words[0], words[1], words[2])
+eng_template, chi_template = PATTERN_POOL[st.session_state.chosen_pattern_idx]
+
+# 將抽到的單字塞進範本中
+raw_sentence = eng_template.format(w0=words[0], w1=words[1], w2=words[2])
+chi_sentence = chi_template.format(
+    w0=f"<b>{words[0]}</b> ({trans_list[0]})",
+    w1=f"<b>{words[1]}</b> ({trans_list[1]})",
+    w2=f"<b>{words[2]}</b> ({trans_list[2]})"
+)
 
 # 🎯 英文示範句：目標單字帶紅色
 red_word_0 = f"<span class='red-word'>{words[0]}</span>"
@@ -115,13 +125,8 @@ if st.button("🔊 播放示範句"):
 
 # 顯示紅字英文句
 st.markdown(f"### {colored_sentence}", unsafe_allow_html=True)
-
-# 🎯 中文示範句：採用固定優雅句型，確保中英文單字完美對應與加粗
-zh_word_0 = f"<b>{words[0]}</b> ({trans_list[0]})"
-zh_word_1 = f"<b>{words[1]}</b> ({trans_list[1]})"
-zh_word_2 = f"<b>{words[2]}</b> ({trans_list[2]})"
-
-st.markdown(f"*(中文：我們今天需要特別注意 {zh_word_0}，妥善處理 {zh_word_1}，並深入理解 {zh_word_2}。)*", unsafe_allow_html=True)
+# 顯示中文對應句
+st.markdown(f"*(中文：{chi_sentence})*", unsafe_allow_html=True)
 
 st.divider()
 st.subheader("📝 請輸入您的句子：")
