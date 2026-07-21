@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from gTTS import gTTS
 import io
 import random
 
@@ -39,12 +38,11 @@ selected_level = st.selectbox(
     ["全部等級 (隨機)", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6"]
 )
 
-# 依選擇過濾資料庫（確保型態一致，轉換為字串或整數比對）
+# 依選擇過濾資料庫
 if selected_level == "全部等級 (隨機)":
     filtered_df = df
 else:
     target_lvl = int(selected_level.split(" ")[1])
-    # 支援欄位名稱可能是 level 或 Level
     level_col = 'level' if 'level' in df.columns else 'Level'
     filtered_df = df[df[level_col] == target_lvl]
 
@@ -57,7 +55,6 @@ def generate_new_challenge(pool_df):
     sample_rows = pool_df.sample(n=min(3, len(pool_df)))
     words_list = sample_rows['word'].tolist()
     
-    # 準備幾種自然的情境句型樣板，讓單字可以自然嵌入其中
     templates = [
         ("When I saw {w1}, I suddenly remembered {w2} and tried to {w3}.", 
          "當我看到 {w1} 時，我突然想起 {w2} 並試著去 {w3}。"),
@@ -69,10 +66,8 @@ def generate_new_challenge(pool_df):
          "如果你想精通 {w1}，你應該練習 {w2} 並學習如何 {w3}。")
     ]
     
-    # 隨機挑選一種情境句型模板
     template_eng, template_chi = random.choice(templates)
     
-    # 確保足夠的變數填入
     w1 = words_list[0] if len(words_list) > 0 else "this"
     w2 = words_list[1] if len(words_list) > 1 else "that"
     w3 = words_list[2] if len(words_list) > 2 else "handle"
@@ -84,18 +79,15 @@ def generate_new_challenge(pool_df):
     st.session_state.raw_eng_sentence = chosen_sentence
     st.session_state.raw_chi_sentence = chosen_chinese
 
-# 如果切換了等級，或者第一次進來，或手動按換一題，就重新出題
 if ('current_selected_level' not in st.session_state 
     or st.session_state.current_selected_level != selected_level
     or 'challenge' not in st.session_state):
     st.session_state.current_selected_level = selected_level
     generate_new_challenge(filtered_df)
 
-# 取得目前的目標單字清單與相關資訊
 words = st.session_state.challenge['word'].tolist()
 trans_list = st.session_state.challenge['trans'].tolist()
 
-# 檢查 CSV 中是否有 kk 音標欄位
 kk_col = None
 for col in ['kk', 'phonetic', 'KK', '音標']:
     if col in st.session_state.challenge.columns:
@@ -114,77 +106,31 @@ with col_top2:
         st.rerun()
 
 for idx, row in st.session_state.challenge.iterrows():
-    col_audio, col_word = st.columns([1.5, 3.5])
     word_str = str(row['word'])
     trans_str = str(row['trans'])
     lvl_val = row[level_col]
     
-    # 取得 KK 音標
     kk_str = ""
     if kk_col and pd.notna(row[kk_col]):
         kk_str = f" [{row[kk_col]}]"
-    
-    with col_audio:
-        if st.button(f"🔊 讀音: {word_str}", key=f"word_btn_{idx}"):
-            tts = gTTS(text=word_str, lang='en')
-            fp = io.BytesIO()
-            tts.write_to_fp(fp)
-            st.audio(fp, autoplay=True)
-            
-    with col_word:
-        st.markdown(f"### {word_str}{kk_str} ({trans_str}) <span style='font-size: 20px; color: #888888;'>(L{lvl_val})</span>", unsafe_allow_html=True)
+        
+    st.markdown(f"### • {word_str}{kk_str} ({trans_str}) <span style='font-size: 20px; color: #888888;'>(L{lvl_val})</span>", unsafe_allow_html=True)
 
 st.divider()
 
-# 處理助教示範句的紅字標註
 eng_sentence = st.session_state.raw_eng_sentence
 chi_sentence = st.session_state.raw_chi_sentence
 
 colored_sentence = eng_sentence
 for w in words:
     import re
-    # 使用忽略大小寫且符合單字的正規表達式來標紅字
     pattern = re.compile(r'\b' + re.escape(str(w)) + r'\b', re.IGNORECASE)
     colored_sentence = pattern.sub(f"<span class='red-word'>{w}</span>", colored_sentence)
 
-# 中文翻譯帶括號與總結
 vocab_notes = "、".join([f"{w} ({trans})" for w, trans in zip(words, trans_list)])
 formatted_chi_sentence = f"{chi_sentence}  【本句核心單字：{vocab_notes}】"
 
 st.subheader("💡 助教示範句：")
-
-# 🎛️ 語速選擇選單
-speed_option = st.selectbox(
-    "🐢 選擇語音播放速度（專為慢速跟讀設計）：",
-    [
-        "正常速", 
-        "慢速 (gTTS 內建慢速)", 
-        "超慢速 (重複單字拉長練習)", 
-        "極慢速 (每個單字拆開慢慢念)"
-    ],
-    key="audio_speed_select"
-)
-
-if st.button("🔊 播放示範句", key="play_demo_sentence"):
-    is_slow = False
-    text_to_speak = eng_sentence
-    
-    if speed_option == "正常速":
-        is_slow = False
-    elif speed_option == "慢速 (gTTS 內建慢速)":
-        is_slow = True
-    elif speed_option == "超慢速 (重複單字拉長練習)":
-        is_slow = True
-        text_to_speak = f"{eng_sentence} ...... {eng_sentence}"
-    elif speed_option == "極慢速 (每個單字拆開慢慢念)":
-        is_slow = True
-        words_spaced = " ... ".join(words)
-        text_to_speak = f"Key words: {words_spaced} ...... Sentence: {eng_sentence}"
-
-    tts = gTTS(text=text_to_speak, lang='en', slow=is_slow)
-    fp = io.BytesIO()
-    tts.write_to_fp(fp)
-    st.audio(fp, autoplay=True)
 
 # 顯示紅字英文口語句
 st.markdown(f"### {colored_sentence}", unsafe_allow_html=True)
