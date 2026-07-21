@@ -73,7 +73,7 @@ CONV_SENTENCE_POOL = [
     ),
     (
         "Finding a good balance between work and life is truly important.",
-        "在工作 (work) and 生活 (life) 之間找到良好的平衡 (balance) 真得很重要。",
+        "在工作 (work) 和生活 (life) 之間找到良好的平衡 (balance) 真得很重要。",
         ["balance", "work", "life"]
     ),
     (
@@ -83,12 +83,9 @@ CONV_SENTENCE_POOL = [
     )
 ]
 
-# 當切換等級、初次載入、或按重新抽籤時，隨機選一句口語好句
-if ('chosen_conv_item' not in st.session_state 
-    or st.session_state.get('need_refresh', False)):
-    
+# 初始化題目狀態（只在第一次進來或主動按換一題時才抽新題目）
+def generate_new_challenge():
     chosen_sentence, chosen_chinese, target_words = random.choice(CONV_SENTENCE_POOL)
-    
     sub_df_list = []
     for tw in target_words:
         match_row = df[df['word'].str.lower() == tw.lower()]
@@ -100,7 +97,9 @@ if ('chosen_conv_item' not in st.session_state
     st.session_state.challenge = pd.DataFrame(sub_df_list)
     st.session_state.raw_eng_sentence = chosen_sentence
     st.session_state.raw_chi_sentence = chosen_chinese
-    st.session_state.need_refresh = False
+
+if 'challenge' not in st.session_state:
+    generate_new_challenge()
 
 # 取得目前的目標單字清單
 words = st.session_state.challenge['word'].tolist()
@@ -112,7 +111,7 @@ with col_top1:
     st.subheader("🎯 今日目標單字（來自實用口語句）：")
 with col_top2:
     if st.button("🔄 換一題", key="top_refresh_btn"):
-        st.session_state.need_refresh = True
+        generate_new_challenge()
         st.rerun()
 
 for idx, row in st.session_state.challenge.iterrows():
@@ -120,7 +119,7 @@ for idx, row in st.session_state.challenge.iterrows():
     word_str = str(row['word'])
     
     with col_audio:
-        # 使用 Streamlit 內建按鈕來播放單字，100% 絕對有聲音！
+        # 專屬發音按鈕：點下去只會發音，題目絕對不會被換掉！
         if st.button(f"🔊 讀音: {word_str}", key=f"word_btn_{idx}"):
             tts = gTTS(text=word_str, lang='en')
             fp = io.BytesIO()
@@ -202,5 +201,5 @@ with col_a:
 
 with col_b:
     if st.button("🔄 換一題", key="refresh_challenge_bottom"):
-        st.session_state.need_refresh = True
+        generate_new_challenge()
         st.rerun()
