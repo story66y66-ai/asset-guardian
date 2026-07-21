@@ -52,34 +52,40 @@ else:
 if len(filtered_df) < 3:
     filtered_df = df
 
-# 動態產生生活化造句的輔助函式
+# 動態產生自然且符合中文在前、括號英文在後的輔助函式
 def generate_new_challenge(pool_df):
     sample_rows = pool_df.sample(n=min(3, len(pool_df)))
     words_list = sample_rows['word'].tolist()
+    trans_list = sample_rows['trans'].tolist()
     
+    w1, w2, w3 = words_list[0], words_list[1], words_list[2]
+    t1, t2, t3 = trans_list[0], trans_list[1], trans_list[2]
+    
+    # 準備多組語法自然流暢的句型
     templates = [
-        ("When I saw {w1}, I suddenly remembered {w2} and tried to {w3}.", 
-         "當我看到 {w1} 時，我突然想起 {w2} 並試著去 {w3}。"),
-        ("It is important to understand {w1} before talking about {w2}, especially when you {w3}.", 
-         "在談論 {w2} 之前，理解 {w1} 是很重要的，特別是當你 {w3} 的時候。"),
-        ("Many people like to explore {w1} and {w2} because they want to {w3}.", 
-         "很多人喜歡探索 {w1} and {w2}，因為他們想要 {w3}。"),
-        ("If you want to master {w1}, you should practice {w2} and learn how to {w3}.", 
-         "如果你想精通 {w1}，你應該練習 {w2} 並學習如何 {w3}。")
+        (
+            f"When I noticed {w1}, I realized it was related to {w2}, so I had to {w3}.",
+            f"當我注意到{t1}({w1})時，我意識到這與{t2}({w2})有關，所以我必須去{t3}({w3})。"
+        ),
+        (
+            f"It is essential to consider {w1} and {w2} before you decide to {w3}.",
+            f"在你決定要{t3}({w3})之前，考慮到{t1}({w1})與{t2}({w2})是非常重要的。"
+        ),
+        (
+            f"Many experts study {w1} and {w2} because they want to understand how to {w3}.",
+            f"許多專家研究{t1}({w1})和{t2}({w2})，因為他們想了解如何{t3}({w3})。"
+        ),
+        (
+            f"If you want to experience {w1}, you should try {w2} and learn to {w3}.",
+            f"如果你想體驗{t1}({w1})，你應該嘗試{t2}({w2})並學會{t3}({w3})。"
+        )
     ]
     
-    template_eng, template_chi = random.choice(templates)
-    
-    w1 = words_list[0] if len(words_list) > 0 else "this"
-    w2 = words_list[1] if len(words_list) > 1 else "that"
-    w3 = words_list[2] if len(words_list) > 2 else "handle"
-    
-    chosen_sentence = template_eng.format(w1=w1, w2=w2, w3=w3)
-    chosen_chinese = template_chi.format(w1=w1, w2=w2, w3=w3)
+    chosen_eng, chosen_chi = random.choice(templates)
     
     st.session_state.challenge = sample_rows
-    st.session_state.raw_eng_sentence = chosen_sentence
-    st.session_state.raw_chi_sentence = chosen_chinese
+    st.session_state.raw_eng_sentence = chosen_eng
+    st.session_state.raw_chi_sentence = chosen_chi
 
 # 如果切換了等級，或者第一次進來，或手動按換一題，就重新出題
 if ('current_selected_level' not in st.session_state 
@@ -142,7 +148,7 @@ for w in words:
     pattern = re.compile(r'\b' + re.escape(str(w)) + r'\b', re.IGNORECASE)
     colored_sentence = pattern.sub(f"<span class='red-word'>{w}</span>", colored_sentence)
 
-vocab_notes = "、".join([f"{w} ({trans})" for w, trans in zip(words, trans_list)])
+vocab_notes = "、".join([f"{trans} ({w})" for w, trans in zip(words, trans_list)])
 formatted_chi_sentence = f"{chi_sentence}  【本句核心單字：{vocab_notes}】"
 
 st.subheader("💡 助教示範句：")
