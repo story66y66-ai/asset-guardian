@@ -4,7 +4,7 @@ from gtts import gTTS
 import io
 import random
 
-# 強制調整整體字體大小
+# 強制調整整體字體大小（特別加大選單與 Radio 相關字體）
 st.markdown("""
     <style>
     .stTextArea textarea { font-size: 32px !important; color: #000000 !important; font-weight: bold !important; }
@@ -12,6 +12,10 @@ st.markdown("""
     h1, h2, h3, h4 { font-weight: bold !important; }
     p { font-size: 28px !important; }
     .red-word { color: #ff2b2b !important; font-weight: bold !important; }
+    
+    /* 放大語速選擇的標題與選項字體 */
+    div[data-baseweb="select"] span { font-size: 24px !important; font-weight: bold !important; }
+    div[role="listbox"] div { font-size: 22px !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -101,7 +105,6 @@ for idx, row in st.session_state.challenge.iterrows():
     col1, col2 = st.columns([1, 4])
     word_str = str(row['word'])
     with col1:
-        # 修正：使用固定的 idx 確保每個單字的播放按鈕各自獨立不衝突
         if st.button(f"🔊 {word_str}", key=f"btn_word_{idx}"):
             tts = gTTS(text=word_str, lang='en')
             fp = io.BytesIO()
@@ -128,7 +131,7 @@ formatted_chi_sentence = f"{chi_sentence}  【本句核心單字：{vocab_notes}
 
 st.subheader("💡 助教示範句：")
 
-# 🎛️ 擴充多段慢速選項（移除快速，增加超慢速與極慢速）
+# 🎛️ 語速選擇選單（字體已透過 CSS 放大）
 speed_option = st.selectbox(
     "🐢 選擇語音播放速度（專為慢速跟讀設計）：",
     [
@@ -150,11 +153,9 @@ if st.button("🔊 播放示範句", key="play_demo_sentence"):
         is_slow = True
     elif speed_option == "超慢速 (重複單字拉長練習)":
         is_slow = True
-        # 把句子中的單字刻意拉開間距重複，製造超慢跟讀效果
         text_to_speak = f"{eng_sentence} ...... {eng_sentence}"
     elif speed_option == "極慢速 (每個單字拆開慢慢念)":
         is_slow = True
-        # 把三個核心單字加上整句拆開緩慢朗讀
         words_spaced = " ... ".join(words)
         text_to_speak = f"Key words: {words_spaced} ...... Sentence: {eng_sentence}"
 
