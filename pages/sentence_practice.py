@@ -1,9 +1,7 @@
 import streamlit as st
 import pandas as pd
-from gtts import gTTS
-import io
 import random
-import base64
+import html
 
 # 強制調整整體字體大小
 st.markdown("""
@@ -24,7 +22,7 @@ st.markdown("""
         font-weight: bold !important;
     }
     
-    /* 自訂超大、像真按鈕一樣的語音觸發器 */
+    /* 完美好按的網頁語音發音按鈕 */
     .sound-btn {
         background-color: #ff4b4b;
         color: white;
@@ -138,22 +136,18 @@ with col_top2:
         st.rerun()
 
 for idx, row in st.session_state.challenge.iterrows():
-    # 欄位分配：左邊放獨立發音按鈕，右邊放單字與中文
     col_audio, col_word = st.columns([1.5, 3.5])
     word_str = str(row['word'])
-    
-    # 製作語音的 Base64 編碼
-    tts = gTTS(text=word_str, lang='en')
-    fp = io.BytesIO()
-    tts.write_to_fp(fp)
-    audio_bytes = fp.getvalue()
-    audio_base64 = base64.b64encode(audio_bytes).decode()
+    safe_word = html.escape(word_str)
     
     with col_audio:
-        # 使用 HTML 語音物件，點擊按鈕直接呼叫 play()，絕對不重新整理、不換題目！
+        # 使用瀏覽器內建的 SpeechSynthesis 發音引擎，點擊直接發聲，秒出聲音且絕對不重新整理！
         audio_html = f"""
-            <audio id="audio_{idx}" src="data:audio/mp3;base64,{audio_base64}"></audio>
-            <button class="sound-btn" onclick="document.getElementById('audio_{idx}').play()">
+            <button class="sound-btn" onclick="
+                var utterance = new SpeechSynthesisUtterance('{safe_word}');
+                utterance.lang = 'en-US';
+                window.speechSynthesis.speak(utterance);
+            ">
                 🔊 讀音
             </button>
         """
@@ -193,6 +187,9 @@ speed_option = st.selectbox(
 )
 
 if st.button("🔊 播放示範句", key="play_demo_sentence"):
+    # 示範句用原本的 gTTS 沒問題
+    from gtts import gTTS
+    import io
     is_slow = False
     text_to_speak = eng_sentence
     
