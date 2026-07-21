@@ -1,118 +1,227 @@
 import streamlit as st
-import random
-import os
-import google.generativeai as genai
+
+import pandas as pd
+
 from gtts import gTTS
+
 import io
 
-# 頁面標題
-st.title("澄玄大學 - 造句實戰室")
 
-# 模擬單字資料庫
-VOCAB_LIST = [
-    ("adventure", "冒險", "L3"), ("scratch", "抓", "L2"), ("demolish", "拆除", "L2"),
-    ("husband", "丈夫", "L1"), ("deport", "驅逐", "L2"), ("deliberation", "深思熟慮", "L2"),
-    ("insolent", "傲慢的", "L2"), ("deep", "深的", "L1"), ("indian", "印第安人", "L2"),
-    ("perceptual", "知覺的", "L2"), ("product", "產品", "L3"), ("disappointment", "失望", "L3"),
-    ("parch", "烤乾", "L2"), ("beach", "海灘", "L2"), ("city", "城市", "L2"),
-    ("iodine", "碘", "L2"), ("gig", "輕便馬車", "L2"), ("angle", "角/角度", "L3"),
-    ("fearless", "大膽的", "L2"), ("craven", "懦弱的", "L2"), ("interpretation", "解釋", "L2")
-]
 
-# 選擇難度
-level_filter = st.selectbox("請選擇單字等級 (Level) :", ["全部等級 (隨機)"])
+# 強制調整整體字體大小
 
-# 隨機挑選 3 個單字（如果按重新整理或按鈕可以換一批）
-if "selected_words" not in st.session_state:
-    st.session_state.selected_words = random.sample(VOCAB_LIST, 3)
+st.markdown("""
 
-target_words = st.session_state.selected_words
+    <style>
 
-st.markdown("### 🎯 今日目標單字：")
-cols = st.columns(3)
-for i, (word, meaning, lvl) in enumerate(target_words):
-    with cols[i]:
-        st.button(f"🔊 {word}", key=f"btn_{word}")
-        st.markdown(f"**{word} ({meaning})** `({lvl})`")
+    .stTextArea textarea { font-size: 32px !important; color: #000000 !important; font-weight: bold !important; }
 
-st.markdown("---")
+    div.stButton > button { font-size: 24px !important; padding: 15px 30px !important; }
 
-# 設定 Gemini API Key (可以直接把你的金鑰字串填在下面雙引號中，或者放空使用備用句型)
-api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
+    h1, h2, h3, h4 { font-weight: bold !important; }
 
-def generate_dynamic_sentence(w1, w2, w3):
-    if not api_key:
-        # 如果沒有設定 API Key 的防呆句型
-        return (
-            f"We tried to check {w1[0]}, handle {w2[0]}, and focus on {w3[0]} today.",
-            f"我們今天試著檢查 {w1[0]} ({w1[1]})、處理 {w2[0]} ({w2[1]})，並且專注於 {w3[0]} ({w3[1]})。"
-        )
+    p { font-size: 28px !important; }
+
+    .red-word { color: #ff2b2b !important; font-weight: bold !important; }
+
+    </style>
+
+    """, unsafe_allow_html=True)
+
+
+
+st.title("✍️ 澄玄大學 - 造句實戰室")
+
+
+
+@st.cache_data
+
+def load_data():
+
+    return pd.read_csv("words.csv")
+
+
+
+df = load_data()
+
+
+
+# 🎯 選擇單字等級 (Level)
+
+selected_level = st.selectbox(
+
+    "📊 請選擇單字等級 (Level)：",
+
+    ["全部等級 (隨機)", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6"]
+
+)
+
+
+
+# 依選擇過濾資料庫
+
+if selected_level == "全部等級 (隨機)":
+
+    filtered_df = df
+
+else:
+
+    # 取得選定的數字等級 (例如 "Level 1" 轉成數字 1)
+
+    target_lvl = int(selected_level.split(" ")[1])
+
+    filtered_df = df[df['level'] == target_lvl]
+
+
+
+# 防呆機制：若選取的等級裡面單字不足 3 個，就降級以防報錯
+
+if len(filtered_df) < 3:
+
+    st.warning(f"⚠️ {selected_level} 目前資料庫裡的單字少於 3 個，已自動開啟全庫抽籤喔！")
+
+    filtered_df = df
+
+
+
+# 關鍵邏輯：切換等級、第一次載入、或按下重新抽籤時重新選取
+
+if ('challenge' not in st.session_state 
+
+    or st.session_state.get('need_refresh', False)
+
+    or st.session_state.get('current_level') != selected_level):
+
     
-    try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        prompt = f"""
-        You are an English teacher. Please write ONE natural, creative, and coherent English sentence that incorporates these three English words: "{w1[0]}", "{w2[0]}", and "{w3[0]}".
-        Do not use a generic template. Make it sound like a real, context-rich scenario.
-        Also provide a Traditional Chinese (繁體中文) translation for the sentence.
-        
-        Output format strictly as:
-        ENGLISH: [Your sentence here]
-        CHINESE: [Your translation here]
-        """
-        response = model.generate_content(prompt)
-        text = response.text.strip()
-        
-        eng_line = ""
-        chi_line = ""
-        for line in text.split('\n'):
-            if line.startswith("ENGLISH:"):
-                eng_line = line.replace("ENGLISH:", "").strip()
-            elif line.startswith("CHINESE:"):
-                chi_line = line.replace("CHINESE:", "").strip()
-                
-        if not eng_line or not chi_line:
-            raise Exception("Parsing failed")
-            
-        return eng_line, chi_line
-    except Exception as e:
-        return (
-            f"Faced with {w1[0]}, we must carefully manage {w2[0]} and understand {w3[0]}.",
-            f"面對 {w1[0]} ({w1[1]})，我們必須小心處理 {w2[0]} ({w2[1]}) 並理解 {w3[0]} ({w3[1]})。"
-        )
 
-# 取得動態例句
-w_eng, w_chi = generate_dynamic_sentence(target_words[0], target_words[1], target_words[2])
+    st.session_state.challenge = filtered_df.sample(n=3)
 
-# 將目標單字上色突顯
-display_eng = w_eng
-for w, _, _ in target_words:
-    display_eng = display_eng.replace(w, f"<span style='color:red; font-weight:bold;'>{w}</span>")
+    st.session_state.current_level = selected_level
 
-st.markdown("### 💡 助教示範句：")
+    st.session_state.need_refresh = False # 重置刷新狀態
+
+
+
+st.subheader("🎯 今日目標單字：")
+
+for _, row in st.session_state.challenge.iterrows():
+
+    col1, col2 = st.columns([1, 4])
+
+    with col1:
+
+        if st.button(f"🔊 {row['word']}", key=f"btn_{row['word']}"):
+
+            tts = gTTS(text=str(row['word']), lang='en')
+
+            fp = io.BytesIO()
+
+            tts.write_to_fp(fp)
+
+            st.audio(fp, autoplay=True)
+
+    with col2:
+
+        st.markdown(f"### {row['word']}  ({row['trans']}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
+
+
+
+st.divider()
+
+
+
+# 取得單字與中文翻譯清單
+
+words = st.session_state.challenge['word'].tolist()
+
+trans_list = st.session_state.challenge['trans'].tolist()
+
+
+
+# 純文字發音用
+
+raw_sentence = f"I have to take {words[0]}, put on my {words[1]}, and travel {words[2]} away."
+
+
+
+# 🎯 英文示範句：目標單字帶紅色
+
+red_word_0 = f"<span class='red-word'>{words[0]}</span>"
+
+red_word_1 = f"<span class='red-word'>{words[1]}</span>"
+
+red_word_2 = f"<span class='red-word'>{words[2]}</span>"
+
+colored_sentence = f"I have to take {red_word_0}, put on my {red_word_1}, and travel {red_word_2} away."
+
+
+
+st.subheader("💡 助教示範句：")
+
 if st.button("🔊 播放示範句"):
-    tts_text = w_eng
-    tts = gTTS(text=tts_text, lang='en')
+
+    tts = gTTS(text=raw_sentence, lang='en')
+
     fp = io.BytesIO()
+
     tts.write_to_fp(fp)
-    st.audio(fp.getvalue(), format='audio/mp3')
 
-st.markdown(f"> **{display_eng}**")
-st.markdown(f"> *(中文：{w_chi})*")
+    st.audio(fp, autoplay=True)
 
-st.markdown("---")
 
-# 恢復底下你原本的學生造句輸入區與互動區
-st.markdown("### ✍️ 請輸入您的句子：")
-user_sentence = st.text_input("在這裡輸入包含目標單字的英文句子：", key="user_input")
 
-if st.button("送出批改 / 檢查"):
-    if user_sentence:
-        st.success("句子已收到！做得很好，請繼續保持練習！")
-    else:
-        st.warning("請先輸入您的英文句子再送出喔！")
+# 顯示紅字英文句
 
-if st.button("🔄 換一組新單字"):
-    if "selected_words" in st.session_state:
-        del st.session_state.selected_words
-    st.rerun()
+st.markdown(f"### {colored_sentence}", unsafe_allow_html=True)
+
+
+
+# 🎯 中文示範句：英文單字用 HTML <b> 強制加粗，並加上 (中文翻譯)
+
+zh_word_0 = f"<b>{words[0]}</b> ({trans_list[0]})"
+
+zh_word_1 = f"<b>{words[1]}</b> ({trans_list[1]})"
+
+zh_word_2 = f"<b>{words[2]}</b> ({trans_list[2]})"
+
+
+
+st.markdown(f"*(中文：我必須注意 {zh_word_0}，穿上 {zh_word_1}，並到 {zh_word_2} 的地方去。)*", unsafe_allow_html=True)
+
+
+
+st.divider()
+
+st.subheader("📝 請輸入您的句子：")
+
+user_input = st.text_area("在這裡輸入...", height=150)
+
+
+
+col_a, col_b = st.columns(2)
+
+with col_a:
+
+    if st.button("✅ 檢查句子"):
+
+        is_correct = all(str(w).lower() in user_input.lower() for w in words)
+
+        if is_correct:
+
+            st.success("## 太棒了！完全正確！")
+
+            st.balloons()
+
+        else:
+
+            st.error("## ❌ 缺少關鍵字，請再試試！")
+
+
+
+with col_b:
+
+    if st.button("🔄 重新抽籤"):
+
+        st.session_state.need_refresh = True
+
+        st.rerun() 
