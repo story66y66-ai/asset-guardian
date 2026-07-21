@@ -1,24 +1,24 @@
 import streamlit as st
 import pandas as pd
-import io
 import random
 
-# 強制調整整體字體大小
+# 強制調整整體字體大小與版面寬度
 st.markdown("""
     <style>
-    .stTextArea textarea { font-size: 32px !important; color: #000000 !important; font-weight: bold !important; }
-    div.stButton > button { font-size: 24px !important; padding: 15px 30px !important; }
+    .stApp { max-width: 100% !important; padding: 2rem 5rem !important; }
+    .stTextArea textarea { font-size: 28px !important; color: #000000 !important; font-weight: bold !important; }
+    div.stButton > button { font-size: 22px !important; padding: 10px 20px !important; width: 100% !important; }
     h1, h2, h3, h4 { font-weight: bold !important; }
-    p { font-size: 28px !important; }
+    p { font-size: 24px !important; }
     .red-word { color: #ff2b2b !important; font-weight: bold !important; }
     
     /* 放大紅框選單內的文字與下拉清單文字 */
     div[data-baseweb="select"] div, div[data-baseweb="select"] span {
-        font-size: 28px !important;
+        font-size: 24px !important;
         font-weight: bold !important;
     }
     div[role="listbox"] div {
-        font-size: 26px !important;
+        font-size: 22px !important;
         font-weight: bold !important;
     }
     </style>
@@ -63,7 +63,7 @@ def generate_new_challenge(pool_df):
         ("Many people like to explore {w1} and {w2} because they want to {w3}.", 
          "很多人喜歡探索 {w1} 和 {w2}，因為他們想要 {w3}。"),
         ("If you want to master {w1}, you should practice {w2} and learn how to {w3}.", 
-         "如果你想精通 {w1}，你應該練習 {w2} 並學習如何 {w3}。")
+         "如果你想精通 {w1} ，你應該練習 {w2} 並學習如何 {w3}。")
     ]
     
     template_eng, template_chi = random.choice(templates)
@@ -97,10 +97,11 @@ for col in ['kk', 'phonetic', 'KK', '音標']:
 level_col = 'level' if 'level' in df.columns else 'Level'
 
 # 頂部區塊：目標單字與「換一題」按鈕並排
-col_top1, col_top2 = st.columns([3, 1])
+col_top1, col_top2 = st.columns([4, 1])
 with col_top1:
     st.subheader(f"🎯 今日目標單字（來自 {selected_level}）：")
 with col_top2:
+    st.write("") # 微調對齊
     if st.button("🔄 換一題", key="top_refresh_btn"):
         generate_new_challenge(filtered_df)
         st.rerun()
