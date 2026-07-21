@@ -41,13 +41,15 @@ if len(filtered_df) < 3:
     st.warning(f"⚠️ {selected_level} 目前資料庫裡的單字少於 3 個，已自動開啟全庫抽籤喔！")
     filtered_df = df
 
-# 關鍵邏輯：切換等級、第一次載入、或按下重新抽籤時重新選取
+# 關鍵邏輯：切換等級、第一次載入、或按下重新抽籤時重新選取單字與新句型
 if ('challenge' not in st.session_state 
     or st.session_state.get('need_refresh', False)
     or st.session_state.get('current_level') != selected_level):
     
     st.session_state.challenge = filtered_df.sample(n=3)
     st.session_state.current_level = selected_level
+    # 每次換單字或按重新整理，就強制隨機挑選不同的句型！
+    st.session_state.chosen_pattern_idx = random.randint(0, 4)
     st.session_state.need_refresh = False # 重置刷新狀態
 
 st.subheader("🎯 今日目標單字：")
@@ -92,8 +94,8 @@ PATTERN_POOL = [
     )
 ]
 
-# 隨機挑選其中一套句型
-if 'chosen_pattern_idx' not in st.session_state or st.session_state.get('need_refresh', False):
+# 確保每次都有索引可用
+if 'chosen_pattern_idx' not in st.session_state:
     st.session_state.chosen_pattern_idx = random.randint(0, len(PATTERN_POOL) - 1)
 
 eng_template, chi_template = PATTERN_POOL[st.session_state.chosen_pattern_idx]
