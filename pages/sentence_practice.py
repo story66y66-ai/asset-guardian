@@ -3,6 +3,7 @@ import pandas as pd
 from gtts import gTTS
 import io
 import random
+import google.generativeai as genai
 
 # 強制調整整體字體大小與頁面寬度延展
 st.markdown("""
@@ -52,7 +53,7 @@ else:
 if len(filtered_df) < 3:
     filtered_df = df
 
-# 動態產生自然且符合中文在前、括號英文在後的輔助函式
+# 動態使用 AI 隨時為抽到的單字量身打造完美句子與翻譯
 def generate_new_challenge(pool_df):
     sample_rows = pool_df.sample(n=min(3, len(pool_df)))
     words_list = sample_rows['word'].tolist()
@@ -61,31 +62,52 @@ def generate_new_challenge(pool_df):
     w1, w2, w3 = words_list[0], words_list[1], words_list[2]
     t1, t2, t3 = trans_list[0], trans_list[1], trans_list[2]
     
-    # 準備多組語法自然流暢的句型
-    templates = [
-        (
-            f"When I noticed {w1}, I realized it was related to {w2}, so I had to {w3}.",
-            f"當我注意到{t1}({w1})時，我意識到這與{t2}({w2})有關，所以我必須去{t3}({w3})。"
-        ),
-        (
-            f"It is essential to consider {w1} and {w2} before you decide to {w3}.",
-            f"在你決定要{t3}({w3})之前，考慮到{t1}({w1})與{t2}({w2})是非常重要的。"
-        ),
-        (
-            f"Many experts study {w1} and {w2} because they want to understand how to {w3}.",
-            f"許多專家研究{t1}({w1})和{t2}({w2})，因為他們想了解如何{t3}({w3})。"
-        ),
-        (
-            f"If you want to experience {w1}, you should try {w2} and learn to {w3}.",
-            f"如果你想體驗{t1}({w1})，你應該嘗試{t2}({w2})並學會{t3}({w3})。"
-        )
-    ]
-    
-    chosen_eng, chosen_chi = random.choice(templates)
+    # 嘗試呼叫 Gemini 產生完美的自然造句
+    try:
+        # 這裡會讀取 Streamlit Secrets 裡設定好的 API Key
+        api_key = st.secrets["GOOGLE_API_KEY"]
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        prompt = f"""
+        You are an English teaching assistant. 
+        I have 3 English words with their Chinese translations:
+        1. {w1} ({t1})
+        2. {w2} ({t2})
+        3. {w3} ({t3})
+        
+        Please write ONE natural, grammatically correct English sentence that includes all 3 words.
+        Then, provide its Traditional Chinese translation. 
+        In the Chinese translation, format each target word strictly as: 中文翻譯(English_word).
+        
+        Return ONLY valid text in this exact format:
+        ENGLISH: [Your English sentence here]
+        CHINESE: [Your Chinese translation here]
+        """
+        
+        response = model.generate_content(prompt)
+        text = response.text.strip()
+        
+        # 解析 AI 回傳的結果
+        lines = text.split('\n')
+        eng_sent, chi_sent = "", ""
+        for line in lines:
+            if line.startswith("ENGLISH:"):
+                eng_sent = line.replace("ENGLISH:", "").strip()
+            elif line.startswith("CHINESE:"):
+                chi_sent = line.replace("CHINESE:", "").strip()
+                
+        if not eng_sent or not chi_sent:
+            raise Exception("Format parsing failed")
+            
+    except Exception as e:
+        # 萬一 API 沒設定或連線異常時的備用安全句型
+        eng_sent = f"People often talk about {w1}, {w2}, and {w3} in daily life."
+        chi_sent = f"人們在日常生活中經常談論 {t1}({w1})、{t2}({w2}) 與 {t3}({w3})。"
     
     st.session_state.challenge = sample_rows
-    st.session_state.raw_eng_sentence = chosen_eng
-    st.session_state.raw_chi_sentence = chosen_chi
+    st.session_state.raw_eng_sentence = eng_sent
+    st.session_state.raw_chi_sentence = chi_sent
 
 # 如果切換了等級，或者第一次進來，或手動按換一題，就重新出題
 if ('current_selected_level' not in st.session_state 
