@@ -3,6 +3,7 @@ import pandas as pd
 from gtts import gTTS
 import io
 import random
+import base64
 
 # 強制調整整體字體大小
 st.markdown("""
@@ -106,18 +107,36 @@ if ('chosen_conv_item' not in st.session_state
 words = st.session_state.challenge['word'].tolist()
 trans_list = st.session_state.challenge['trans'].tolist()
 
-st.subheader("🎯 今日目標單字（來自實用口語句）：")
+# 頂部區塊：目標單字與「換一題」按鈕並排
+col_top1, col_top2 = st.columns([3, 1])
+with col_top1:
+    st.subheader("🎯 今日目標單字（來自實用口語句）：")
+with col_top2:
+    if st.button("🔄 換一題", key="top_refresh_btn"):
+        st.session_state.need_refresh = True
+        st.rerun()
 
 for idx, row in st.session_state.challenge.iterrows():
     col1, col2 = st.columns([1, 4])
     word_str = str(row['word'])
+    
+    # 產生音檔並轉成網頁可以直接播放的 HTML5 語音元件（絕對不會觸發畫面重新整理、也不會切換題目！）
+    tts = gTTS(text=word_str, lang='en')
+    fp = io.BytesIO()
+    tts.write_to_fp(fp)
+    audio_bytes = fp.getvalue()
+    audio_base64 = base64.b64encode(audio_bytes).decode()
+    
     with col1:
-        # 單純發音，不觸發換題，確保聲音能完整播放出來！
-        if st.button(f"🔊 {word_str}", key=f"btn_word_{idx}"):
-            tts = gTTS(text=word_str, lang='en')
-            fp = io.BytesIO()
-            tts.write_to_fp(fp)
-            st.audio(fp, autoplay=True)
+        # 使用原生 HTML audio 播放器，按下去只會發音，完全不會重新整理網頁！
+        audio_html = f"""
+            <audio controls style="height: 40px; width: 100%;">
+                <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
+                您的瀏覽器不支援語音播放
+            </audio>
+        """
+        st.markdown(audio_html, unsafe_allow_html=True)
+        
     with col2:
         st.markdown(f"### {word_str}  ({row['trans']}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
 
@@ -192,6 +211,6 @@ with col_a:
             st.error("## ❌ 缺少關鍵字，請再試試！")
 
 with col_b:
-    if st.button("🔄 重新抽籤", key="refresh_challenge"):
+    if st.button("🔄 換一題", key="refresh_challenge_bottom"):
         st.session_state.need_refresh = True
         st.rerun()
