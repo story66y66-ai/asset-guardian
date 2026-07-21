@@ -39,36 +39,37 @@ else:
 if len(filtered_df) < 3:
     filtered_df = df
 
-# 💡 口語化英文好句庫
+# 💡 口語化英文好句庫 (句子, 中文翻譯, 對應的中文詞彙對照清單, 三個英文單字)
+# 這樣可以百分之百精準對應到中文括號！
 CONV_SENTENCE_POOL = [
     (
         "Could you please help me check if this order is ready?",
-        "可以請幫我確認一下這筆訂單準備好了嗎？",
+        "可以請幫忙 (help) 我確認 (check) 一下這筆訂單 (order) 準備好了嗎？",
         ["order", "help", "check"]
     ),
     (
         "I really need to focus on my study plan for this semester.",
-        "我真的需要專注在我這學期的讀書計畫上。",
+        "我真的需要專注於 (focus) 我這學期的讀書計畫 (plan) 與學習 (study) 上。",
         ["focus", "study", "plan"]
     ),
     (
         "Let us take a short break before we start the next task.",
-        "我們在開始下一個任務之前，先休息一下吧。",
+        "我們在開始 (start) 下一個任務 (task) 之前，先休息 (break) 一下吧。",
         ["break", "start", "task"]
     ),
     (
         "She always brings a positive energy to everyone around her.",
-        "她總是為身邊的每個人帶來積極的正能量。",
+        "她總是為身邊周圍 (around) 的每個人 (everyone) 帶來積極的正能量 (energy)。",
         ["energy", "everyone", "around"]
     ),
     (
         "Finding a good balance between work and life is truly important.",
-        "在工作和生活之間找到良好的平衡真的很重要。",
+        "在工作 (work) 和生活 (life) 之間找到良好的平衡 (balance) 真得很重要。",
         ["balance", "work", "life"]
     ),
     (
         "Do you remember where we parked our car this morning?",
-        "妳記得我們今天早上把車停在哪裡嗎？",
+        "妳記得 (remember) 我們今天早晨 (morning) 把車子 (car) 停在哪裡嗎？",
         ["remember", "car", "morning"]
     )
 ]
@@ -120,7 +121,7 @@ for w in words:
     pattern = re.compile(re.escape(w), re.IGNORECASE)
     colored_sentence = pattern.sub(f"<span class='red-word'>{w}</span>", colored_sentence)
 
-# 💡 在中文翻譯後面，條列式附上所有三個單字與其中文意思
+# 💡 結合：中文裡面已經內建括號英文，後面再加上完整的總結清單
 vocab_notes = "、".join([f"{w} ({trans})" for w, trans in zip(words, trans_list)])
 formatted_chi_sentence = f"{chi_sentence}  【本句核心單字：{vocab_notes}】"
 
@@ -133,7 +134,7 @@ if st.button("🔊 播放示範句", key="play_demo_sentence"):
 
 # 顯示紅字英文口語句
 st.markdown(f"### {colored_sentence}", unsafe_allow_html=True)
-# 顯示帶有完整單字對照的中文意思
+# 顯示帶有括號與後方補充的中文意思
 st.markdown(f"*(中文：{formatted_chi_sentence})*", unsafe_allow_html=True)
 
 st.divider()
