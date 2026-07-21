@@ -4,7 +4,7 @@ from gtts import gTTS
 import io
 import random
 
-# 強制調整整體字體大小（特別加大選單與 Radio 相關字體）
+# 強制調整整體字體大小（大幅放大語速選單與下拉清單的字體）
 st.markdown("""
     <style>
     .stTextArea textarea { font-size: 32px !important; color: #000000 !important; font-weight: bold !important; }
@@ -13,9 +13,15 @@ st.markdown("""
     p { font-size: 28px !important; }
     .red-word { color: #ff2b2b !important; font-weight: bold !important; }
     
-    /* 放大語速選擇的標題與選項字體 */
-    div[data-baseweb="select"] span { font-size: 24px !important; font-weight: bold !important; }
-    div[role="listbox"] div { font-size: 22px !important; }
+    /* 放大紅框選單內的文字與下拉清單文字 */
+    div[data-baseweb="select"] div, div[data-baseweb="select"] span {
+        font-size: 28px !important;
+        font-weight: bold !important;
+    }
+    div[role="listbox"] div {
+        font-size: 26px !important;
+        font-weight: bold !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -131,7 +137,7 @@ formatted_chi_sentence = f"{chi_sentence}  【本句核心單字：{vocab_notes}
 
 st.subheader("💡 助教示範句：")
 
-# 🎛️ 語速選擇選單（字體已透過 CSS 放大）
+# 🎛️ 語速選擇選單
 speed_option = st.selectbox(
     "🐢 選擇語音播放速度（專為慢速跟讀設計）：",
     [
