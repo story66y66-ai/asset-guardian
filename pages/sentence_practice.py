@@ -5,7 +5,7 @@ import io
 import random
 import base64
 
-# 強制調整整體字體大小與超大播放按鈕樣式
+# 強制調整整體字體大小
 st.markdown("""
     <style>
     .stTextArea textarea { font-size: 32px !important; color: #000000 !important; font-weight: bold !important; }
@@ -22,13 +22,6 @@ st.markdown("""
     div[role="listbox"] div {
         font-size: 26px !important;
         font-weight: bold !important;
-    }
-    
-    /* 自訂超大好按的音訊播放器外觀 */
-    audio.big-audio {
-        width: 100%;
-        height: 55px;
-        filter: contrast(120%);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -124,20 +117,23 @@ with col_top2:
         st.rerun()
 
 for idx, row in st.session_state.challenge.iterrows():
-    col1, col2 = st.columns([1.2, 3.8])
+    # 欄位分配：左邊放獨立發音按鈕與播放器，右邊放單字與中文
+    col_audio, col_word = st.columns([1.5, 3.5])
     word_str = str(row['word'])
     
-    # 產生音檔並轉成超大好按的 HTML5 播放器（絕不重新整理、按鈕放大好操作）
+    # 製作語音的 Base64 編碼
     tts = gTTS(text=word_str, lang='en')
     fp = io.BytesIO()
     tts.write_to_fp(fp)
     audio_bytes = fp.getvalue()
     audio_base64 = base64.b64encode(audio_bytes).decode()
     
-    with col1:
+    with col_audio:
+        # 在 Play 鍵左側完美整合大顆喇叭圖示與 HTML5 播放器，點擊絕不重新整理！
         audio_html = f"""
-            <div style="background-color: #f0f2f6; padding: 5px; border-radius: 10px; text-align: center;">
-                <audio controls class="big-audio">
+            <div style="display: flex; align-items: center; background-color: #f0f2f6; padding: 6px; border-radius: 10px;">
+                <span style="font-size: 26px; margin-right: 8px;">🔊</span>
+                <audio controls style="width: 100%; height: 40px;">
                     <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
                     您的瀏覽器不支援語音播放
                 </audio>
@@ -145,8 +141,8 @@ for idx, row in st.session_state.challenge.iterrows():
         """
         st.markdown(audio_html, unsafe_allow_html=True)
         
-    with col2:
-        st.markdown(f"### 🔊 {word_str}  ({row['trans']}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
+    with col_word:
+        st.markdown(f"### {word_str}  ({row['trans']}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
 
 st.divider()
 
