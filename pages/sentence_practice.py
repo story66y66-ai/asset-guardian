@@ -3,6 +3,7 @@ import pandas as pd
 from gtts import gTTS
 import io
 import random
+import google.generativeai as genai
 
 # 強制調整整體字體大小與頁面寬度延展
 st.markdown("""
@@ -52,7 +53,7 @@ else:
 if len(filtered_df) < 3:
     filtered_df = df
 
-# 動態產生多變、生動且符合文法的句型
+# 透過真正的 Google Gemini AI 針對抽到的 3 個單字即時量身打造通順句子
 def generate_new_challenge(pool_df):
     sample_rows = pool_df.sample(n=min(3, len(pool_df)))
     words_list = sample_rows['word'].tolist()
@@ -61,39 +62,51 @@ def generate_new_challenge(pool_df):
     w1, w2, w3 = words_list[0], words_list[1], words_list[2]
     t1, t2, t3 = trans_list[0], trans_list[1], trans_list[2]
     
-    # 設計多種不同文法與情境的樣板，確保千變萬化
-    templates = [
-        (
-            f"When you feel like {w1}, remember to look at {w2} and find a way to {w3}.",
-            f"當你感覺到{t1}({w1})時，記得看看{t2}({w2})並找方法去{t3}({w3})。"
-        ),
-        (
-            f"Why did he choose {w1} instead of {w2} when he tried to {w3}?",
-            f"當他嘗試去{t3}({w3})時，為什麼他會選擇{t1}({w1})而不是{t2}({w2})？"
-        ),
-        (
-            f"If we want to understand {w1}, we must first explore {w2} and learn how to {w3}.",
-            f"如果我们想了解{t1}({w1})，我們必須先探索{t2}({w2})並學習如何{t3}({w3})。"
-        ),
-        (
-            f"She used {w1} to describe {w2}, which helped everyone {w3}.",
-            f"她用{t1}({w1})來描述{t2}({w2})，這幫助每個人都去{t3}({w3})。"
-        ),
-        (
-            f"Never ignore {w1} or {w2} if you really want to {w3} successfully.",
-            f"如果你真的想成功地{t3}({w3})，千萬不要忽視{t1}({w1})或{t2}({w2})。"
-        ),
-        (
-            f"The teacher explained how {w1} connects with {w2} so that we could {w3}.",
-            f"老師解釋了{t1}({w1})是如何與{t2}({w2})連結的，以便我們能夠{t3}({w3})。"
-        )
-    ]
+    eng_sent, chi_sent = "", ""
     
-    chosen_eng, chosen_chi = random.choice(templates)
+    try:
+        # 讀取 Streamlit Secrets 裡的 GOOGLE_API_KEY
+        api_key = st.secrets["GOOGLE_API_KEY"]
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        prompt = f"""
+        You are an expert English teacher. 
+        I have 3 completely random English words with their Chinese translations:
+        1. {w1} ({t1})
+        2. {w2} ({t2})
+        3. {w3} ({t3})
+        
+        Please write ONE natural, logical, and grammatically correct English sentence that incorporates all 3 words together in a meaningful context.
+        Then, provide its natural Traditional Chinese translation. 
+        In the Chinese translation, format each target word strictly as: 中文翻譯(English_word).
+        
+        Return ONLY valid text in this exact format, with no extra markdown or conversational filler:
+        ENGLISH: [Your English sentence here]
+        CHINESE: [Your Chinese translation here]
+        """
+        
+        response = model.generate_content(prompt)
+        text = response.text.strip()
+        
+        lines = text.split('\n')
+        for line in lines:
+            if line.startswith("ENGLISH:"):
+                eng_sent = line.replace("ENGLISH:", "").strip()
+            elif line.startswith("CHINESE:"):
+                chi_sent = line.replace("CHINESE:", "").strip()
+                
+        if not eng_sent or not chi_sent:
+            raise Exception("AI output format invalid")
+            
+    except Exception as e:
+        # 如果尚未設定 API Key 或連線失敗時的提示
+        eng_sent = f"Please configure GOOGLE_API_KEY in Streamlit Secrets to let AI generate sentences for: {w1}, {w2}, {w3}."
+        chi_sent = f"請在 Streamlit Secrets 設定 GOOGLE_API_KEY，才能讓 AI 為這三個單字產出完美句子：{t1}({w1})、{t2}({w2})、{t3}({w3})。"
     
     st.session_state.challenge = sample_rows
-    st.session_state.raw_eng_sentence = chosen_eng
-    st.session_state.raw_chi_sentence = chosen_chi
+    st.session_state.raw_eng_sentence = eng_sent
+    st.session_state.raw_chi_sentence = chi_sent
 
 # 如果切換了等級，或者第一次進來，或手動按換一題，就重新出題
 if ('current_selected_level' not in st.session_state 
