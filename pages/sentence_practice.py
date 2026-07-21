@@ -101,9 +101,16 @@ def generate_new_challenge():
 if 'challenge' not in st.session_state:
     generate_new_challenge()
 
-# 取得目前的目標單字清單
+# 取得目前的目標單字清單與相關資訊
 words = st.session_state.challenge['word'].tolist()
 trans_list = st.session_state.challenge['trans'].tolist()
+
+# 檢查 CSV 中是否有 kk 音標欄位（相容常見的欄位名稱 kk 或 phonetic）
+kk_col = None
+for col in ['kk', 'phonetic', 'KK', '音標']:
+    if col in st.session_state.challenge.columns:
+        kk_col = col
+        break
 
 # 頂部區塊：目標單字與「換一題」按鈕並排
 col_top1, col_top2 = st.columns([3, 1])
@@ -117,9 +124,14 @@ with col_top2:
 for idx, row in st.session_state.challenge.iterrows():
     col_audio, col_word = st.columns([1.5, 3.5])
     word_str = str(row['word'])
+    trans_str = str(row['trans'])
+    
+    # 取得 KK 音標（如果有的話）
+    kk_str = ""
+    if kk_col and pd.notna(row[kk_col]):
+        kk_str = f" [{row[kk_col]}]"
     
     with col_audio:
-        # 專屬發音按鈕：點下去只會發音，題目絕對不會被換掉！
         if st.button(f"🔊 讀音: {word_str}", key=f"word_btn_{idx}"):
             tts = gTTS(text=word_str, lang='en')
             fp = io.BytesIO()
@@ -127,7 +139,7 @@ for idx, row in st.session_state.challenge.iterrows():
             st.audio(fp, autoplay=True)
             
     with col_word:
-        st.markdown(f"### {word_str}  ({row['trans']}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
+        st.markdown(f"### {word_str}{kk_str} ({trans_str}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
 
 st.divider()
 
