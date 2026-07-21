@@ -120,11 +120,9 @@ for w in words:
     pattern = re.compile(re.escape(w), re.IGNORECASE)
     colored_sentence = pattern.sub(f"<span class='red-word'>{w}</span>", colored_sentence)
 
-# 💡 將中文翻譯裡的目標單字後面加上英文括號
-formatted_chi_sentence = chi_sentence
-for w, trans in zip(words, trans_list):
-    # 尋找中文翻譯中對應的中文意思，並在其後方加上 (英文單字)
-    formatted_chi_sentence = formatted_chi_sentence.replace(trans, f"{trans} ({w})")
+# 💡 在中文翻譯後面，條列式附上所有三個單字與其中文意思
+vocab_notes = "、".join([f"{w} ({trans})" for w, trans in zip(words, trans_list)])
+formatted_chi_sentence = f"{chi_sentence}  【本句核心單字：{vocab_notes}】"
 
 st.subheader("💡 助教示範句：")
 if st.button("🔊 播放示範句", key="play_demo_sentence"):
@@ -135,7 +133,7 @@ if st.button("🔊 播放示範句", key="play_demo_sentence"):
 
 # 顯示紅字英文口語句
 st.markdown(f"### {colored_sentence}", unsafe_allow_html=True)
-# 顯示帶有英文括號的中文意思
+# 顯示帶有完整單字對照的中文意思
 st.markdown(f"*(中文：{formatted_chi_sentence})*", unsafe_allow_html=True)
 
 st.divider()
