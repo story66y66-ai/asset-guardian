@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from gtts import gTTS
+from gTTS import gTTS
 import io
 import random
 
@@ -39,26 +39,46 @@ selected_level = st.selectbox(
     ["全部等級 (隨機)", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6"]
 )
 
-# 依選擇過濾資料庫
+# 依選擇過濾資料庫（確保型態一致，轉換為字串或整數比對）
 if selected_level == "全部等級 (隨機)":
     filtered_df = df
 else:
     target_lvl = int(selected_level.split(" ")[1])
-    filtered_df = df[df['level'] == target_lvl]
+    # 支援欄位名稱可能是 level 或 Level
+    level_col = 'level' if 'level' in df.columns else 'Level'
+    filtered_df = df[df[level_col] == target_lvl]
 
 # 防呆：如果該等級選不到 3 個字，就退回使用全部資料庫
 if len(filtered_df) < 3:
     filtered_df = df
 
-# 動態產生題目函式：直接從當前過濾後的等級隨機抽 3 個字，並自動組成造句練習
+# 動態產生生活化造句的輔助函式
 def generate_new_challenge(pool_df):
-    # 從當前等級隨機抽 3 個單字列
     sample_rows = pool_df.sample(n=min(3, len(pool_df)))
     words_list = sample_rows['word'].tolist()
     
-    # 自動組合出一句練習句與中文提示
-    chosen_sentence = f"Please use {' , '.join(words_list)} to make a meaningful sentence."
-    chosen_chinese = f"請運用以下單字造句：{'、'.join(words_list)}"
+    # 準備幾種自然的情境句型樣板，讓單字可以自然嵌入其中
+    templates = [
+        ("When I saw {w1}, I suddenly remembered {w2} and tried to {w3}.", 
+         "當我看到 {w1} 時，我突然想起 {w2} 並試著去 {w3}。"),
+        ("It is important to understand {w1} before talking about {w2}, especially when you {w3}.", 
+         "在談論 {w2} 之前，理解 {w1} 是很重要的，特別是當你 {w3} 的時候。"),
+        ("Many people like to explore {w1} and {w2} because they want to {w3}.", 
+         "很多人喜歡探索 {w1} 和 {w2}，因為他們想要 {w3}。"),
+        ("If you want to master {w1}, you should practice {w2} and learn how to {w3}.", 
+         "如果你想精通 {w1}，你應該練習 {w2} 並學習如何 {w3}。")
+    ]
+    
+    # 隨機挑選一種情境句型模板
+    template_eng, template_chi = random.choice(templates)
+    
+    # 確保足夠的變數填入
+    w1 = words_list[0] if len(words_list) > 0 else "this"
+    w2 = words_list[1] if len(words_list) > 1 else "that"
+    w3 = words_list[2] if len(words_list) > 2 else "handle"
+    
+    chosen_sentence = template_eng.format(w1=w1, w2=w2, w3=w3)
+    chosen_chinese = template_chi.format(w1=w1, w2=w2, w3=w3)
     
     st.session_state.challenge = sample_rows
     st.session_state.raw_eng_sentence = chosen_sentence
@@ -82,6 +102,8 @@ for col in ['kk', 'phonetic', 'KK', '音標']:
         kk_col = col
         break
 
+level_col = 'level' if 'level' in df.columns else 'Level'
+
 # 頂部區塊：目標單字與「換一題」按鈕並排
 col_top1, col_top2 = st.columns([3, 1])
 with col_top1:
@@ -95,6 +117,7 @@ for idx, row in st.session_state.challenge.iterrows():
     col_audio, col_word = st.columns([1.5, 3.5])
     word_str = str(row['word'])
     trans_str = str(row['trans'])
+    lvl_val = row[level_col]
     
     # 取得 KK 音標
     kk_str = ""
@@ -109,7 +132,7 @@ for idx, row in st.session_state.challenge.iterrows():
             st.audio(fp, autoplay=True)
             
     with col_word:
-        st.markdown(f"### {word_str}{kk_str} ({trans_str}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
+        st.markdown(f"### {word_str}{kk_str} ({trans_str}) <span style='font-size: 20px; color: #888888;'>(L{lvl_val})</span>", unsafe_allow_html=True)
 
 st.divider()
 
@@ -120,7 +143,8 @@ chi_sentence = st.session_state.raw_chi_sentence
 colored_sentence = eng_sentence
 for w in words:
     import re
-    pattern = re.compile(re.escape(w), re.IGNORECASE)
+    # 使用忽略大小寫且符合單字的正規表達式來標紅字
+    pattern = re.compile(r'\b' + re.escape(str(w)) + r'\b', re.IGNORECASE)
     colored_sentence = pattern.sub(f"<span class='red-word'>{w}</span>", colored_sentence)
 
 # 中文翻譯帶括號與總結
