@@ -1,4 +1,4 @@
 streamlit
 pandas
-gttS
+gTTS
 google-generativeai
