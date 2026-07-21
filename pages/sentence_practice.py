@@ -4,7 +4,7 @@ from gtts import gTTS
 import io
 import random
 
-# 強制調整整體字體大小（大幅放大語速選單與下拉清單的字體）
+# 強制調整整體字體大小
 st.markdown("""
     <style>
     .stTextArea textarea { font-size: 32px !important; color: #000000 !important; font-weight: bold !important; }
@@ -107,15 +107,20 @@ words = st.session_state.challenge['word'].tolist()
 trans_list = st.session_state.challenge['trans'].tolist()
 
 st.subheader("🎯 今日目標單字（來自實用口語句）：")
+st.info("💡 小秘訣：點擊左側任一單字發音按鈕，除了聽發音外，也會**同時快速切換到下一題新的造句挑戰**喔！")
+
 for idx, row in st.session_state.challenge.iterrows():
     col1, col2 = st.columns([1, 4])
     word_str = str(row['word'])
     with col1:
+        # 點擊後發音，並觸發隨機換新題目
         if st.button(f"🔊 {word_str}", key=f"btn_word_{idx}"):
             tts = gTTS(text=word_str, lang='en')
             fp = io.BytesIO()
             tts.write_to_fp(fp)
             st.audio(fp, autoplay=True)
+            st.session_state.need_refresh = True
+            st.rerun()
     with col2:
         st.markdown(f"### {word_str}  ({row['trans']}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
 
