@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import random
 from gtts import gTTS
 import io
 
@@ -32,7 +33,6 @@ selected_level = st.selectbox(
 if selected_level == "全部等級 (隨機)":
     filtered_df = df
 else:
-    # 取得選定的數字等級 (例如 "Level 1" 轉成數字 1)
     target_lvl = int(selected_level.split(" ")[1])
     filtered_df = df[df['level'] == target_lvl]
 
@@ -68,14 +68,14 @@ st.divider()
 words = st.session_state.challenge['word'].tolist()
 trans_list = st.session_state.challenge['trans'].tolist()
 
-# 純文字發音用
-raw_sentence = f"I have to take {words[0]}, put on my {words[1]}, and travel {words[2]} away."
+# 🎯 準備口語化、更自然的句型組合與動態中文翻譯
+# 為了保持英文句型穩定讓練習好對應，我們優化中文的連接方式，讓它聽起來像日常對話
+raw_sentence = f"I need to check {words[0]}, prepare my {words[1]}, and handle {words[2]} carefully."
 
-# 🎯 英文示範句：目標單字帶紅色
 red_word_0 = f"<span class='red-word'>{words[0]}</span>"
 red_word_1 = f"<span class='red-word'>{words[1]}</span>"
 red_word_2 = f"<span class='red-word'>{words[2]}</span>"
-colored_sentence = f"I have to take {red_word_0}, put on my {red_word_1}, and travel {red_word_2} away."
+colored_sentence = f"I need to check {red_word_0}, prepare my {red_word_1}, and handle {red_word_2} carefully."
 
 st.subheader("💡 助教示範句：")
 if st.button("🔊 播放示範句"):
@@ -87,12 +87,12 @@ if st.button("🔊 播放示範句"):
 # 顯示紅字英文句
 st.markdown(f"### {colored_sentence}", unsafe_allow_html=True)
 
-# 🎯 中文示範句：英文單字用 HTML <b> 強制加粗，並加上 (中文翻譯)
+# 🎯 優化後的口語中文翻譯（不再生硬，聽起來像生活對話）
 zh_word_0 = f"<b>{words[0]}</b> ({trans_list[0]})"
 zh_word_1 = f"<b>{words[1]}</b> ({trans_list[1]})"
 zh_word_2 = f"<b>{words[2]}</b> ({trans_list[2]})"
 
-st.markdown(f"*(中文：我必須注意 {zh_word_0}，穿上 {zh_word_1}，並到 {zh_word_2} 的地方去。)*", unsafe_allow_html=True)
+st.markdown(f"*(中文：我需要先確認 {zh_word_0}，準備好我的 {zh_word_1}，然後小心處理 {zh_word_2}。)*", unsafe_allow_html=True)
 
 st.divider()
 st.subheader("📝 請輸入您的句子：")
