@@ -19,10 +19,13 @@ st.markdown("""
 
 st.title("📖 澄玄大學 - 語言學院")
 
-# 讀取資料
+# 讀取資料並自動過濾重複單字
 @st.cache_data
 def load_data():
-    return pd.read_csv("words.csv")
+    df = pd.read_csv("words.csv")
+    if "word" in df.columns:
+        df = df.drop_duplicates(subset=["word"]).reset_index(drop=True)
+    return df
 
 df = load_data()
 
@@ -46,10 +49,15 @@ if len(event.selection.rows) > 0:
     st.session_state.selected_word = df.iloc[selected_index]['word']
 
 # 2. 同步的選單
+word_list = df['word'].tolist()
+# 確保選取的單字在列表中，避免索引超出範圍
+if st.session_state.selected_word not in word_list:
+    st.session_state.selected_word = word_list[0]
+
 selected_word = st.selectbox(
     "目前選取的單字：",
-    df['word'].tolist(),
-    index=df['word'].tolist().index(st.session_state.selected_word)
+    word_list,
+    index=word_list.index(st.session_state.selected_word)
 )
 
 # 更新 Session State
