@@ -39,9 +39,7 @@ else:
 if len(filtered_df) < 3:
     filtered_df = df
 
-# 💡 核心創新：準備一套「口語化、生動實用」的現成英文好句庫
-# 每個元素格式：(英文完整好句, 中文翻譯, [包含的三個單字英文原名])
-# 系統會從我們的 words.csv 裡面去撈出對應的資料來顯示！
+# 💡 口語化英文好句庫
 CONV_SENTENCE_POOL = [
     (
         "Could you please help me check if this order is ready?",
@@ -79,17 +77,14 @@ CONV_SENTENCE_POOL = [
 if ('chosen_conv_item' not in st.session_state 
     or st.session_state.get('need_refresh', False)):
     
-    # 隨機挑選一句好句
     chosen_sentence, chosen_chinese, target_words = random.choice(CONV_SENTENCE_POOL)
     
-    # 從 CSV 資料庫中把這三個單字的詳細資料（中文翻譯、等級）找出來
     sub_df_list = []
     for tw in target_words:
         match_row = df[df['word'].str.lower() == tw.lower()]
         if not match_row.empty:
             sub_df_list.append(match_row.iloc[0])
         else:
-            # 萬一 CSV 找不到，就隨機從資料庫補一個
             sub_df_list.append(df.sample(n=1).iloc[0])
             
     st.session_state.challenge = pd.DataFrame(sub_df_list)
@@ -121,10 +116,15 @@ chi_sentence = st.session_state.raw_chi_sentence
 
 colored_sentence = eng_sentence
 for w in words:
-    # 忽略大小寫替換成紅字
     import re
     pattern = re.compile(re.escape(w), re.IGNORECASE)
     colored_sentence = pattern.sub(f"<span class='red-word'>{w}</span>", colored_sentence)
+
+# 💡 將中文翻譯裡的目標單字後面加上英文括號
+formatted_chi_sentence = chi_sentence
+for w, trans in zip(words, trans_list):
+    # 尋找中文翻譯中對應的中文意思，並在其後方加上 (英文單字)
+    formatted_chi_sentence = formatted_chi_sentence.replace(trans, f"{trans} ({w})")
 
 st.subheader("💡 助教示範句：")
 if st.button("🔊 播放示範句", key="play_demo_sentence"):
@@ -135,8 +135,8 @@ if st.button("🔊 播放示範句", key="play_demo_sentence"):
 
 # 顯示紅字英文口語句
 st.markdown(f"### {colored_sentence}", unsafe_allow_html=True)
-# 顯示中文意思
-st.markdown(f"*(中文：{chi_sentence})*", unsafe_allow_html=True)
+# 顯示帶有英文括號的中文意思
+st.markdown(f"*(中文：{formatted_chi_sentence})*", unsafe_allow_html=True)
 
 st.divider()
 st.subheader("📝 請輸入您的句子：")
