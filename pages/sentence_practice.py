@@ -63,7 +63,10 @@ for _, row in st.session_state.challenge.iterrows():
         st.markdown(f"### {row['word']}  ({row['trans']}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
 
 st.divider()
+
+# 取得單字與中文翻譯清單
 words = st.session_state.challenge['word'].tolist()
+trans_list = st.session_state.challenge['trans'].tolist()
 
 # 純文字發音用
 raw_sentence = f"I have to take {words[0]}, put on my {words[1]}, and travel {words[2]} away."
@@ -84,8 +87,12 @@ if st.button("🔊 播放示範句"):
 # 顯示紅字英文句
 st.markdown(f"### {colored_sentence}", unsafe_allow_html=True)
 
-# 🎯 中文示範句：目標單字帶粗體
-st.markdown(f"*(中文：我必須注意 **{words[0]}**，穿上 **{words[1]}**，並到 **{words[2]}** 的地方去。)*")
+# 🎯 中文示範句：英文單字用 HTML <b> 強制加粗，並加上 (中文翻譯)
+zh_word_0 = f"<b>{words[0]}</b> ({trans_list[0]})"
+zh_word_1 = f"<b>{words[1]}</b> ({trans_list[1]})"
+zh_word_2 = f"<b>{words[2]}</b> ({trans_list[2]})"
+
+st.markdown(f"*(中文：我必須注意 {zh_word_0}，穿上 {zh_word_1}，並到 {zh_word_2} 的地方去。)*", unsafe_allow_html=True)
 
 st.divider()
 st.subheader("📝 請輸入您的句子：")
