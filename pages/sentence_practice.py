@@ -23,6 +23,27 @@ st.markdown("""
         font-size: 26px !important;
         font-weight: bold !important;
     }
+    
+    /* 自訂超大、像真按鈕一樣的語音觸發器 */
+    .sound-btn {
+        background-color: #ff4b4b;
+        color: white;
+        padding: 10px 20px;
+        font-size: 22px;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: 0.2s;
+    }
+    .sound-btn:hover {
+        background-color: #ff2b2b;
+        transform: scale(1.05);
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -117,7 +138,7 @@ with col_top2:
         st.rerun()
 
 for idx, row in st.session_state.challenge.iterrows():
-    # 欄位分配：左邊放獨立發音按鈕與播放器，右邊放單字與中文
+    # 欄位分配：左邊放獨立發音按鈕，右邊放單字與中文
     col_audio, col_word = st.columns([1.5, 3.5])
     word_str = str(row['word'])
     
@@ -129,15 +150,12 @@ for idx, row in st.session_state.challenge.iterrows():
     audio_base64 = base64.b64encode(audio_bytes).decode()
     
     with col_audio:
-        # 在 Play 鍵左側完美整合大顆喇叭圖示與 HTML5 播放器，點擊絕不重新整理！
+        # 使用 HTML 語音物件，點擊按鈕直接呼叫 play()，絕對不重新整理、不換題目！
         audio_html = f"""
-            <div style="display: flex; align-items: center; background-color: #f0f2f6; padding: 6px; border-radius: 10px;">
-                <span style="font-size: 26px; margin-right: 8px;">🔊</span>
-                <audio controls style="width: 100%; height: 40px;">
-                    <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
-                    您的瀏覽器不支援語音播放
-                </audio>
-            </div>
+            <audio id="audio_{idx}" src="data:audio/mp3;base64,{audio_base64}"></audio>
+            <button class="sound-btn" onclick="document.getElementById('audio_{idx}').play()">
+                🔊 讀音
+            </button>
         """
         st.markdown(audio_html, unsafe_allow_html=True)
         
