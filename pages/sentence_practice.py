@@ -97,16 +97,18 @@ words = st.session_state.challenge['word'].tolist()
 trans_list = st.session_state.challenge['trans'].tolist()
 
 st.subheader("🎯 今日目標單字（來自實用口語句）：")
-for _, row in st.session_state.challenge.iterrows():
+for idx, row in st.session_state.challenge.iterrows():
     col1, col2 = st.columns([1, 4])
+    word_str = str(row['word'])
     with col1:
-        if st.button(f"🔊 {row['word']}", key=f"btn_{row['word']}_{random.randint(1,1000)}"):
-            tts = gTTS(text=str(row['word']), lang='en')
+        # 修正：使用固定的 idx 確保每個單字的播放按鈕各自獨立不衝突
+        if st.button(f"🔊 {word_str}", key=f"btn_word_{idx}"):
+            tts = gTTS(text=word_str, lang='en')
             fp = io.BytesIO()
             tts.write_to_fp(fp)
             st.audio(fp, autoplay=True)
     with col2:
-        st.markdown(f"### {row['word']}  ({row['trans']}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
+        st.markdown(f"### {word_str}  ({row['trans']}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
 
 st.divider()
 
@@ -126,26 +128,39 @@ formatted_chi_sentence = f"{chi_sentence}  【本句核心單字：{vocab_notes}
 
 st.subheader("💡 助教示範句：")
 
-# 🎛️ 新增語速選擇按鈕
-speed_option = st.radio(
-    "🐢 選擇語音播放速度：",
-    ["正常速", "慢速 (適合跟讀)", "快速 (挑戰流利度)"],
-    horizontal=True,
-    key="audio_speed_radio"
+# 🎛️ 擴充多段慢速選項（移除快速，增加超慢速與極慢速）
+speed_option = st.selectbox(
+    "🐢 選擇語音播放速度（專為慢速跟讀設計）：",
+    [
+        "正常速", 
+        "慢速 (gTTS 內建慢速)", 
+        "超慢速 (重複單字拉長練習)", 
+        "極慢速 (每個單字拆開慢慢念)"
+    ],
+    key="audio_speed_select"
 )
 
 if st.button("🔊 播放示範句", key="play_demo_sentence"):
-    # 根據選擇設定 gTTS 的 slow 參數
-    is_slow = (speed_option == "慢速 (適合跟讀)")
+    is_slow = False
+    text_to_speak = eng_sentence
     
-    tts = gTTS(text=eng_sentence, lang='en', slow=is_slow)
+    if speed_option == "正常速":
+        is_slow = False
+    elif speed_option == "慢速 (gTTS 內建慢速)":
+        is_slow = True
+    elif speed_option == "超慢速 (重複單字拉長練習)":
+        is_slow = True
+        # 把句子中的單字刻意拉開間距重複，製造超慢跟讀效果
+        text_to_speak = f"{eng_sentence} ...... {eng_sentence}"
+    elif speed_option == "極慢速 (每個單字拆開慢慢念)":
+        is_slow = True
+        # 把三個核心單字加上整句拆開緩慢朗讀
+        words_spaced = " ... ".join(words)
+        text_to_speak = f"Key words: {words_spaced} ...... Sentence: {eng_sentence}"
+
+    tts = gTTS(text=text_to_speak, lang='en', slow=is_slow)
     fp = io.BytesIO()
     tts.write_to_fp(fp)
-    
-    # 如果選擇快速，利用 HTML5 audio 屬性外加一點播放速度調整的小提示
-    if speed_option == "快速 (挑戰流利度)":
-        st.info("💡 小提示：您可以直接點擊下方語音播放器右側的三個點 (...) 來調整成 1.25 倍或 1.5 倍速！")
-        
     st.audio(fp, autoplay=True)
 
 # 顯示紅字英文口語句
