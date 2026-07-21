@@ -3,6 +3,17 @@ import pandas as pd
 import random
 from gtts import gTTS
 import io
+import os
+import google.generativeai as genai
+
+# 設定 Gemini API (自動抓取 Streamlit 的 Secrets 或環境變數)
+try:
+    if "GEMINI_API_KEY" in st.secrets:
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    elif "GOOGLE_API_KEY" in os.environ:
+        genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+except Exception:
+    pass
 
 # 強制調整整體字體大小
 st.markdown("""
@@ -50,6 +61,41 @@ if ('challenge' not in st.session_state
     st.session_state.current_level = selected_level
     st.session_state.need_refresh = False # 重置刷新狀態
 
+    # 🎯 呼叫 AI 針對這三個新單字量身打造最道地的造句
+    words_list = st.session_state.challenge['word'].tolist()
+    
+    prompt = f"""
+    You are an English teaching assistant. I have three English words: {words_list[0]}, {words_list[1]}, {words_list[2]}.
+    Please create ONE natural, conversational English sentence that includes all three words.
+    Also provide a natural, colloquial Traditional Chinese (繁體中文) translation of this sentence.
+    
+    Return the result strictly in this format without extra markdown code blocks:
+    ENGLISH: [The English sentence]
+    CHINESE: [The Traditional Chinese translation]
+    """
+    
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(prompt)
+        lines = response.text.strip().split('\n')
+        eng_line = ""
+        chi_line = ""
+        for line in lines:
+            if line.startswith("ENGLISH:"):
+                eng_line = line.replace("ENGLISH:", "").strip()
+            elif line.startswith("CHINESE:"):
+                chi_line = line.replace("CHINESE:", "").strip()
+        
+        if not eng_line or not chi_line:
+            raise Exception("Format error")
+            
+        st.session_state.ai_eng = eng_line
+        st.session_state.ai_chi = chi_line
+    except Exception:
+        # 萬一 API 沒設定或連線失敗的備用方案
+        st.session_state.ai_eng = f"Please use {words_list[0]}, {words_list[1]}, and {words_list[2]} correctly in context."
+        st.session_state.ai_chi = f"請在語境中正確使用 {words_list[0]}、{words_list[1]} 和 {words_list[2]}。"
+
 st.subheader("🎯 今日目標單字：")
 for _, row in st.session_state.challenge.iterrows():
     col1, col2 = st.columns([1, 4])
@@ -64,18 +110,17 @@ for _, row in st.session_state.challenge.iterrows():
 
 st.divider()
 
-# 取得單字與中文翻譯清單
 words = st.session_state.challenge['word'].tolist()
 trans_list = st.session_state.challenge['trans'].tolist()
 
-# 🎯 準備口語化、更自然的句型組合與動態中文翻譯
-# 為了保持英文句型穩定讓練習好對應，我們優化中文的連接方式，讓它聽起來像日常對話
-raw_sentence = f"I need to check {words[0]}, prepare my {words[1]}, and handle {words[2]} carefully."
+# 取得 AI 生成的句子
+raw_sentence = st.session_state.get('ai_eng', f"Practice with {words[0]}, {words[1]}, and {words[2]}.")
+ai_chinese = st.session_state.get('ai_chi', "請練習造句。")
 
-red_word_0 = f"<span class='red-word'>{words[0]}</span>"
-red_word_1 = f"<span class='red-word'>{words[1]}</span>"
-red_word_2 = f"<span class='red-word'>{words[2]}</span>"
-colored_sentence = f"I need to check {red_word_0}, prepare my {red_word_1}, and handle {red_word_2} carefully."
+# 將英文句子中的目標單字加上紅字高亮
+colored_sentence = raw_sentence
+for w in words:
+    colored_sentence = colored_sentence.replace(w, f"<span class='red-word'>{w}</span>")
 
 st.subheader("💡 助教示範句：")
 if st.button("🔊 播放示範句"):
@@ -87,12 +132,14 @@ if st.button("🔊 播放示範句"):
 # 顯示紅字英文句
 st.markdown(f"### {colored_sentence}", unsafe_allow_html=True)
 
-# 🎯 優化後的口語中文翻譯（不再生硬，聽起來像生活對話）
-zh_word_0 = f"<b>{words[0]}</b> ({trans_list[0]})"
-zh_word_1 = f"<b>{words[1]}</b> ({trans_list[1]})"
-zh_word_2 = f"<b>{words[2]}</b> ({trans_list[2]})"
+# 將中文句子中的目標單字加上粗體與原中文翻譯對照
+formatted_chinese = ai_chinese
+for i, w in enumerate(words):
+    target_str = f"{w}"
+    replacement = f"<b>{w}</b> ({trans_list[i]})"
+    formatted_chinese = formatted_chinese.replace(target_str, replacement)
 
-st.markdown(f"*(中文：我需要先確認 {zh_word_0}，準備好我的 {zh_word_1}，然後小心處理 {zh_word_2}。)*", unsafe_allow_html=True)
+st.markdown(f"*(中文：{formatted_chinese})*", unsafe_allow_html=True)
 
 st.divider()
 st.subheader("📝 請輸入您的句子：")
