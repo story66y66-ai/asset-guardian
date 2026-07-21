@@ -21,9 +21,32 @@ def load_data():
 
 df = load_data()
 
-# 關鍵邏輯：若沒挑戰單字，或使用者按了重新抽籤，就重新選取
-if 'challenge' not in st.session_state or st.session_state.get('need_refresh', False):
-    st.session_state.challenge = df.sample(n=3)
+# 🎯 新增：選擇單字等級 (Level)
+selected_level = st.selectbox(
+    "📊 請選擇單字等級 (Level)：",
+    ["全部等級 (隨機)", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6"]
+)
+
+# 依選擇過濾資料庫
+if selected_level == "全部等級 (隨機)":
+    filtered_df = df
+else:
+    # 取得選定的數字等級 (例如 "Level 1" 轉成數字 1)
+    target_lvl = int(selected_level.split(" ")[1])
+    filtered_df = df[df['level'] == target_lvl]
+
+# 防呆機制：若選取的等級裡面單字不足 3 個，就降級以防報錯
+if len(filtered_df) < 3:
+    st.warning(f"⚠️ {selected_level} 目前資料庫裡的單字少於 3 個，已自動開啟全庫抽籤喔！")
+    filtered_df = df
+
+# 關鍵邏輯：切換等級、第一次載入、或按下重新抽籤時重新選取
+if ('challenge' not in st.session_state 
+    or st.session_state.get('need_refresh', False)
+    or st.session_state.get('current_level') != selected_level):
+    
+    st.session_state.challenge = filtered_df.sample(n=3)
+    st.session_state.current_level = selected_level
     st.session_state.need_refresh = False # 重置刷新狀態
 
 st.subheader("🎯 今日目標單字：")
@@ -31,12 +54,12 @@ for _, row in st.session_state.challenge.iterrows():
     col1, col2 = st.columns([1, 4])
     with col1:
         if st.button(f"🔊 {row['word']}", key=f"btn_{row['word']}"):
-            tts = gTTS(text=row['word'], lang='en')
+            tts = gTTS(text=str(row['word']), lang='en')
             fp = io.BytesIO()
             tts.write_to_fp(fp)
             st.audio(fp, autoplay=True)
     with col2:
-        st.markdown(f"### {row['word']}  ({row['trans']})")
+        st.markdown(f"### {row['word']}  ({row['trans']}) <span style='font-size: 20px; color: #888888;'>(L{row['level']})</span>", unsafe_allow_html=True)
 
 st.divider()
 words = st.session_state.challenge['word'].tolist()
@@ -60,7 +83,7 @@ user_input = st.text_area("在這裡輸入...", height=150)
 col_a, col_b = st.columns(2)
 with col_a:
     if st.button("✅ 檢查句子"):
-        is_correct = all(w.lower() in user_input.lower() for w in words)
+        is_correct = all(str(w).lower() in user_input.lower() for w in words)
         if is_correct:
             st.success("## 太棒了！完全正確！")
             st.balloons()
