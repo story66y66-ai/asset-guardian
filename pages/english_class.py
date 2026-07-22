@@ -133,8 +133,8 @@ if not df.empty:
                 with c3:
                     scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_{idx}_{w}")
                 
-                # 確保 key 完整包含 程度、句型、場合，切換時一定會重新觸發
-                state_key = f"ai_data_v6_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                # 使用 v7 版本鍵值，確保 程度、句型、場合 的任何切換都能獨立對應
+                state_key = f"ai_data_v7_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     e_text, c_text = "", ""
@@ -153,13 +153,13 @@ if not df.empty:
                             prompt = f"""
                             You are an expert, native English conversation teacher. 
                             Target English word: {w} ({trans_w})
-                            Level requirement: {level_choice}
-                            Sentence Type requirement: {type_choice} (Must strictly match Affirmative, Negative, or Interrogative)
+                            Level requirement: {level_choice} (初階=Very simple words and short structure, 中階=Natural conversational sentence, 高階=Advanced vocabulary and complex structure)
+                            Sentence Type requirement: {type_choice} (肯定句=Affirmative, 否定句=Negative, 疑問句=Interrogative)
                             Scene/Context: {scene_choice}
                             
-                            Please write ONE completely natural, highly practical, native-sounding English conversational sentence using the target word, strictly following the Sentence Type requirement ({type_choice}).
+                            Please write ONE completely natural, highly practical, native-sounding English conversational sentence using the target word, strictly following BOTH the Level ({level_choice}) and Sentence Type ({type_choice}).
                             CRITICAL RULES:
-                            1. The English sentence must contain ONLY pure English words. Do NOT mix any Chinese characters or placeholders into the English sentence.
+                            1. The English sentence must contain ONLY pure English words. Do NOT mix any Chinese characters or placeholders.
                             2. Provide a natural Traditional Chinese translation separately.
                             
                             Return ONLY valid text in this exact format:
@@ -177,17 +177,29 @@ if not df.empty:
                     except Exception as err:
                         pass
                     
-                    # 完整的動態備用句（同時對應 程度 與 句型）
+                    # 完善的動態備用機制：完美同時區分「初/中/高階」與「肯定/否定/疑問句」
                     if not e_text or not c_text:
-                        if type_choice == "肯定句":
-                            e_text = f"I always look {w} here."
-                            c_text = f"我總是這裡找 {w}。"
-                        elif type_choice == "否定句":
-                            e_text = f"I don't look {w} there."
-                            c_text = f"我不在那裡找 {w}。"
-                        else:
-                            e_text = f"Do you look {w} here?"
-                            c_text = f"你在這裡找 {w} 嗎？"
+                        if level_choice == "初階":
+                            if type_choice == "肯定句":
+                                e_text, c_text = f"I look {w} here.", f"我這裡看 {w}。"
+                            elif type_choice == "否定句":
+                                e_text, c_text = f"I don't look {w} here.", f"我不在這裡看 {w}。"
+                            else:
+                                e_text, c_text = f"Do you look {w} here?", f"你在這裡看 {w} 嗎？"
+                        elif level_choice == "中階":
+                            if type_choice == "肯定句":
+                                e_text, c_text = f"We can usually find {w} around this area.", f"我們通常可以在這附近找到 {w}。"
+                            elif type_choice == "否定句":
+                                e_text, c_text = f"We cannot easily find {w} in this area.", f"我們無法在這附近輕鬆找到 {w}。"
+                            else:
+                                e_text, c_text = f"Can we find {w} around this area?", f"我們可以在這附近找到 {w} 嗎？"
+                        else:  # 高階
+                            if type_choice == "肯定句":
+                                e_text, c_text = f"Substantial resources have been allocated {w} this project.", f"已為這個專案配置了大量的資源。"
+                            elif type_choice == "否定句":
+                                e_text, c_text = f"No additional resources have been allocated {w} this project.", f"尚未為這個專案配置額外的資源。"
+                            else:
+                                e_text, c_text = f"Have sufficient resources been allocated {w} this project?", f"是否已為這個專案配置了充足的資源？"
                             
                     st.session_state[state_key] = {"eng": e_text, "chi": c_text}
 
@@ -200,14 +212,14 @@ if not df.empty:
                 st.markdown(f"**💡 助教示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v6_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v7_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
                     st.audio(fp, autoplay=True)
 
-                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v6_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
-                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v6_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v7_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
+                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v7_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     if w.lower() in user_practice.lower():
                         st.success(f"🎉 太棒了！[{w}] 使用正確！")
                     else:
