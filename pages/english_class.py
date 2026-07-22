@@ -29,7 +29,6 @@ st.title("📖 澄玄大學 - 語言學院 & 造句實戰室")
 # 背景自動合併與讀取資料函式
 @st.cache_data
 def load_and_merge_data():
-    # 1. 自動搜尋所有 level 檔案
     all_files = glob.glob("words_level*.csv")
     
     df_list = []
@@ -42,20 +41,16 @@ def load_and_merge_data():
                 pass
                 
     if df_list:
-        # 合併所有 level 檔案
         combined_df = pd.concat(df_list, ignore_index=True)
     else:
-        # 如果找不到 level 檔案，就退回直接讀取 words.csv
         try:
             combined_df = pd.read_csv("words.csv")
         except Exception:
             combined_df = pd.DataFrame(columns=["word", "trans", "kk", "level"])
 
-    # 2. 自動過濾重複的單字
     if "word" in combined_df.columns:
         combined_df = combined_df.drop_duplicates(subset=["word"])
     
-    # 3. 將 level 轉換為數字並由小到大排序
     if "level" in combined_df.columns:
         combined_df["level"] = pd.to_numeric(combined_df["level"], errors="coerce")
         combined_df = combined_df.sort_values(by="level", ascending=True)
@@ -66,54 +61,63 @@ def load_and_merge_data():
 df = load_and_merge_data()
 
 # 初始化 Session State
-if 'selected_word' not in st.session_state:
-    st.session_state.selected_word = df['word'].iloc[0] if not df.empty else ""
-
-if 'selected_vocab_list' not in st.session_state:
-    st.session_state.selected_vocab_list = []
-
 if 'challenge_sentence' not in st.session_state:
     st.session_state.challenge_sentence = {"eng": "", "chi": "", "words": []}
 
-# 1. 顯示表格與勾選功能
-st.subheader("點選表格中的單字（或勾選進行造句實戰）：")
+st.subheader("📋 單字總表（點擊表格中的單字列即可聽發音，並可勾選 3 個單字進行造句）：")
+
 if not df.empty:
-    # 建立一個編輯用的 DataFrame 包含選取框
     display_df = df[['word', 'trans', 'kk', 'level']].copy()
     
-    # 檢查是否已經有勾選狀態記錄
-    if 'select_checkbox' not in st.session_state:
-        display_df.insert(0, '選擇', False)
-    else:
-        # 保留之前的勾選狀態
-        checked_words = st.session_state.get('checked_words_set', set())
-        display_df.insert(0, '選擇', display_df['word'].isin(checked_words))
+    checked_words = st.session_state.get('checked_words_set', set())
+    display_df.insert(0, '選擇', display_df['word'].isin(checked_words))
 
-    # 使用 data_editor 支援勾選框互動
+    # 使用 dataframe 結合 on_select 來達成點擊直接發音
+    event = st.dataframe(
+        display_df,
+        use_container_width=True,
+        hide_index=True,
+        on_select="rerun",
+        selection_mode="single-row",
+        key="vocab_table"
+    )
+
+    # 如果點擊了某一行，直接取得該單字並自動發音
+    if len(event.selection.rows) > 0:
+        selected_index = event.selection.rows[0]
+        clicked_word = df.iloc[selected_index]['word']
+        
+        # 執行語音播放
+        tts = gTTS(text=str(clicked_word), lang='en')
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        st.audio(fp, autoplay=True)
+
+    st.markdown("---")
+    st.subheader("✨ 勾選造句區")
+    st.write("請在上方表格左側的方框中**勾選剛好 3 個單字**，即可解鎖 AI 示範句：")
+
+    # 為了讓使用者能夠勾選並即時反應，提供一個簡便的勾選管理介面或透過 data_editor 調整
     edited_df = st.data_editor(
         display_df,
         use_container_width=True,
         hide_index=True,
         disabled=['word', 'trans', 'kk', 'level'],
-        key="vocab_editor"
+        key="vocab_editor_checkbox"
     )
 
-    # 收集被勾選的單字列
-    selected_rows = edited_df[edited_df['选择'] == True] if '选择' in edited_df.columns else edited_df[edited_df['選擇'] == True]
+    selected_rows = edited_df[edited_df['選擇'] == True]
     current_checked_words = selected_rows['word'].tolist()
     st.session_state['checked_words_set'] = set(current_checked_words)
 
-    # 顯示目前勾選狀態提示
-    st.markdown(f"**📌 目前已勾選 {len(current_checked_words)} 個單字**（造句實戰建議剛好勾選 **3個** 單字）：")
+    st.markdown(f"**📌 目前已勾選 {len(current_checked_words)} 個單字**：")
     if current_checked_words:
         st.write("、".join([f"**{w}**" for w in current_checked_words]))
 
-    # 當剛好勾選 3 個單字時，提供 AI 造句按鈕
     if len(current_checked_words) == 3:
-        if st.button("✨ 根據這 3 個勾選單字生成造句實戰", key="generate_btn"):
+        if st.button("🚀 根據這 3 個單字生成 AI 示範句", key="generate_btn"):
             w1, w2, w3 = current_checked_words[0], current_checked_words[1], current_checked_words[2]
             
-            # 撈取中文翻譯
             t1 = df[df['word'] == w1]['trans'].values[0] if not df[df['word'] == w1].empty else ""
             t2 = df[df['word'] == w2]['trans'].values[0] if not df[df['word'] == w2].empty else ""
             t3 = df[df['word'] == w3]['trans'].values[0] if not df[df['word'] == w3].empty else ""
@@ -167,16 +171,14 @@ if not df.empty:
                 "trans": [t1, t2, t3]
             }
 
-    # 如果已經有生成的句子，直接顯示在下方供造句練習
     if st.session_state.challenge_sentence["eng"]:
         st.divider()
-        st.subheader("💡 助教示範句（來自您勾選的 3 個單字）：")
+        st.subheader("💡 助教示範句：")
         
         c_words = st.session_state.challenge_sentence["words"]
         c_eng = st.session_state.challenge_sentence["eng"]
         c_chi = st.session_state.challenge_sentence["chi"]
         
-        # 紅字標註
         colored_sent = c_eng
         for w in c_words:
             pattern = re.compile(r'\b' + re.escape(str(w)) + r'\b', re.IGNORECASE)
@@ -201,29 +203,5 @@ if not df.empty:
                 st.balloons()
             else:
                 st.error("## ❌ 缺少部分勾選的關鍵字，請再檢查看看喔！")
-
-    st.divider()
-
-    # 2. 保留原本的單字下拉選單與自動發音功能
-    word_list = df['word'].tolist()
-    if st.session_state.selected_word not in word_list:
-        st.session_state.selected_word = word_list[0]
-
-    selected_word = st.selectbox(
-        "目前選取的單字：",
-        word_list,
-        index=word_list.index(st.session_state.selected_word),
-        key="word_selectbox"
-    )
-
-    # 更新 Session State
-    st.session_state.selected_word = selected_word
-
-    # 3. 自動發音
-    if selected_word:
-        tts = gTTS(text=selected_word, lang='en')
-        fp = io.BytesIO()
-        tts.write_to_fp(fp)
-        st.audio(fp, autoplay=True)
 else:
     st.warning("目前沒有找到任何單字資料，請確認是否有上傳 level 檔案！")
