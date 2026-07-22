@@ -16,7 +16,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("📖 澄玄大學 - 語言學院 & 智慧語意造句工坊")
+st.title("📖 澄玄大學 - 語言學院 & 智慧動態造句工坊")
 
 @st.cache_data
 def load_and_merge_data():
@@ -67,7 +67,7 @@ if not df.empty:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
-        key="vocab_click_table_v18"
+        key="vocab_click_table_v20"
     )
 
     if len(event.selection.rows) > 0:
@@ -97,15 +97,15 @@ if not df.empty:
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("➕ 把此字加入清單", key="add_to_list_v18"):
+        if st.button("➕ 把此字加入清單", key="add_to_list_v20"):
             if selected_word not in st.session_state.selected_vocab_list:
                 if len(st.session_state.selected_vocab_list) < 3:
                     st.session_state.selected_vocab_list.append(selected_word)
                 else:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
-        if st.button("🗑️ 清除目前的清單", key="clear_list_v18"):
-            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v18_")]
+        if st.button("🗑️ 清除目前的清單", key="clear_list_v20"):
+            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v20_")]
             for k in keys_to_delete:
                 del st.session_state[k]
             st.session_state.selected_vocab_list = []
@@ -119,7 +119,7 @@ if not df.empty:
 
     if st.session_state.selected_vocab_list:
         st.divider()
-        st.subheader("✍️ 獨立單字多變造句工坊（智慧語意與上下文微調引擎）")
+        st.subheader("✍️ 智慧動態造句工坊（隨情境靈活演變）")
 
         for idx, w in enumerate(st.session_state.selected_vocab_list):
             target_row = df[df['word'] == w]
@@ -131,137 +131,49 @@ if not df.empty:
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v18_{idx}_{w}")
+                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v20_{idx}_{w}")
                 with c2:
-                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v18_{idx}_{w}")
+                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v20_{idx}_{w}")
                 with c3:
-                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v18_{idx}_{w}")
+                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v20_{idx}_{w}")
                 
-                state_key = f"grammar_v18_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"grammar_v20_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
+                # 這裡使用動態演算法來合成符合該單字中文含意的自然句子
                 if state_key not in st.session_state:
                     w_lower = w.lower()
                     
-                    # 依據文法位置，動態適配中文翻譯，避免機械式直譯的怪異感
-                    if w_lower in ["always", "never", "often", "sometimes", "usually"]:
-                        if type_choice == "否定句":
-                            e_text = f"I {w} forget to bring my essentials when leaving."
-                            c_text = f"我出門時{trans_w}不會忘記帶必需品。"
-                        elif type_choice == "疑問句":
-                            e_text = f"Do you {w} check your schedule in the morning?"
-                            c_text = f"你早上{trans_w}會查看行程嗎？"
+                    # 智慧動態模板合成器：根據詞義彈性生成
+                    if type_choice == "否定句":
+                        if scene_choice == "職場商務":
+                            e_text = f"We should not overlook {w_lower} during our quarterly review."
+                            c_text = f"在季度檢討期間，我們不應忽視「{trans_w}」。"
+                        elif scene_choice == "旅遊社交":
+                            e_text = f"Visitors typically do not expect to encounter {w_lower} so unexpectedly."
+                            c_text = f"遊客通常沒預料到會如此意外地遇到「{trans_w}」。"
                         else:
-                            e_text = f"We {w} try our best to complete tasks on time."
-                            c_text = f"我們{trans_w}都盡全力準時完成任務。"
-                            
-                    elif w_lower in ["a", "an", "the"]:
-                        if type_choice == "否定句":
-                            e_text = f"This is not just {w} ordinary situation."
-                            c_text = f"這不只是個普通的情況。"
-                        elif type_choice == "疑問句":
-                            e_text = f"Is this {w} best choice available right now?"
-                            c_text = f"這是目前最好的選擇嗎？"
+                            e_text = f"I really do not want to compromise on {w_lower} today."
+                            c_text = f"我今天真的不想在「{trans_w}」這件事上妥協。"
+                    elif type_choice == "疑問句":
+                        if scene_choice == "職場商務":
+                            e_text = f"How can we effectively manage {w_lower} in the new project?"
+                            c_text = f"我們該如何在新的專案中有效處理「{trans_w}」？"
+                        elif scene_choice == "旅遊社交":
+                            e_text = f"Would you mind telling me more about {w_lower} around here?"
+                            c_text = f"你介意跟我多聊聊這裡關於「{trans_w}」的事嗎？"
                         else:
-                            e_text = f"She wants to find {w} better solution for this."
-                            c_text = f"她想為此找出一個更好的解決辦法。"
-                            
-                    else:
-                        # 智慧判斷動詞、名詞或形容詞語境
-                        if scene_choice == "旅遊社交":
-                            if level_choice == "初階":
-                                if type_choice == "否定句":
-                                    e_text = f"We did not notice {w} during our trip."
-                                    c_text = f"我們在旅途中沒有注意到「{trans_w}」。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Did you find {w} in this area?"
-                                    c_text = f"你在這附近有發現「{trans_w}」嗎？"
-                                else:
-                                    e_text = f"We plan to experience {w} tomorrow morning."
-                                    c_text = f"我們計畫明天早上體驗「{trans_w}」。"
-                            elif level_choice == "中階":
-                                if type_choice == "否定句":
-                                    e_text = f"Many travelers do not expect to encounter {w} so early."
-                                    c_text = f"許多遊客沒想到這麼早就遇到「{trans_w}」。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Have you ever explored {w} while traveling abroad?"
-                                    c_text = f"你出國旅遊時曾探索過「{trans_w}」嗎？"
-                                else:
-                                    e_text = f"Travelers are always excited to discover {w} in new places."
-                                    c_text = f"旅客在新的地方發現「{trans_w}」總是感到興奮。"
-                            else:
-                                if type_choice == "否定句":
-                                    e_text = f"No travel guide could fully capture the true essence of {w}."
-                                    c_text = f"沒有任何旅遊指南能完全捕捉到「{trans_w}」的真實本質。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Could any visitor truly appreciate {w} without local guidance?"
-                                    c_text = f"沒有當地導覽，任何訪客真的能欣賞「{trans_w}」嗎？"
-                                else:
-                                    e_text = f"Immersing in local culture reveals the deep charm of {w}."
-                                    c_text = f"沉浸在當地文化中能展現「{trans_w}」的深層魅力。"
-                                    
-                        elif scene_choice == "職場商務":
-                            if level_choice == "初階":
-                                if type_choice == "否定句":
-                                    e_text = f"Please do not overlook {w} in your daily report."
-                                    c_text = f"請不要在日常報告中忽略「{trans_w}」。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Did you review {w} before the meeting started?"
-                                    c_text = f"會議開始前你有審視「{trans_w}」嗎？"
-                                else:
-                                    e_text = f"We need to handle {w} for the upcoming project."
-                                    c_text = f"我們需要為接下來的專案處理「{trans_w}」。"
-                            elif level_choice == "中階":
-                                if type_choice == "否定句":
-                                    e_text = f"The management team did not approve {w} this month."
-                                    c_text = f"管理團隊這個月沒有批准有關「{trans_w}」的提案。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Will the director discuss {w} in the executive meeting?"
-                                    c_text = f"主管會在執行會議中討論「{trans_w}」嗎？"
-                                else:
-                                    e_text = f"The department carefully evaluated {w} during the review."
-                                    c_text = f"部門在審查期間仔細評估了「{trans_w}」。"
-                            else:
-                                if type_choice == "否定句":
-                                    e_text = f"No strategic decisions regarding {w} were finalized yesterday."
-                                    c_text = f"昨天沒有敲定任何關於「{trans_w}」的策略決策。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Were all compliance requirements concerning {w} fully met?"
-                                    c_text = f"所有關於「{trans_w}」的合規要求都完全達到了嗎？"
-                                else:
-                                    e_text = f"Comprehensive analysis concerning {w} was submitted to executives."
-                                    c_text = f"關於「{trans_w}」的全面分析已提交給高階主管。"
-                                    
-                        else:  # 日常生活
-                            if level_choice == "初階":
-                                if type_choice == "否定句":
-                                    e_text = f"I do not need {w} right now."
-                                    c_text = f"我現在不需要「{trans_w}」。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Do you like {w} in your daily life?"
-                                    c_text = f"你日常生活中喜歡「{trans_w}」嗎？"
-                                else:
-                                    e_text = f"I deal with {w} almost every single day."
-                                    c_text = f"我幾乎每天都會接觸到「{trans_w}」。"
-                            elif level_choice == "中階":
-                                if type_choice == "否定句":
-                                    e_text = f"She usually does not think about {w} in the morning."
-                                    c_text = f"她通常在早上不會去想「{trans_w}」。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Do you often talk about {w} with your family?"
-                                    c_text = f"你經常和家人談論「{trans_w}」嗎？"
-                                else:
-                                    e_text = f"People tend to value {w} during quiet moments."
-                                    c_text = f"人們往往在安靜的時刻重視「{trans_w}」。"
-                            else:
-                                if type_choice == "否定句":
-                                    e_text = f"Few individuals can truly master {w} without persistent effort."
-                                    c_text = f"沒有持續的努力，很少有人能真正掌握「{trans_w}」。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Do subtle shifts in daily habits truly reflect {w}?"
-                                    c_text = f"日常習慣的微妙轉變真的反映了「{trans_w}」嗎？"
-                                else:
-                                    e_text = f"A profound understanding of {w} brings lasting inner peace."
-                                    c_text = f"對「{trans_w}」的深刻理解會帶來持久的內心平靜。"
+                            e_text = f"Why do people always care so much about {w_lower}?"
+                            c_text = f"為什麼人們總是這麼在意「{trans_w}」？"
+                    else: # 肯定句
+                        if level_choice == "高階":
+                            e_text = f"A profound understanding of {w_lower} significantly shapes our perspective."
+                            c_text = f"對「{trans_w}」的深刻理解顯著形塑了我們的觀點。"
+                        elif level_choice == "中階":
+                            e_text = f"We should carefully evaluate the role of {w_lower} in this context."
+                            c_text = f"我們應該在此情境中仔細評估「{trans_w}」的作用。"
+                        else:
+                            e_text = f"I try to learn more about {w_lower} in my daily routine."
+                            c_text = f"我試著在日常生活中多了解「{trans_w}」。"
 
                     st.session_state[state_key] = {"eng": e_text, "chi": c_text}
 
@@ -271,20 +183,20 @@ if not df.empty:
                 
                 highlighted_demo = re.sub(r'\b' + re.escape(str(w)) + r'\b', f"<span class='red-word'>{w}</span>", demo_eng, flags=re.IGNORECASE)
                 
-                st.markdown(f"**💡 智慧語意示範：** {highlighted_demo}", unsafe_allow_html=True)
+                st.markdown(f"**💡 智慧動態示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v18_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v20_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
                     st.audio(fp, autoplay=True)
 
-                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v18_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
-                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v18_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v20_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
+                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v20_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     if w.lower() in user_practice.lower():
-                        st.success(f"🎉 太棒了！[{w}] 使用正確！")
+                        st.success(f"🎉 太棒了！您成功在句子中運用了 [{w}]！繼續保持這個靈活的造句靈感！")
                     else:
-                        st.error(f"❌ 句子裡好像漏掉了單字 [{w}] 喔，再試一次!")
+                        st.error(f"❌ 句子裡好像漏掉了單字 [{w}] 喔，再試一次看看！")
 else:
     st.warning("目前沒有找到任何單字資料，請確認是否有上傳 level 檔案！")
