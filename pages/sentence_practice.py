@@ -51,7 +51,7 @@ df = load_and_merge_data()
 if 'selected_word' not in st.session_state:
     st.session_state.selected_word = df['word'].iloc[0] if not df.empty else ""
 
-# 建立兩個分頁：一個是原本乾淨的單字查詢與發音，一個是 YouTube 影音學習
+# 建立兩個分頁：單字查詢與發音 / YouTube 影音學習
 tab1, tab2 = st.tabs(["📚 單字總表與查字發音", "🎬 YouTube 影音隨看隨學"])
 
 with tab1:
