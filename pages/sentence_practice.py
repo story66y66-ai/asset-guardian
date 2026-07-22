@@ -1,164 +1,125 @@
-import streamlit as st
-import pandas as pd
-import glob
-import os
-from gtts import gTTS
-import io
-
-st.markdown("""
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>歌詞語音播放器</title>
     <style>
-    [data-testid="stSidebar"] { font-size: 28px !important; }
-    [data-testid="stSidebar"] div, [data-testid="stSidebar"] a { font-size: 28px !important; }
-    .stTextArea textarea { font-size: 28px !important; color: #000000 !important; font-weight: bold !important; }
-    div.stButton > button { font-size: 22px !important; padding: 10px 20px !important; }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f7f9fc;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        select, button {
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            flex-grow: 1;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.stop {
+            background-color: #f44336;
+            flex-grow: 0;
+        }
+        button.stop:hover {
+            background-color: #d32f2f;
+        }
     </style>
-    """, unsafe_allow_html=True)
+</head>
+<body>
 
-st.title("📖 澄玄大學 - 語言學院 & YouTube 影音學習工坊")
-
-@st.cache_data
-def load_and_merge_data():
-    all_files = glob.glob("words_level*.csv")
-    df_list = []
-    if all_files:
-        for filename in sorted(all_files):
-            try:
-                temp_df = pd.read_csv(filename)
-                df_list.append(temp_df)
-            except Exception:
-                pass
-                
-    if df_list:
-        combined_df = pd.concat(df_list, ignore_index=True)
-    else:
-        try:
-            combined_df = pd.read_csv("words.csv")
-        except Exception:
-            combined_df = pd.DataFrame(columns=["word", "trans", "kk", "level"])
-
-    if "word" in combined_df.columns:
-        combined_df = combined_df.drop_duplicates(subset=["word"])
+    <h2>🎵 歌詞不同速度發音播放器</h2>
     
-    if "level" in combined_df.columns:
-        combined_df["level"] = pd.to_numeric(combined_df["level"], errors="coerce")
-        combined_df = combined_df.sort_values(by="level", ascending=True)
+    <label for="lyricsInput">請在下方貼上你的歌詞：</label>
+    <textarea id="lyricsInput" placeholder="在這裡貼上歌詞..."></textarea>
+
+    <div class="controls">
+        <div>
+            <label for="speedSelect">速度：</label>
+            <select id="speedSelect">
+                <option value="0.5">0.5x (慢速)</option>
+                <option value="0.75">0.75x (稍慢)</option>
+                <option value="1.0" selected>1.0x (正常)</option>
+                <option value="1.25">1.25x (稍快)</option>
+                <option value="1.5">1.5x (快速)</option>
+            </select>
+        </div>
         
-    combined_df = combined_df.reset_index(drop=True)
-    return combined_df
+        <button onclick="playLyrics()">播放發音</button>
+        <button class="stop" onclick="stopLyrics()">停止</button>
+    </div>
 
-df = load_and_merge_data()
+    <script>
+        function playLyrics() {
+            const text = document.getElementById('lyricsInput').value;
+            if (!text.trim()) {
+                alert('請先輸入或貼上歌詞！');
+                return;
+            }
 
-if 'selected_word' not in st.session_state:
-    st.session_state.selected_word = df['word'].iloc[0] if not df.empty else ""
+            // 檢查瀏覽器是否支援語音合成
+            if (!('speechSynthesis' in window)) {
+                alert('很抱歉，你的瀏覽器不支援語音功能。');
+                return;
+            }
 
-# 建立兩個分頁：單字查詢與發音 / YouTube 影音學習
-tab1, tab2 = st.tabs(["📚 單字總表與查字發音", "🎬 YouTube 影音隨看隨學"])
+            // 如果正在播放，先停止
+            window.speechSynthesis.cancel();
 
-with tab1:
-    st.subheader("📋 單字總表（點擊表格列即可聽發音）：")
-
-    if not df.empty:
-        display_df = df[['word', 'trans', 'kk', 'level']]
-        
-        event = st.dataframe(
-            display_df,
-            use_container_width=True,
-            hide_index=True,
-            on_select="rerun",
-            selection_mode="single-row",
-            key="vocab_click_table_clean"
-        )
-
-        if len(event.selection.rows) > 0:
-            selected_index = event.selection.rows[0]
-            clicked_word = df.iloc[selected_index]['word']
-            if st.session_state.selected_word != clicked_word:
-                st.session_state.selected_word = clicked_word
-                
-                tts = gTTS(text=str(clicked_word), lang='en')
-                fp = io.BytesIO()
-                tts.write_to_fp(fp)
-                st.audio(fp, autoplay=True)
-
-        st.divider()
-
-        word_list = df['word'].tolist()
-        if st.session_state.selected_word not in word_list:
-            st.session_state.selected_word = word_list[0]
-
-        st.subheader("🎯 單字快速搜尋與聆聽：")
-        selected_word = st.selectbox(
-            "目前選取的單字：",
-            word_list,
-            index=word_list.index(st.session_state.selected_word),
-            key="selected_word_clean"
-        )
-
-        target_row = df[df['word'] == selected_word]
-        if not target_row.empty:
-            trans_w = target_row['trans'].values[0]
-            kk_w = target_row['kk'].values[0] if 'kk' in target_row.columns else ""
-            w_level = target_row['level'].values[0] if 'level' in target_row.columns else ""
+            const utterance = new SpeechSynthesisUtterance(text);
             
-            with st.container(border=True):
-                st.markdown(f"### 🔍 單字詳情：`{selected_word}`")
-                st.markdown(f"**中文翻譯：** {trans_w}")
-                st.markdown(f"**KK 音標：** {kk_w} | **難度級別：** Level {w_level}")
-                
-                if st.button(f"🔊 播放 [{selected_word}] 標準發音", key="play_selected_word_btn"):
-                    tts = gTTS(text=str(selected_word), lang='en')
-                    fp = io.BytesIO()
-                    tts.write_to_fp(fp)
-                    st.audio(fp, autoplay=True)
-    else:
-        st.warning("目前沒有找到任何單字資料！")
+            // 設定語言為中文
+            utterance.lang = 'zh-TW';
 
-with tab2:
-    st.subheader("🌐 YouTube 影片隨看隨學與多段速練功坊")
-    yt_url = st.text_input("請在此貼上 YouTube 影片或 Shorts 網址：", placeholder="https://www.youtube.com/watch?v=...", key="yt_url_input_clean")
+            // 取得選取的速度
+            const speed = document.getElementById('speedSelect').value;
+            utterance.rate = parseFloat(speed);
 
-    if yt_url:
-        st.success("✅ 成功載入影片！請一邊觀看影片，一邊利用下方多段速按鈕進行聽力特訓：")
-        st.video(yt_url)
-        
-        st.divider()
-        st.subheader("📚 影音精選實用短句與多段速發音控制")
-        
-        sample_yt_sentences = [
-            {"word": "effort", "trans": "努力", "sentence": "Persistent effort is the key to mastering any language."},
-            {"word": "splendor", "trans": "壯麗", "sentence": "No travel guide could fully describe the true splendor of this place."},
-            {"word": "routine", "trans": "日常", "sentence": "I try to learn something new in my daily routine."}
-        ]
-        
-        for idx, item in enumerate(sample_yt_sentences):
-            w = item["word"]
-            trans = item["trans"]
-            sentence = item["sentence"]
-            
-            with st.container(border=True):
-                st.markdown(f"### 🔹 精選單字：`{w}` （{trans}）")
-                st.markdown(f"**💡 例句：** {sentence}")
-                
-                st.markdown("🔊 **多段速發音練習：**")
-                col_s1, col_s2, col_s3 = st.columns(3)
-                
-                with col_s1:
-                    if st.button(f"正常速度 🔊", key=f"norm_clean_{idx}_{w}"):
-                        tts = gTTS(text=sentence, lang='en', slow=False)
-                        fp = io.BytesIO()
-                        tts.write_to_fp(fp)
-                        st.audio(fp, autoplay=True)
-                with col_s2:
-                    if st.button(f"慢速練習 🐢", key=f"slow_clean_{idx}_{w}"):
-                        tts = gTTS(text=sentence, lang='en', slow=True)
-                        fp = io.BytesIO()
-                        tts.write_to_fp(fp)
-                        st.audio(fp, autoplay=True)
-                with col_s3:
-                    if st.button(f"極慢拆解 🐌", key=f"x_slow_clean_{idx}_{w}"):
-                        tts = gTTS(text=f"{w}... {w}... {sentence}", lang='en', slow=True)
-                        fp = io.BytesIO()
-                        tts.write_to_fp(fp)
-                        st.audio(fp, autoplay=True)
-    else:
-        st.info("💡 請在上方輸入框貼上想要學習的 YouTube 網址，即可在分頁中展開專屬影音學習！")
+            // 開始播放
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function stopLyrics() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        }
+    </script>
+
+</body>
+</html>
