@@ -73,7 +73,6 @@ if 'challenge_sentence' not in st.session_state:
 st.subheader("📋 單字總表（點擊表格中的單字列即可直接聽發音）：")
 
 if not df.empty:
-    # 1. 原本純淨、好點擊發音的表格（不夾雜 checkbox，操作完全不卡頓）
     display_df = df[['word', 'trans', 'kk', 'level']]
     
     event = st.dataframe(
@@ -85,32 +84,34 @@ if not df.empty:
         key="vocab_click_table"
     )
 
-    # 如果點擊了表格中的某一行，同步更新選取單字並自動發音
+    # 如果點擊了表格中的某一行，更新 session_state 裡的選取單字並發音
     if len(event.selection.rows) > 0:
         selected_index = event.selection.rows[0]
-        st.session_state.selected_word = df.iloc[selected_index]['word']
-        
-        # 立即播放發音
-        tts = gTTS(text=str(st.session_state.selected_word), lang='en')
-        fp = io.BytesIO()
-        tts.write_to_fp(fp)
-        st.audio(fp, autoplay=True)
+        clicked_word = df.iloc[selected_index]['word']
+        if st.session_state.selected_word != clicked_word:
+            st.session_state.selected_word = clicked_word
+            
+            # 播放發音
+            tts = gTTS(text=str(clicked_word), lang='en')
+            fp = io.BytesIO()
+            tts.write_to_fp(fp)
+            st.audio(fp, autoplay=True)
 
     st.divider()
 
-    # 2. 下拉選單與目前選取區（會跟著上方表格點擊同步連動！）
     word_list = df['word'].tolist()
     if st.session_state.selected_word not in word_list:
         st.session_state.selected_word = word_list[0]
 
     st.subheader("🎯 造句實戰選字區（會與上方點擊同步）：")
+    
+    # 這裡直接用 selectbox，讓它完美對應 session_state.selected_word
     selected_word = st.selectbox(
         "目前選取的單字：",
         word_list,
         index=word_list.index(st.session_state.selected_word),
-        key="synced_word_selectbox"
+        key="selected_word"
     )
-    st.session_state.selected_word = selected_word
 
     # 加入到造句清單的按鈕
     col1, col2 = st.columns([1, 3])
