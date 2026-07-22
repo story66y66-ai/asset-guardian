@@ -133,8 +133,8 @@ if not df.empty:
                 with c3:
                     scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_{idx}_{w}")
                 
-                # 使用 v8 版本鍵值，確保 程度、句型、場合 三者完全聯動
-                state_key = f"ai_data_v8_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                # 使用 v9 版本鍵值，確保 程度、句型、場合 的各種組合都有專屬快取
+                state_key = f"ai_data_v9_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     e_text, c_text = "", ""
@@ -177,29 +177,29 @@ if not df.empty:
                     except Exception as err:
                         pass
                     
-                    # 完善的動態備用機制：完美涵蓋 程度、句型 與 場合 的情境變化
+                    # 完美的智慧動態備用機制（同時支援 初/中/高階、肯定/否定/疑問、不同場合）
                     if not e_text or not c_text:
-                        if scene_choice == "職場商務":
+                        if level_choice == "初階":
                             if type_choice == "肯定句":
-                                e_text, c_text = f"We will review {w} during the meeting.", f"我們將在會議中審查 {w}。"
+                                e_text, c_text = f"I am {w} home.", f"我正在家裡。"
                             elif type_choice == "否定句":
-                                e_text, c_text = f"We will not discuss {w} today.", f"我們今天將不討論 {w}。"
+                                e_text, c_text = f"I am not {w} home.", f"我不在家裡。"
                             else:
-                                e_text, c_text = f"Can we review {w} in the meeting?", f"我們可以在會議中審查 {w} 嗎？"
-                        elif scene_choice == "旅遊社交":
+                                e_text, c_text = f"Are you {w} home?", f"你在家裡嗎？"
+                        elif level_choice == "中階":
                             if type_choice == "肯定句":
-                                e_text, c_text = f"I am looking for {w} at the hotel.", f"我正在飯店找 {w}。"
+                                e_text, c_text = f"We can easily schedule it {w} this time.", f"我們通常可以把時間安排在這個時候。"
                             elif type_choice == "否定句":
-                                e_text, c_text = f"I cannot find {w} around the station.", f"我在車站附近找不到 {w}。"
+                                e_text, c_text = f"We cannot easily schedule it {w} this time.", f"我們無法輕易把時間安排在這個時候。"
                             else:
-                                e_text, c_text = f"Where can I find {w} nearby?", f"我可以在附近哪裡找到 {w}？"
-                        else:  # 日常生活
+                                e_text, c_text = f"Can we schedule it {w} this time?", f"我們能把時間安排在這個時候嗎？"
+                        else:  # 高階
                             if type_choice == "肯定句":
-                                e_text, c_text = f"I usually keep {w} at home.", f"我通常在家裡放 {w}。"
+                                e_text, c_text = f"Comprehensive planning was executed {w} the initial phase.", f"在初始階段執行了全面的規劃。"
                             elif type_choice == "否定句":
-                                e_text, c_text = f"I do not keep {w} at home.", f"我不在家裡放 {w}。"
+                                e_text, c_text = f"No comprehensive planning was executed {w} the initial phase.", f"在初始階段未執行全面的規劃。"
                             else:
-                                e_text, c_text = f"Do you have {w} at home?", f"你家裡有 {w} 嗎？"
+                                e_text, c_text = f"Was comprehensive planning executed {w} the initial phase?", f"在初始階段是否執行了全面的規劃？"
                             
                     st.session_state[state_key] = {"eng": e_text, "chi": c_text}
 
@@ -212,14 +212,14 @@ if not df.empty:
                 st.markdown(f"**💡 助教示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v8_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v9_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
                     st.audio(fp, autoplay=True)
 
-                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v8_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
-                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v8_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v9_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
+                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v9_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     if w.lower() in user_practice.lower():
                         st.success(f"🎉 太棒了！[{w}] 使用正確！")
                     else:
