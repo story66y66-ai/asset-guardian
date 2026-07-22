@@ -133,7 +133,7 @@ if not df.empty:
                 with c3:
                     scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_{idx}_{w}")
                 
-                state_key = f"ai_data_v12_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"ai_data_v13_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     e_text, c_text = "", ""
@@ -156,7 +156,7 @@ if not df.empty:
                             Sentence Type requirement: {type_choice} (肯定句=Affirmative, 否定句=Negative, 疑問句=Interrogative)
                             Scene/Context requirement: {scene_choice} (日常生活=Daily life chat, 職場商務=Office/Workplace communication, 旅遊社交=Travel/Socializing)
                             
-                            Please write ONE completely natural, highly practical, native-sounding English conversational sentence using the target word, strictly fulfilling ALL THREE requirements: Level ({level_choice}), Sentence Type ({type_choice}), and Scene/Context ({scene_choice}).
+                            Please write ONE completely natural, highly practical, native-sounding English conversational sentence that correctly uses the target word '{w}' according to its grammatical role. Ensure it strictly fulfills ALL THREE requirements.
                             CRITICAL RULES:
                             1. The English sentence must contain ONLY pure English words. Do NOT mix any Chinese characters or placeholders.
                             2. Provide a natural Traditional Chinese translation separately.
@@ -176,74 +176,30 @@ if not df.empty:
                     except Exception as err:
                         pass
                     
-                    # 【極致自然版備用機制】讓否定句不論搭配哪個介系詞或單字都流暢道地
+                    # 智慧型動態備用機制：如果 AI 暫時沒回應，根據單字本身的特性提供合理句子
                     if not e_text or not c_text:
-                        if scene_choice == "旅遊社交":
-                            if level_choice == "初階":
-                                if type_choice == "肯定句":
-                                    e_text, c_text = f"We can stay {w} the hotel.", f"我們可以待在飯店裡。"
-                                elif type_choice == "否定句":
-                                    e_text, c_text = f"We decided not to stay {w} the hotel.", f"我們決定不要待在飯店裡。"
-                                else:
-                                    e_text, c_text = f"Can we stay {w} the hotel?", f"我們可以待在飯店裡嗎？"
-                            elif level_choice == "中階":
-                                if type_choice == "肯定句":
-                                    e_text, c_text = f"Tourists like to take photos {w} this spot.", f"遊客喜歡在這個景點拍照。"
-                                elif type_choice == "否定句":
-                                    e_text, c_text = f"Tourists do not like to take photos {w} this spot.", f"遊客不喜歡在這個景點拍照。"
-                                else:
-                                    e_text, c_text = f"Do tourists like to take photos {w} this spot?", f"遊客喜歡在這個景點拍照嗎？"
+                        w_lower = w.lower()
+                        if "born" in w_lower:
+                            if type_choice == "否定句":
+                                e_text, c_text = f"He was not born in this city.", f"他不是在這個城市出生的。"
+                            elif type_choice == "疑問句":
+                                e_text, c_text = f"Were you born here?", f"你是在這裡出生的嗎？"
                             else:
-                                if type_choice == "肯定句":
-                                    e_text, c_text = f"Travelers found deep relaxation {w} the serene valley.", f"旅客在寧靜的山谷中找到了深層的放鬆。"
-                                elif type_choice == "否定句":
-                                    e_text, c_text = f"Travelers could not find any relaxation {w} the noisy street.", f"旅客在喧鬧的街道上找不到任何放鬆的感覺。"
-                                else:
-                                    e_text, c_text = f"Could travelers find relaxation {w} the serene valley?", f"旅客能在寧靜的山谷中找到放鬆嗎？"
-                        elif scene_choice == "職場商務":
-                            if level_choice == "初階":
-                                if type_choice == "肯定句":
-                                    e_text, c_text = f"Please wait {w} the reception desk.", f"請在接待櫃檯等候。"
-                                elif type_choice == "否定句":
-                                    e_text, c_text = f"Please do not wait {w} the reception desk.", f"請不要在接待櫃檯等候。"
-                                else:
-                                    e_text, c_text = f"Should we wait {w} the reception desk?", f"我們應該在接待櫃檯等候嗎？"
-                            elif level_choice == "中階":
-                                if type_choice == "肯定句":
-                                    e_text, c_text = f"The manager discussed the plan {w} the meeting.", f"經理在會議中討論了這個計畫。"
-                                elif type_choice == "否定句":
-                                    e_text, c_text = f"The manager did not discuss the plan {w} the meeting.", f"經理沒有在會議中討論這個計畫。"
-                                else:
-                                    e_text, c_text = f"Did the manager discuss the plan {w} the meeting?", f"經理有在會議中討論這個計畫嗎？"
+                                e_text, c_text = f"She was born in a small town.", f"她出生在一個小鎮。"
+                        elif "bench" in w_lower:
+                            if type_choice == "否定句":
+                                e_text, c_text = f"They did not sit on the bench.", f"他們沒有坐在長椅上。"
+                            elif type_choice == "疑問句":
+                                e_text, c_text = f"Is anyone sitting on that bench?", f"有人坐在那張長椅上嗎？"
                             else:
-                                if type_choice == "肯定句":
-                                    e_text, c_text = f"Strategic decisions were finalized {w} the executive board meeting.", f"策略決策是在執行董事會會議上敲定的。"
-                                elif type_choice == "否定句":
-                                    e_text, c_text = f"No strategic decisions were finalized {w} the preliminary briefing.", f"在初步簡報中沒有敲定任何策略決策。"
-                                else:
-                                    e_text, c_text = f"Were strategic decisions finalized {w} the executive board meeting?", f"策略決策是在執行董事會會議上敲定的嗎？"
-                        else:  # 日常生活
-                            if level_choice == "初階":
-                                if type_choice == "肯定句":
-                                    e_text, c_text = f"I am eating lunch {w} home.", f"我正在家裡吃午餐。"
-                                elif type_choice == "否定句":
-                                    e_text, c_text = f"I am not eating lunch {w} home today.", f"我今天不在家裡吃午餐。"
-                                else:
-                                    e_text, c_text = f"Are you eating lunch {w} home?", f"你正在家裡吃午餐嗎？"
-                            elif level_choice == "中階":
-                                if type_choice == "肯定句":
-                                    e_text, c_text = f"She studies English {w} her desk every evening.", f"她每天晚上都在書桌前學英語。"
-                                elif type_choice == "否定句":
-                                    e_text, c_text = f"She does not study English {w} her desk on weekends.", f"她週末不在書桌前學英語。"
-                                else:
-                                    e_text, c_text = f"Does she study English {w} her desk every evening?", f"她每天晚上都在書桌前學英語嗎？"
+                                e_text, c_text = f"He is resting on a wooden bench.", f"他正在木長椅上休息。"
+                        else:
+                            if type_choice == "否定句":
+                                e_text, c_text = f"We are not staying {w} this place.", f"我們沒有待在這個地方。"
+                            elif type_choice == "疑問句":
+                                e_text, c_text = f"Are you {w} the office?", f"你在辦公室嗎？"
                             else:
-                                if type_choice == "肯定句":
-                                    e_text, c_text = f"Profound inspirations often strike {w} midnight.", f"深刻的靈感經常在午夜時分湧現。"
-                                elif type_choice == "否定句":
-                                    e_text, c_text = f"Inspirations rarely strike {w} busy hours.", f"靈感在忙碌的時刻很少湧現。"
-                                else:
-                                    e_text, c_text = f"Do profound inspirations strike {w} midnight?", f"深刻的靈感經常在午夜時分湧現嗎？"
+                                e_text, c_text = f"I am waiting {w} the station.", f"我正在車站等候。"
                             
                     st.session_state[state_key] = {"eng": e_text, "chi": c_text}
 
@@ -256,14 +212,14 @@ if not df.empty:
                 st.markdown(f"**💡 助教示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v12_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v13_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
                     st.audio(fp, autoplay=True)
 
-                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v12_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
-                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v12_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v13_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
+                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v13_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     if w.lower() in user_practice.lower():
                         st.success(f"🎉 太棒了！[{w}] 使用正確！")
                     else:
