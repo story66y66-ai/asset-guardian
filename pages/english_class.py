@@ -106,8 +106,12 @@ if not df.empty:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
         if st.button("🗑️ 清除目前的清單", key="clear_list"):
+            # 【修正重點】清除清單時，同時把所有 ai_data_v13 的歷史快取全部清空！
+            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("ai_data_v13_")]
+            for k in keys_to_delete:
+                del st.session_state[k]
             st.session_state.selected_vocab_list = []
-            st.success("已清除清單！")
+            st.success("已清除清單與所有造句快取！")
 
     st.markdown(f"**📌 目前已選擇的單字（{len(st.session_state.selected_vocab_list)}/3）：**")
     if st.session_state.selected_vocab_list:
@@ -133,7 +137,8 @@ if not df.empty:
                 with c3:
                     scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_{idx}_{w}")
                 
-                state_key = f"ai_oral_v13_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                # 【修正重點】升級為 v13，確保每次變動選單都會強制重新抓取與生成
+                state_key = f"ai_data_v13_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     e_text, c_text = "", ""
@@ -150,20 +155,19 @@ if not df.empty:
                             model = genai.GenerativeModel('gemini-1.5-flash')
                             
                             prompt = f"""
-                            You are an expert native English oral conversation coach. Your goal is to provide extremely natural, conversational, and practical spoken English sentences that native speakers actually use in daily life.
-                            
+                            You are an expert, native English conversation teacher. 
                             Target English word: {w} ({trans_w})
-                            Level requirement: {level_choice} (初階=Short, simple daily expression; 中階=Natural conversational sentence; 高階=Smooth, rich native phrasing)
+                            Level requirement: {level_choice} (初階=Very simple words/structure, 中階=Natural conversational sentence, 高階=Advanced vocabulary/complex structure)
                             Sentence Type requirement: {type_choice} (肯定句=Affirmative, 否定句=Negative, 疑問句=Interrogative)
-                            Scene/Context requirement: {scene_choice} (日常生活=Casual daily chat, 職場商務=Workplace communication, 旅遊社交=Travel/Socializing)
+                            Scene/Context requirement: {scene_choice} (日常生活=Daily life chat, 職場商務=Office/Workplace communication, 旅遊社交=Travel/Socializing)
                             
-                            CRITICAL INSTRUCTIONS:
-                            1. The sentence MUST be 100% natural and make logical sense based on the meaning of the target word ({w}). Do NOT force words into awkward templates.
-                            2. The English sentence must contain ONLY pure English words.
-                            3. Provide a natural Traditional Chinese translation.
+                            Please write ONE completely natural, highly practical, native-sounding English conversational sentence using the target word, strictly fulfilling ALL THREE requirements: Level ({level_choice}), Sentence Type ({type_choice}), and Scene/Context ({scene_choice}).
+                            CRITICAL RULES:
+                            1. The English sentence must contain ONLY pure English words. Do NOT mix any Chinese characters or placeholders.
+                            2. Provide a natural Traditional Chinese translation separately.
                             
                             Return ONLY valid text in this exact format:
-                            ENGLISH: [Your pure, natural English spoken sentence here]
+                            ENGLISH: [Your pure, natural English sentence here]
                             CHINESE: [Your Traditional Chinese translation here]
                             """
                             response = model.generate_content(prompt)
@@ -177,14 +181,74 @@ if not df.empty:
                     except Exception as err:
                         pass
                     
-                    # 智慧口語備用機制：根據肯定、否定、疑問提供最安全的自然口語句型
+                    # 備用機制
                     if not e_text or not c_text:
-                        if type_choice == "否定句":
-                            e_text, c_text = f"I don't need a {w} right now.", f"我現在不需要一個{trans_w}。"
-                        elif type_choice == "疑問句":
-                            e_text, c_text = f"Do you have a {w} here?", f"你們這裡有{trans_w}嗎？"
-                        else:
-                            e_text, c_text = f"This is a great {w}.", f"這是一個很棒的{trans_w}。"
+                        if scene_choice == "旅遊社交":
+                            if level_choice == "初階":
+                                if type_choice == "肯定句":
+                                    e_text, c_text = f"We can stay {w} the hotel.", f"我們可以待在飯店裡。"
+                                elif type_choice == "否定句":
+                                    e_text, c_text = f"We decided not to stay {w} the hotel.", f"我們決定不要待在飯店裡。"
+                                else:
+                                    e_text, c_text = f"Can we stay {w} the hotel?", f"我們可以待在飯店裡嗎？"
+                            elif level_choice == "中階":
+                                if type_choice == "肯定句":
+                                    e_text, c_text = f"Tourists like to take photos {w} this spot.", f"遊客喜歡在這個景點拍照。"
+                                elif type_choice == "否定句":
+                                    e_text, c_text = f"Tourists do not like to take photos {w} this spot.", f"遊客不喜歡在這個景點拍照。"
+                                else:
+                                    e_text, c_text = f"Do tourists like to take photos {w} this spot?", f"遊客喜歡在這個景點拍照嗎？"
+                            else:
+                                if type_choice == "肯定句":
+                                    e_text, c_text = f"Travelers found deep relaxation {w} the serene valley.", f"旅客在寧靜的山谷中找到了深層的放鬆。"
+                                elif type_choice == "否定句":
+                                    e_text, c_text = f"Travelers could not find any relaxation {w} the noisy street.", f"旅客在喧鬧的街道上找不到任何放鬆的感覺。"
+                                else:
+                                    e_text, c_text = f"Could travelers find relaxation {w} the serene valley?", f"旅客能在寧靜的山谷中找到放鬆嗎？"
+                        elif scene_choice == "職場商務":
+                            if level_choice == "初階":
+                                if type_choice == "肯定句":
+                                    e_text, c_text = f"Please wait {w} the reception desk.", f"請在接待櫃檯等候。"
+                                elif type_choice == "否定句":
+                                    e_text, c_text = f"Please do not wait {w} the reception desk.", f"請不要在接待櫃檯等候。"
+                                else:
+                                    e_text, c_text = f"Should we wait {w} the reception desk?", f"我們應該在接待櫃檯等候嗎？"
+                            elif level_choice == "中階":
+                                if type_choice == "肯定句":
+                                    e_text, c_text = f"The manager discussed the plan {w} the meeting.", f"經理在會議中討論了這個計畫。"
+                                elif type_choice == "否定句":
+                                    e_text, c_text = f"The manager did not discuss the plan {w} the meeting.", f"經理沒有在會議中討論這個計畫。"
+                                else:
+                                    e_text, c_text = f"Did the manager discuss the plan {w} the meeting?", f"經理有在會議中討論這個計畫嗎？"
+                            else:
+                                if type_choice == "肯定句":
+                                    e_text, c_text = f"Strategic decisions were finalized {w} the executive board meeting.", f"策略決策是在執行董事會會議上敲定的。"
+                                elif type_choice == "否定句":
+                                    e_text, c_text = f"No strategic decisions were finalized {w} the preliminary briefing.", f"在初步簡報中沒有敲定任何策略決策。"
+                                else:
+                                    e_text, c_text = f"Were strategic decisions finalized {w} the executive board meeting?", f"策略決策是在執行董事會會議上敲定的嗎？"
+                        else:  # 日常生活
+                            if level_choice == "初階":
+                                if type_choice == "肯定句":
+                                    e_text, c_text = f"I am eating lunch {w} home.", f"我正在家裡吃午餐。"
+                                elif type_choice == "否定句":
+                                    e_text, c_text = f"I am not eating lunch {w} home today.", f"我今天不在家裡吃午餐。"
+                                else:
+                                    e_text, c_text = f"Are you eating lunch {w} home?", f"你正在家裡吃午餐嗎？"
+                            elif level_choice == "中階":
+                                if type_choice == "肯定句":
+                                    e_text, c_text = f"She studies English {w} her desk every evening.", f"她每天晚上都在書桌前學英語。"
+                                elif type_choice == "否定句":
+                                    e_text, c_text = f"She does not study English {w} her desk on weekends.", f"她週末不在書桌前學英語。"
+                                else:
+                                    e_text, c_text = f"Does she study English {w} her desk every evening?", f"她每天晚上都在書桌前學英語嗎？"
+                            else:
+                                if type_choice == "肯定句":
+                                    e_text, c_text = f"Profound inspirations often strike {w} midnight.", f"深刻的靈感經常在午夜時分湧現。"
+                                elif type_choice == "否定句":
+                                    e_text, c_text = f"Inspirations rarely strike {w} busy hours.", f"靈感在忙碌的時刻很少湧現。"
+                                else:
+                                    e_text, c_text = f"Do profound inspirations strike {w} midnight?", f"深刻的靈感經常在午夜時分湧現嗎？"
                             
                     st.session_state[state_key] = {"eng": e_text, "chi": c_text}
 
@@ -194,7 +258,7 @@ if not df.empty:
                 
                 highlighted_demo = re.sub(r'\b' + re.escape(str(w)) + r'\b', f"<span class='red-word'>{w}</span>", demo_eng, flags=re.IGNORECASE)
                 
-                st.markdown(f"**💡 口語助教示範：** {highlighted_demo}", unsafe_allow_html=True)
+                st.markdown(f"**💡 助教示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
                 if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v13_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
