@@ -5,7 +5,6 @@ import os
 from gtts import gTTS
 import io
 import re
-import google.generativeai as genai
 
 st.markdown("""
     <style>
@@ -117,7 +116,7 @@ if not df.empty:
 
     if st.session_state.selected_vocab_list:
         st.divider()
-        st.subheader("✍️ 獨立單字多變造句工坊（每個單字各自調整難易度、句型與場合）")
+        st.subheader("✍️ 獨立單字多變造句工坊")
 
         for idx, w in enumerate(st.session_state.selected_vocab_list):
             trans_w = df[df['word'] == w]['trans'].values[0] if not df[df['word'] == w].empty else ""
@@ -133,93 +132,30 @@ if not df.empty:
                 with c3:
                     scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_{idx}_{w}")
                 
-                state_key = f"ai_data_v13_{w}_{level_choice}_{type_choice}_{scene_choice}"
-                
-                if state_key not in st.session_state:
-                    e_text, c_text = "", ""
-                    try:
-                        if "general" in st.secrets and "GOOGLE_API_KEY" in st.secrets["general"]:
-                            api_key = st.secrets["general"]["GOOGLE_API_KEY"]
-                        elif "GOOGLE_API_KEY" in st.secrets:
-                            api_key = st.secrets["GOOGLE_API_KEY"]
-                        else:
-                            api_key = ""
-                            
-                        if api_key:
-                            genai.configure(api_key=api_key)
-                            model = genai.GenerativeModel('gemini-1.5-flash')
-                            
-                            prompt = f"""
-                            You are an expert, native English conversation teacher. 
-                            Target English word: {w} ({trans_w})
-                            Level requirement: {level_choice} (初階=Very simple words/structure, 中階=Natural conversational sentence, 高階=Advanced vocabulary/complex structure)
-                            Sentence Type requirement: {type_choice} (肯定句=Affirmative, 否定句=Negative, 疑問句=Interrogative)
-                            Scene/Context requirement: {scene_choice} (日常生活=Daily life chat, 職場商務=Office/Workplace communication, 旅遊社交=Travel/Socializing)
-                            
-                            Please write ONE completely natural, highly practical, native-sounding English conversational sentence that correctly uses the target word '{w}' according to its grammatical role. Ensure it strictly fulfills ALL THREE requirements.
-                            CRITICAL RULES:
-                            1. The English sentence must contain ONLY pure English words. Do NOT mix any Chinese characters or placeholders.
-                            2. Provide a natural Traditional Chinese translation separately.
-                            
-                            Return ONLY valid text in this exact format:
-                            ENGLISH: [Your pure, natural English sentence here]
-                            CHINESE: [Your Traditional Chinese translation here]
-                            """
-                            response = model.generate_content(prompt)
-                            text = response.text.strip()
-                            
-                            for line in text.split('\n'):
-                                if line.startswith("ENGLISH:"):
-                                    e_text = line.replace("ENGLISH:", "").strip()
-                                elif line.startswith("CHINESE:"):
-                                    c_text = line.replace("CHINESE:", "").strip()
-                    except Exception as err:
-                        pass
-                    
-                    # 智慧型動態備用機制：如果 AI 暫時沒回應，根據單字本身的特性提供合理句子
-                    if not e_text or not c_text:
-                        w_lower = w.lower()
-                        if "born" in w_lower:
-                            if type_choice == "否定句":
-                                e_text, c_text = f"He was not born in this city.", f"他不是在這個城市出生的。"
-                            elif type_choice == "疑問句":
-                                e_text, c_text = f"Were you born here?", f"你是在這裡出生的嗎？"
-                            else:
-                                e_text, c_text = f"She was born in a small town.", f"她出生在一個小鎮。"
-                        elif "bench" in w_lower:
-                            if type_choice == "否定句":
-                                e_text, c_text = f"They did not sit on the bench.", f"他們沒有坐在長椅上。"
-                            elif type_choice == "疑問句":
-                                e_text, c_text = f"Is anyone sitting on that bench?", f"有人坐在那張長椅上嗎？"
-                            else:
-                                e_text, c_text = f"He is resting on a wooden bench.", f"他正在木長椅上休息。"
-                        else:
-                            if type_choice == "否定句":
-                                e_text, c_text = f"We are not staying {w} this place.", f"我們沒有待在這個地方。"
-                            elif type_choice == "疑問句":
-                                e_text, c_text = f"Are you {w} the office?", f"你在辦公室嗎？"
-                            else:
-                                e_text, c_text = f"I am waiting {w} the station.", f"我正在車站等候。"
-                            
-                    st.session_state[state_key] = {"eng": e_text, "chi": c_text}
-
-                current_data = st.session_state[state_key]
-                demo_eng = current_data["eng"]
-                demo_chi = current_data["chi"]
+                # 簡單固定的示範句子，清楚好懂不複雜
+                if type_choice == "否定句":
+                    demo_eng = f"We are not using {w} here."
+                    demo_chi = f"我們在這裡沒有使用{w}。"
+                elif type_choice == "疑問句":
+                    demo_eng = f"Is this {w}?"
+                    demo_chi = f"這是{w}嗎？"
+                else:
+                    demo_eng = f"This is a {w}."
+                    demo_chi = f"這是一個{w}。"
                 
                 highlighted_demo = re.sub(r'\b' + re.escape(str(w)) + r'\b', f"<span class='red-word'>{w}</span>", demo_eng, flags=re.IGNORECASE)
                 
                 st.markdown(f"**💡 助教示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v13_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_simple_{idx}_{w}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
                     st.audio(fp, autoplay=True)
 
-                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v13_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
-                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v13_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_simple_{idx}_{w}", height=90)
+                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_simple_{idx}_{w}"):
                     if w.lower() in user_practice.lower():
                         st.success(f"🎉 太棒了！[{w}] 使用正確！")
                     else:
