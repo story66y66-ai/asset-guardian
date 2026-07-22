@@ -133,7 +133,8 @@ if not df.empty:
                 with c3:
                     scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_{idx}_{w}")
                 
-                state_key = f"ai_data_v5_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                # 確保 key 完整包含 程度、句型、場合，切換時一定會重新觸發
+                state_key = f"ai_data_v6_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     e_text, c_text = "", ""
@@ -153,10 +154,10 @@ if not df.empty:
                             You are an expert, native English conversation teacher. 
                             Target English word: {w} ({trans_w})
                             Level requirement: {level_choice}
-                            Sentence Type: {type_choice}
+                            Sentence Type requirement: {type_choice} (Must strictly match Affirmative, Negative, or Interrogative)
                             Scene/Context: {scene_choice}
                             
-                            Please write ONE completely natural, highly practical, native-sounding English conversational sentence using the target word. 
+                            Please write ONE completely natural, highly practical, native-sounding English conversational sentence using the target word, strictly following the Sentence Type requirement ({type_choice}).
                             CRITICAL RULES:
                             1. The English sentence must contain ONLY pure English words. Do NOT mix any Chinese characters or placeholders into the English sentence.
                             2. Provide a natural Traditional Chinese translation separately.
@@ -176,17 +177,17 @@ if not df.empty:
                     except Exception as err:
                         pass
                     
-                    # 如果 API 沒成功拿到，提供優質且符合全英文的動態純英文備用句
+                    # 完整的動態備用句（同時對應 程度 與 句型）
                     if not e_text or not c_text:
-                        if level_choice == "初階":
-                            e_text = f"I look at the map every morning."
-                            c_text = f"我每天早上都看地圖。"
-                        elif level_choice == "中階":
-                            e_text = f"She is waiting for you at the front desk."
-                            c_text = f"她正在櫃檯等您。"
+                        if type_choice == "肯定句":
+                            e_text = f"I always look {w} here."
+                            c_text = f"我總是這裡找 {w}。"
+                        elif type_choice == "否定句":
+                            e_text = f"I don't look {w} there."
+                            c_text = f"我不在那裡找 {w}。"
                         else:
-                            e_text = f"He arrived right at the critical moment."
-                            c_text = f"他在關鍵時刻抵達了。"
+                            e_text = f"Do you look {w} here?"
+                            c_text = f"你在這裡找 {w} 嗎？"
                             
                     st.session_state[state_key] = {"eng": e_text, "chi": c_text}
 
@@ -199,14 +200,14 @@ if not df.empty:
                 st.markdown(f"**💡 助教示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v5_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v6_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
                     st.audio(fp, autoplay=True)
 
-                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v5_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
-                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v5_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v6_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
+                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v6_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     if w.lower() in user_practice.lower():
                         st.success(f"🎉 太棒了！[{w}] 使用正確！")
                     else:
