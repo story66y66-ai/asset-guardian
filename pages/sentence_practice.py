@@ -1,42 +1,31 @@
+import streamlit as st
+
+st.subheader("🎵 歌詞不同速度發音播放器")
+
+# 用 HTML/JS 透過 streamlit 元件呈現
+html_code = """
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>歌詞語音播放器</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 40px auto;
-            padding: 20px;
-            background-color: #f7f9fc;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        h2 {
-            color: #333;
-            text-align: center;
-        }
         textarea {
             width: 100%;
-            height: 150px;
-            padding: 12px;
+            height: 120px;
+            padding: 10px;
             border: 1px solid #ccc;
             border-radius: 6px;
             font-size: 16px;
-            resize: vertical;
             box-sizing: border-box;
         }
         .controls {
-            margin-top: 15px;
+            margin-top: 10px;
             display: flex;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
-            justify-content: space-between;
         }
         select, button {
-            padding: 10px 15px;
+            padding: 8px 12px;
             font-size: 16px;
             border-radius: 6px;
             border: 1px solid #ccc;
@@ -47,40 +36,24 @@
             border: none;
             cursor: pointer;
             font-weight: bold;
-            flex-grow: 1;
-        }
-        button:hover {
-            background-color: #45a049;
         }
         button.stop {
             background-color: #f44336;
-            flex-grow: 0;
-        }
-        button.stop:hover {
-            background-color: #d32f2f;
         }
     </style>
 </head>
 <body>
-
-    <h2>🎵 歌詞不同速度發音播放器</h2>
-    
-    <label for="lyricsInput">請在下方貼上你的歌詞：</label>
-    <textarea id="lyricsInput" placeholder="在這裡貼上歌詞..."></textarea>
-
+    <textarea id="lyricsInput" placeholder="在這裡貼上你的歌詞..."></textarea>
     <div class="controls">
-        <div>
-            <label for="speedSelect">速度：</label>
-            <select id="speedSelect">
-                <option value="0.5">0.5x (慢速)</option>
-                <option value="0.75">0.75x (稍慢)</option>
-                <option value="1.0" selected>1.0x (正常)</option>
-                <option value="1.25">1.25x (稍快)</option>
-                <option value="1.5">1.5x (快速)</option>
-            </select>
-        </div>
-        
-        <button onclick="playLyrics()">播放發音</button>
+        <label for="speedSelect">速度：</label>
+        <select id="speedSelect">
+            <option value="0.5">0.5x</option>
+            <option value="0.75">0.75x</option>
+            <option value="1.0" selected>1.0x</option>
+            <option value="1.25">1.25x</option>
+            <option value="1.5">1.5x</option>
+        </select>
+        <button onclick="playLyrics()">播放</button>
         <button class="stop" onclick="stopLyrics()">停止</button>
     </div>
 
@@ -88,38 +61,28 @@
         function playLyrics() {
             const text = document.getElementById('lyricsInput').value;
             if (!text.trim()) {
-                alert('請先輸入或貼上歌詞！');
+                alert('請先輸入歌詞！');
                 return;
             }
-
-            // 檢查瀏覽器是否支援語音合成
             if (!('speechSynthesis' in window)) {
-                alert('很抱歉，你的瀏覽器不支援語音功能。');
+                alert('瀏覽器不支援語音功能');
                 return;
             }
-
-            // 如果正在播放，先停止
             window.speechSynthesis.cancel();
-
             const utterance = new SpeechSynthesisUtterance(text);
-            
-            // 設定語言為中文
             utterance.lang = 'zh-TW';
-
-            // 取得選取的速度
-            const speed = document.getElementById('speedSelect').value;
-            utterance.rate = parseFloat(speed);
-
-            // 開始播放
+            utterance.rate = parseFloat(document.getElementById('speedSelect').value);
             window.speechSynthesis.speak(utterance);
         }
-
         function stopLyrics() {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
             }
         }
     </script>
-
 </body>
 </html>
+"""
+
+# 在 Streamlit 中安全嵌入 HTML
+st.components.v1.html(html_code, height=250)
