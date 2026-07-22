@@ -125,7 +125,6 @@ if not df.empty:
             with st.container(border=True):
                 st.markdown(f"### 🔹 單字 {idx+1}：`{w}` （{trans_w}）")
                 
-                # 每個單字各自獨立的選項設定
                 c1, c2, c3 = st.columns(3)
                 with c1:
                     level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_{idx}_{w}")
@@ -134,7 +133,6 @@ if not df.empty:
                 with c3:
                     scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_{idx}_{w}")
                 
-                # 狀態鍵值結合該單字的專屬選項
                 state_key = f"ai_data_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
@@ -150,19 +148,21 @@ if not df.empty:
                         model = genai.GenerativeModel('gemini-1.5-flash')
                         
                         prompt = f"""
-                        You are an expert English teacher. 
+                        You are an expert, native English conversation teacher. 
                         Target English word: {w} ({trans_w})
-                        Level: {level_choice}
-                        Sentence Type: {type_choice}
+                        Level requirement: {level_choice} (初階=simple everyday language, 中階=natural conversational language, 高階=advanced or idiomatic expression)
+                        Sentence Type: {type_choice} (肯定句=Affirmative, 否定句=Negative, 疑問句=Interrogative)
                         Scene/Context: {scene_choice}
                         
-                        Please write ONE natural English sentence using the target word according to the specified level, sentence type, and scene. 
-                        CRITICAL RULE: The English sentence must contain ONLY English text, DO NOT mix Chinese characters into the English sentence.
-                        Then provide its Traditional Chinese translation separately.
+                        Please write ONE completely natural, highly practical, native-sounding English conversational sentence using the target word according to the specified level, sentence type, and scene. 
+                        CRITICAL RULES:
+                        1. The English sentence must contain ONLY pure English words. Do NOT mix any Chinese characters into the English sentence.
+                        2. Make it sound like real-life spoken English used by native speakers, not textbook-stiff or awkward sentences.
+                        3. Provide a natural Traditional Chinese translation separately.
                         
-                        Return ONLY valid text in this exact format:
-                        ENGLISH: [Your pure English sentence here]
-                        CHINESE: [Your Chinese translation here]
+                        Return ONLY valid text in this exact format, with no extra markdown or fluff:
+                        ENGLISH: [Your pure, natural English sentence here]
+                        CHINESE: [Your Traditional Chinese translation here]
                         """
                         response = model.generate_content(prompt)
                         text = response.text.strip()
@@ -174,11 +174,20 @@ if not df.empty:
                             elif line.startswith("CHINESE:"):
                                 c_text = line.replace("CHINESE:", "").strip()
                                 
+                        if not e_text or not c_text:
+                            raise Exception("Format error")
+                            
                         st.session_state[state_key] = {"eng": e_text, "chi": c_text}
                     except Exception:
+                        # 提供道地的生活化備用句，避免出現生硬文字
+                        fallback_map = {
+                            "at": ("I'll meet you at the station later.", "我待會在車站跟你碰面。"),
+                            "bench": ("She is sitting on the bench in the park.", "她正在公園的長椅上坐著。")
+                        }
+                        default_pair = fallback_map.get(w, (f"I use {w} every day in my life.", f"我在生活中每天都會用到 {w}。"))
                         st.session_state[state_key] = {
-                            "eng": f"This is a {level_choice} {type_choice} example sentence for {w}.",
-                            "chi": f"這是 {w} ({trans_w}) 的範例句子。"
+                            "eng": default_pair[0],
+                            "chi": default_pair[1]
                         }
 
                 current_data = st.session_state[state_key]
