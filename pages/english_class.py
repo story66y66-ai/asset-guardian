@@ -61,52 +61,82 @@ def load_and_merge_data():
 df = load_and_merge_data()
 
 # 初始化 Session State
+if 'selected_word' not in st.session_state:
+    st.session_state.selected_word = df['word'].iloc[0] if not df.empty else ""
+
+if 'selected_vocab_list' not in st.session_state:
+    st.session_state.selected_vocab_list = []
+
 if 'challenge_sentence' not in st.session_state:
     st.session_state.challenge_sentence = {"eng": "", "chi": "", "words": []}
 
-st.subheader("📋 單字總表（點擊單字列即可聽發音，並可直接勾選 3 個單字進行造句）：")
+st.subheader("📋 單字總表（點擊表格中的單字列即可直接聽發音）：")
 
 if not df.empty:
-    display_df = df[['word', 'trans', 'kk', 'level']].copy()
+    # 1. 原本純淨、好點擊發音的表格（不夾雜 checkbox，操作完全不卡頓）
+    display_df = df[['word', 'trans', 'kk', 'level']]
     
-    # 保持之前的勾選狀態
-    checked_words = st.session_state.get('checked_words_set', set())
-    display_df.insert(0, '選擇', display_df['word'].isin(checked_words))
-
-    # 使用 data_editor 讓同一個表格既能點擊、又能直接勾選
-    edited_df = st.data_editor(
+    event = st.dataframe(
         display_df,
         use_container_width=True,
         hide_index=True,
-        disabled=['word', 'trans', 'kk', 'level'],
-        key="unified_vocab_editor"
+        on_select="rerun",
+        selection_mode="single-row",
+        key="vocab_click_table"
     )
 
-    # 偵測是否有單字列被點擊（透過 Session State 或事件捕捉，在 Streamlit 中我們可透過回傳或點擊紀錄來發音）
-    # 取得被勾選的清單
-    selected_rows = edited_df[edited_df['選擇'] == True]
-    current_checked_words = selected_rows['word'].tolist()
-    st.session_state['checked_words_set'] = set(current_checked_words)
-
-    # 額外提供一個快速點擊發音區或直接點擊提示
-    st.markdown("---")
-    st.markdown(f"**📌 目前已勾選 {len(current_checked_words)} 個單字**（造句實戰建議剛好勾選 **3個** 單字）：")
-    if current_checked_words:
-        st.write("、".join([f"**{w}**" for w in current_checked_words]))
-
-    # 快速單字發音輔助選單（保留點了馬上聽發音的極速體驗）
-    word_list = df['word'].tolist()
-    quick_sound_word = st.selectbox("🔊 快速發音點選區（從這裡選單字會立刻念出聲音）：", word_list, key="quick_sound_select")
-    if quick_sound_word:
-        tts = gTTS(text=str(quick_sound_word), lang='en')
+    # 如果點擊了表格中的某一行，同步更新選取單字並自動發音
+    if len(event.selection.rows) > 0:
+        selected_index = event.selection.rows[0]
+        st.session_state.selected_word = df.iloc[selected_index]['word']
+        
+        # 立即播放發音
+        tts = gTTS(text=str(st.session_state.selected_word), lang='en')
         fp = io.BytesIO()
         tts.write_to_fp(fp)
         st.audio(fp, autoplay=True)
 
-    # 當剛好勾選 3 個單字時，顯示 AI 造句按鈕
-    if len(current_checked_words) == 3:
-        if st.button("🚀 根據這 3 個勾選單字生成 AI 示範句", key="generate_btn"):
-            w1, w2, w3 = current_checked_words[0], current_checked_words[1], current_checked_words[2]
+    st.divider()
+
+    # 2. 下拉選單與目前選取區（會跟著上方表格點擊同步連動！）
+    word_list = df['word'].tolist()
+    if st.session_state.selected_word not in word_list:
+        st.session_state.selected_word = word_list[0]
+
+    st.subheader("🎯 造句實戰選字區（會與上方點擊同步）：")
+    selected_word = st.selectbox(
+        "目前選取的單字：",
+        word_list,
+        index=word_list.index(st.session_state.selected_word),
+        key="synced_word_selectbox"
+    )
+    st.session_state.selected_word = selected_word
+
+    # 加入到造句清單的按鈕
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        if st.button("➕ 把此字加入造句清單", key="add_to_list"):
+            if selected_word not in st.session_state.selected_vocab_list:
+                if len(st.session_state.selected_vocab_list) < 3:
+                    st.session_state.selected_vocab_list.append(selected_word)
+                else:
+                    st.warning("最多只能選 3 個單字喔！您可以先點擊「清除清單」重新選擇。")
+    with col2:
+        if st.button("🗑️ 清除目前的造句清單", key="clear_list"):
+            st.session_state.selected_vocab_list = []
+            st.success("已清除清單！")
+
+    # 顯示目前已加入的單字清單（目標 3 個）
+    st.markdown(f"**📌 目前已選擇的造句單字（{len(st.session_state.selected_vocab_list)}/3）：**")
+    if st.session_state.selected_vocab_list:
+        st.write("、".join([f"**{w}**" for w in st.session_state.selected_vocab_list]))
+    else:
+        st.info("目前還沒有加入單字，請從上方點選喜歡的字後，點擊「把此字加入造句清單」。")
+
+    # 當剛好收集到 3 個單字時，顯示 AI 生成按鈕
+    if len(st.session_state.selected_vocab_list) == 3:
+        if st.button("✨ 根據這 3 個單字生成 AI 示範句", key="generate_ai_btn"):
+            w1, w2, w3 = st.session_state.selected_vocab_list[0], st.session_state.selected_vocab_list[1], st.session_state.selected_vocab_list[2]
             
             t1 = df[df['word'] == w1]['trans'].values[0] if not df[df['word'] == w1].empty else ""
             t2 = df[df['word'] == w2]['trans'].values[0] if not df[df['word'] == w2].empty else ""
@@ -157,11 +187,11 @@ if not df.empty:
             st.session_state.challenge_sentence = {
                 "eng": eng_sent,
                 "chi": chi_sent,
-                "words": current_checked_words,
+                "words": st.session_state.selected_vocab_list.copy(),
                 "trans": [t1, t2, t3]
             }
 
-    # 如果已經有生成的造句，顯示在下方
+    # 如果已經生成句子，顯示在下方供造句練習
     if st.session_state.challenge_sentence["eng"]:
         st.divider()
         st.subheader("💡 助教示範句：")
@@ -178,21 +208,21 @@ if not df.empty:
         st.markdown(f"### {colored_sent}", unsafe_allow_html=True)
         st.markdown(f"*(中文：{c_chi})*", unsafe_allow_html=True)
         
-        if st.button("🔊 播放示範句語音", key="play_demo"):
+        if st.button("🔊 播放示範句語音", key="play_demo_audio"):
             tts = gTTS(text=c_eng, lang='en')
             fp = io.BytesIO()
             tts.write_to_fp(fp)
             st.audio(fp, autoplay=True)
 
         st.subheader("📝 請輸入您的造句練習：")
-        user_input = st.text_area("在這裡輸入...", height=130, key="user_sentence_input")
+        user_input = st.text_area("在這裡輸入...", height=130, key="user_sentence_input_box")
 
-        if st.button("✅ 檢查我的句子", key="check_sentence"):
+        if st.button("✅ 檢查我的句子", key="check_user_sentence"):
             is_correct = all(str(w).lower() in user_input.lower() for w in c_words)
             if is_correct:
-                st.success("## 太棒了！完全正確！包含了所有勾選的單字！")
+                st.success("## 太棒了！完全正確！包含了所有選取的單字！")
                 st.balloons()
             else:
-                st.error("## ❌ 缺少部分勾選的關鍵字，請再檢查看看喔！")
+                st.error("## ❌ 缺少部分選取的關鍵字，請再檢查看看喔！")
 else:
     st.warning("目前沒有找到任何單字資料，請確認是否有上傳 level 檔案！")
