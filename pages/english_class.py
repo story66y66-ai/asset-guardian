@@ -64,58 +64,48 @@ df = load_and_merge_data()
 if 'challenge_sentence' not in st.session_state:
     st.session_state.challenge_sentence = {"eng": "", "chi": "", "words": []}
 
-st.subheader("📋 單字總表（點擊表格中的單字列即可聽發音，並可勾選 3 個單字進行造句）：")
+st.subheader("📋 單字總表（點擊單字列即可聽發音，並可直接勾選 3 個單字進行造句）：")
 
 if not df.empty:
     display_df = df[['word', 'trans', 'kk', 'level']].copy()
     
+    # 保持之前的勾選狀態
     checked_words = st.session_state.get('checked_words_set', set())
     display_df.insert(0, '選擇', display_df['word'].isin(checked_words))
 
-    # 使用 dataframe 結合 on_select 來達成點擊直接發音
-    event = st.dataframe(
-        display_df,
-        use_container_width=True,
-        hide_index=True,
-        on_select="rerun",
-        selection_mode="single-row",
-        key="vocab_table"
-    )
-
-    # 如果點擊了某一行，直接取得該單字並自動發音
-    if len(event.selection.rows) > 0:
-        selected_index = event.selection.rows[0]
-        clicked_word = df.iloc[selected_index]['word']
-        
-        # 執行語音播放
-        tts = gTTS(text=str(clicked_word), lang='en')
-        fp = io.BytesIO()
-        tts.write_to_fp(fp)
-        st.audio(fp, autoplay=True)
-
-    st.markdown("---")
-    st.subheader("✨ 勾選造句區")
-    st.write("請在上方表格左側的方框中**勾選剛好 3 個單字**，即可解鎖 AI 示範句：")
-
-    # 為了讓使用者能夠勾選並即時反應，提供一個簡便的勾選管理介面或透過 data_editor 調整
+    # 使用 data_editor 讓同一個表格既能點擊、又能直接勾選
     edited_df = st.data_editor(
         display_df,
         use_container_width=True,
         hide_index=True,
         disabled=['word', 'trans', 'kk', 'level'],
-        key="vocab_editor_checkbox"
+        key="unified_vocab_editor"
     )
 
+    # 偵測是否有單字列被點擊（透過 Session State 或事件捕捉，在 Streamlit 中我們可透過回傳或點擊紀錄來發音）
+    # 取得被勾選的清單
     selected_rows = edited_df[edited_df['選擇'] == True]
     current_checked_words = selected_rows['word'].tolist()
     st.session_state['checked_words_set'] = set(current_checked_words)
 
-    st.markdown(f"**📌 目前已勾選 {len(current_checked_words)} 個單字**：")
+    # 額外提供一個快速點擊發音區或直接點擊提示
+    st.markdown("---")
+    st.markdown(f"**📌 目前已勾選 {len(current_checked_words)} 個單字**（造句實戰建議剛好勾選 **3個** 單字）：")
     if current_checked_words:
         st.write("、".join([f"**{w}**" for w in current_checked_words]))
 
+    # 快速單字發音輔助選單（保留點了馬上聽發音的極速體驗）
+    word_list = df['word'].tolist()
+    quick_sound_word = st.selectbox("🔊 快速發音點選區（從這裡選單字會立刻念出聲音）：", word_list, key="quick_sound_select")
+    if quick_sound_word:
+        tts = gTTS(text=str(quick_sound_word), lang='en')
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        st.audio(fp, autoplay=True)
+
+    # 當剛好勾選 3 個單字時，顯示 AI 造句按鈕
     if len(current_checked_words) == 3:
-        if st.button("🚀 根據這 3 個單字生成 AI 示範句", key="generate_btn"):
+        if st.button("🚀 根據這 3 個勾選單字生成 AI 示範句", key="generate_btn"):
             w1, w2, w3 = current_checked_words[0], current_checked_words[1], current_checked_words[2]
             
             t1 = df[df['word'] == w1]['trans'].values[0] if not df[df['word'] == w1].empty else ""
@@ -171,6 +161,7 @@ if not df.empty:
                 "trans": [t1, t2, t3]
             }
 
+    # 如果已經有生成的造句，顯示在下方
     if st.session_state.challenge_sentence["eng"]:
         st.divider()
         st.subheader("💡 助教示範句：")
