@@ -133,7 +133,8 @@ if not df.empty:
                 with c3:
                     scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_{idx}_{w}")
                 
-                state_key = f"ai_data_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                # 使用全新的 v3 鍵值，強制重新跟 AI 要道地口語句子
+                state_key = f"ai_data_v3_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     try:
@@ -157,10 +158,10 @@ if not df.empty:
                         Please write ONE completely natural, highly practical, native-sounding English conversational sentence using the target word according to the specified level, sentence type, and scene. 
                         CRITICAL RULES:
                         1. The English sentence must contain ONLY pure English words. Do NOT mix any Chinese characters into the English sentence.
-                        2. Make it sound like real-life spoken English used by native speakers, not textbook-stiff or awkward sentences.
+                        2. Make it sound like real-life spoken English used by native speakers.
                         3. Provide a natural Traditional Chinese translation separately.
                         
-                        Return ONLY valid text in this exact format, with no extra markdown or fluff:
+                        Return ONLY valid text in this exact format:
                         ENGLISH: [Your pure, natural English sentence here]
                         CHINESE: [Your Traditional Chinese translation here]
                         """
@@ -179,7 +180,6 @@ if not df.empty:
                             
                         st.session_state[state_key] = {"eng": e_text, "chi": c_text}
                     except Exception:
-                        # 提供道地的生活化備用句，避免出現生硬文字
                         fallback_map = {
                             "at": ("I'll meet you at the station later.", "我待會在車站跟你碰面。"),
                             "bench": ("She is sitting on the bench in the park.", "她正在公園的長椅上坐著。")
@@ -199,14 +199,14 @@ if not df.empty:
                 st.markdown(f"**💡 助教示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v3_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
                     st.audio(fp, autoplay=True)
 
-                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
-                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v3_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
+                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v3_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     if w.lower() in user_practice.lower():
                         st.success(f"🎉 太棒了！[{w}] 使用正確！")
                     else:
