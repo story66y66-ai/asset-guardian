@@ -7,7 +7,6 @@ import io
 import re
 import google.generativeai as genai
 
-# 強制調整整體字體與側邊欄位字體
 st.markdown("""
     <style>
     [data-testid="stSidebar"] { font-size: 28px !important; }
@@ -116,19 +115,17 @@ if not df.empty:
     else:
         st.info("目前還沒有加入單字，請從上方點選喜歡的字後加入。")
 
-    # 當清單中有單字時，分別針對每一個單字獨立進行多變造句實戰
     if st.session_state.selected_vocab_list:
         st.divider()
         st.subheader("✍️ 獨立單字多變造句工坊")
         
-        # 讓澄玄選擇程度與句型變化條件
         col_opt1, col_opt2, col_opt3 = st.columns(3)
         with col_opt1:
             level_choice = st.selectbox("📚 選擇程度：", ["初階 (Beginner)", "中階 (Intermediate)", "高階 (Advanced)"], key="lvl_choice")
         with col_opt2:
             type_choice = st.selectbox("🔄 選擇句型形態：", ["肯定句 (Affirmative)", "否定句 (Negative)", "疑問句 (Interrogative)"], key="typ_choice")
         with col_opt3:
-            scene_choice = st.selectbox("场景/場合：", ["日常生活 (Daily Life)", "職場商務 (Business)", "旅遊社交 (Travel & Social)"], key="scn_choice")
+            scene_choice = st.selectbox("場景/場合：", ["日常生活 (Daily Life)", "職場商務 (Business)", "旅遊社交 (Travel & Social)"], key="scn_choice")
 
         for idx, w in enumerate(st.session_state.selected_vocab_list):
             trans_w = df[df['word'] == w]['trans'].values[0] if not df[df['word'] == w].empty else ""
@@ -136,16 +133,10 @@ if not df.empty:
             with st.container(border=True):
                 st.markdown(f"### 🔹 單字 {idx+1}：`{w}` （{trans_w}）")
                 
-                # 產生 AI 範例按鈕與邏輯
-                gen_btn_key = f"gen_{idx}_{w}"
-                ai_sent_key = f"ai_sent_{idx}_{w}"
-                ai_chi_key = f"ai_chi_{idx}_{w}"
+                # 將選項條件加入 key 判定，只要切換選項，就會自動重新抓取對應的新範例
+                state_key = f"ai_data_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
-                if ai_sent_key not in st.session_state:
-                    st.session_state[ai_sent_key] = ""
-                    st.session_state[ai_chi_key] = ""
-
-                if st.button(f"✨ 產出 [{w}] 的專屬示範句", key=gen_btn_key):
+                if state_key not in st.session_state:
                     try:
                         if "general" in st.secrets and "GOOGLE_API_KEY" in st.secrets["general"]:
                             api_key = st.secrets["general"]["GOOGLE_API_KEY"]
@@ -181,33 +172,33 @@ if not df.empty:
                             elif line.startswith("CHINESE:"):
                                 c_text = line.replace("CHINESE:", "").strip()
                                 
-                        st.session_state[ai_sent_key] = e_text
-                        st.session_state[ai_chi_key] = c_text
+                        st.session_state[state_key] = {"eng": e_text, "chi": c_text}
                     except Exception:
-                        st.session_state[ai_sent_key] = f"This is an example sentence for {w}."
-                        st.session_state[ai_chi_key] = f"這是 {w} ({trans_w}) 的範例句子。"
+                        st.session_state[state_key] = {
+                            "eng": f"This is a {level_choice} {type_choice} example for {w}.",
+                            "chi": f"這是 {w} ({trans_w}) 的範例句子。"
+                        }
 
-                # 顯示範例與練習區
-                if st.session_state[ai_sent_key]:
-                    demo_eng = st.session_state[ai_sent_key]
-                    demo_chi = st.session_state[ai_chi_key]
-                    
-                    highlighted_demo = re.sub(r'\b' + re.escape(str(w)) + r'\b', f"<span class='red-word'>{w}</span>", demo_eng, flags=re.IGNORECASE)
-                    
-                    st.markdown(f"**💡 助教示範：** {highlighted_demo}", unsafe_allow_html=True)
-                    st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
-                    
-                    if st.button(f"🔊 聽 [{w}] 示範句發音", key=f"audio_{idx}_{w}"):
-                        tts = gTTS(text=demo_eng, lang='en')
-                        fp = io.BytesIO()
-                        tts.write_to_fp(fp)
-                        st.audio(fp, autoplay=True)
+                current_data = st.session_state[state_key]
+                demo_eng = current_data["eng"]
+                demo_chi = current_data["chi"]
+                
+                highlighted_demo = re.sub(r'\b' + re.escape(str(w)) + r'\b', f"<span class='red-word'>{w}</span>", demo_eng, flags=re.IGNORECASE)
+                
+                st.markdown(f"**💡 助教示範（{level_choice} / {type_choice}）：** {highlighted_demo}", unsafe_allow_html=True)
+                st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
+                
+                if st.button(f"🔊 聽 [{w}] 示範句發音", key=f"audio_{idx}_{w}_{level_choice}_{type_choice}"):
+                    tts = gTTS(text=demo_eng, lang='en')
+                    fp = io.BytesIO()
+                    tts.write_to_fp(fp)
+                    st.audio(fp, autoplay=True)
 
-                    user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_{idx}_{w}", height=90)
-                    if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_{idx}_{w}"):
-                        if w.lower() in user_practice.lower():
-                            st.success(f"🎉 太棒了！[{w}] 使用正確！")
-                        else:
-                            st.error(f"❌ 句子裡好像漏掉了單字 [{w}] 喔，再試一次!")
+                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_{idx}_{w}_{level_choice}_{type_choice}", height=90)
+                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_{idx}_{w}_{level_choice}_{type_choice}"):
+                    if w.lower() in user_practice.lower():
+                        st.success(f"🎉 太棒了！[{w}] 使用正確！")
+                    else:
+                        st.error(f"❌ 句子裡好像漏掉了單字 [{w}] 喔，再試一次!")
 else:
     st.warning("目前沒有找到任何單字資料，請確認是否有上傳 level 檔案！")
