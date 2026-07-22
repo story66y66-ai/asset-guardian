@@ -1,8 +1,17 @@
 import streamlit as st
 
+st.title("句子與單字練習 / 歌詞播放器")
+
+# --- 1. 原本的單字與發音功能區塊 ---
+st.subheader("📚 單字與句子練習")
+# 如果原本這裡有原本的程式碼邏輯，你可以保留或在這裡擴充
+st.write("（這裡可以繼續放你原本的單字與發音練習功能）")
+
+st.markdown("---")
+
+# --- 2. 新增的歌詞不同速度發音播放器區塊 ---
 st.subheader("🎵 歌詞不同速度發音播放器")
 
-# 用 HTML/JS 透過 streamlit 元件呈現
 html_code = """
 <!DOCTYPE html>
 <html lang="zh-TW">
@@ -84,5 +93,4 @@ html_code = """
 </html>
 """
 
-# 在 Streamlit 中安全嵌入 HTML
 st.components.v1.html(html_code, height=250)
