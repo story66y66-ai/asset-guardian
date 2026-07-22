@@ -17,7 +17,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("📖 澄玄大學 - 語言學院 & 單字多變造句工坊")
+st.title("📖 澄玄大學 - 語言學院 & 單字獨立多變造句工坊")
 
 @st.cache_data
 def load_and_merge_data():
@@ -117,15 +117,7 @@ if not df.empty:
 
     if st.session_state.selected_vocab_list:
         st.divider()
-        st.subheader("✍️ 獨立單字多變造句工坊")
-        
-        col_opt1, col_opt2, col_opt3 = st.columns(3)
-        with col_opt1:
-            level_choice = st.selectbox("📚 選擇程度：", ["初階 (Beginner)", "中階 (Intermediate)", "高階 (Advanced)"], key="lvl_choice")
-        with col_opt2:
-            type_choice = st.selectbox("🔄 選擇句型形態：", ["肯定句 (Affirmative)", "否定句 (Negative)", "疑問句 (Interrogative)"], key="typ_choice")
-        with col_opt3:
-            scene_choice = st.selectbox("場景/場合：", ["日常生活 (Daily Life)", "職場商務 (Business)", "旅遊社交 (Travel & Social)"], key="scn_choice")
+        st.subheader("✍️ 獨立單字多變造句工坊（每個單字各自調整難易度與句型）")
 
         for idx, w in enumerate(st.session_state.selected_vocab_list):
             trans_w = df[df['word'] == w]['trans'].values[0] if not df[df['word'] == w].empty else ""
@@ -133,7 +125,16 @@ if not df.empty:
             with st.container(border=True):
                 st.markdown(f"### 🔹 單字 {idx+1}：`{w}` （{trans_w}）")
                 
-                # 將選項條件加入 key 判定，只要切換選項，就會自動重新抓取對應的新範例
+                # 每個單字各自獨立的選項設定
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_{idx}_{w}")
+                with c2:
+                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_{idx}_{w}")
+                with c3:
+                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_{idx}_{w}")
+                
+                # 狀態鍵值結合該單字的專屬選項
                 state_key = f"ai_data_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
@@ -155,12 +156,13 @@ if not df.empty:
                         Sentence Type: {type_choice}
                         Scene/Context: {scene_choice}
                         
-                        Please write ONE natural English sentence using the target word according to the specified level, sentence type, and scene.
-                        Then provide its Traditional Chinese translation. In the Chinese translation, format the target word as: 中文翻譯({w}).
+                        Please write ONE natural English sentence using the target word according to the specified level, sentence type, and scene. 
+                        CRITICAL RULE: The English sentence must contain ONLY English text, DO NOT mix Chinese characters into the English sentence.
+                        Then provide its Traditional Chinese translation separately.
                         
                         Return ONLY valid text in this exact format:
-                        ENGLISH: [Your English sentence]
-                        CHINESE: [Your Chinese translation]
+                        ENGLISH: [Your pure English sentence here]
+                        CHINESE: [Your Chinese translation here]
                         """
                         response = model.generate_content(prompt)
                         text = response.text.strip()
@@ -175,7 +177,7 @@ if not df.empty:
                         st.session_state[state_key] = {"eng": e_text, "chi": c_text}
                     except Exception:
                         st.session_state[state_key] = {
-                            "eng": f"This is a {level_choice} {type_choice} example for {w}.",
+                            "eng": f"This is a {level_choice} {type_choice} example sentence for {w}.",
                             "chi": f"這是 {w} ({trans_w}) 的範例句子。"
                         }
 
@@ -185,17 +187,17 @@ if not df.empty:
                 
                 highlighted_demo = re.sub(r'\b' + re.escape(str(w)) + r'\b', f"<span class='red-word'>{w}</span>", demo_eng, flags=re.IGNORECASE)
                 
-                st.markdown(f"**💡 助教示範（{level_choice} / {type_choice}）：** {highlighted_demo}", unsafe_allow_html=True)
+                st.markdown(f"**💡 助教示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句發音", key=f"audio_{idx}_{w}_{level_choice}_{type_choice}"):
+                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
                     st.audio(fp, autoplay=True)
 
-                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_{idx}_{w}_{level_choice}_{type_choice}", height=90)
-                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_{idx}_{w}_{level_choice}_{type_choice}"):
+                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
+                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     if w.lower() in user_practice.lower():
                         st.success(f"🎉 太棒了！[{w}] 使用正確！")
                     else:
