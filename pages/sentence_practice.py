@@ -1,235 +1,164 @@
 import streamlit as st
 import pandas as pd
+import glob
+import os
 from gtts import gTTS
 import io
-import random
-import google.generativeai as genai
 
-# 強制調整整體字體大小與頁面寬度延展
 st.markdown("""
     <style>
-    .block-container { max-width: 95% !important; padding-top: 2rem !important; }
-    .stTextArea textarea { font-size: 32px !important; color: #000000 !important; font-weight: bold !important; }
+    [data-testid="stSidebar"] { font-size: 28px !important; }
+    [data-testid="stSidebar"] div, [data-testid="stSidebar"] a { font-size: 28px !important; }
+    .stTextArea textarea { font-size: 28px !important; color: #000000 !important; font-weight: bold !important; }
     div.stButton > button { font-size: 22px !important; padding: 10px 20px !important; }
-    h1, h2, h3, h4 { font-weight: bold !important; }
-    p { font-size: 28px !important; }
-    .red-word { color: #ff2b2b !important; font-weight: bold !important; }
-    
-    /* 放大紅框選單內的文字與下拉清單文字 */
-    div[data-baseweb="select"] div, div[data-baseweb="select"] span {
-        font-size: 28px !important;
-        font-weight: bold !important;
-    }
-    div[role="listbox"] div {
-        font-size: 26px !important;
-        font-weight: bold !important;
-    }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("✍️ 澄玄大學 - 造句實戰室")
+st.title("📖 澄玄大學 - 語言學院 & YouTube 影音學習工坊")
 
 @st.cache_data
-def load_data():
-    return pd.read_csv("words.csv")
-
-df = load_data()
-
-# 🎯 選擇單字等級 (Level)
-selected_level = st.selectbox(
-    "📊 請選擇單字等級 (Level)：",
-    ["全部等級 (隨機)", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6"]
-)
-
-# 依選擇過濾資料庫（相容大小寫 level 欄位）
-if selected_level == "全部等級 (隨機)":
-    filtered_df = df
-else:
-    target_lvl = int(selected_level.split(" ")[1])
-    level_col = 'level' if 'level' in df.columns else 'Level'
-    filtered_df = df[df[level_col] == target_lvl]
-
-# 防呆：如果該等級選不到 3 個字，就退回使用全部資料庫
-if len(filtered_df) < 3:
-    filtered_df = df
-
-# 透過真正的 Google Gemini AI 針對抽到的 3 個單字即時量身打造通順句子
-def generate_new_challenge(pool_df):
-    sample_rows = pool_df.sample(n=min(3, len(pool_df)))
-    words_list = sample_rows['word'].tolist()
-    trans_list = sample_rows['trans'].tolist()
-    
-    w1, w2, w3 = words_list[0], words_list[1], words_list[2]
-    t1, t2, t3 = trans_list[0], trans_list[1], trans_list[2]
-    
-    eng_sent, chi_sent = "", ""
-    
-    try:
-        # 更安全與相容的 Streamlit Secrets 讀取方式（支援 [general] 與直接根目錄）
-        if "general" in st.secrets and "GOOGLE_API_KEY" in st.secrets["general"]:
-            api_key = st.secrets["general"]["GOOGLE_API_KEY"]
-        elif "GOOGLE_API_KEY" in st.secrets:
-            api_key = st.secrets["GOOGLE_API_KEY"]
-        else:
-            api_key = ""
-            
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        prompt = f"""
-        You are an expert English teacher. 
-        I have 3 completely random English words with their Chinese translations:
-        1. {w1} ({t1})
-        2. {w2} ({t2})
-        3. {w3} ({t3})
-        
-        Please write ONE natural, logical, and grammatically correct English sentence that incorporates all 3 words together in a meaningful context.
-        Then, provide its natural Traditional Chinese translation. 
-        In the Chinese translation, format each target word strictly as: 中文翻譯(English_word).
-        
-        Return ONLY valid text in this exact format, with no extra markdown or conversational filler:
-        ENGLISH: [Your English sentence here]
-        CHINESE: [Your Chinese translation here]
-        """
-        
-        response = model.generate_content(prompt)
-        text = response.text.strip()
-        
-        lines = text.split('\n')
-        for line in lines:
-            if line.startswith("ENGLISH:"):
-                eng_sent = line.replace("ENGLISH:", "").strip()
-            elif line.startswith("CHINESE:"):
-                chi_sent = line.replace("CHINESE:", "").strip()
+def load_and_merge_data():
+    all_files = glob.glob("words_level*.csv")
+    df_list = []
+    if all_files:
+        for filename in sorted(all_files):
+            try:
+                temp_df = pd.read_csv(filename)
+                df_list.append(temp_df)
+            except Exception:
+                pass
                 
-        if not eng_sent or not chi_sent:
-            raise Exception("AI output format invalid")
+    if df_list:
+        combined_df = pd.concat(df_list, ignore_index=True)
+    else:
+        try:
+            combined_df = pd.read_csv("words.csv")
+        except Exception:
+            combined_df = pd.DataFrame(columns=["word", "trans", "kk", "level"])
+
+    if "word" in combined_df.columns:
+        combined_df = combined_df.drop_duplicates(subset=["word"])
+    
+    if "level" in combined_df.columns:
+        combined_df["level"] = pd.to_numeric(combined_df["level"], errors="coerce")
+        combined_df = combined_df.sort_values(by="level", ascending=True)
+        
+    combined_df = combined_df.reset_index(drop=True)
+    return combined_df
+
+df = load_and_merge_data()
+
+if 'selected_word' not in st.session_state:
+    st.session_state.selected_word = df['word'].iloc[0] if not df.empty else ""
+
+# 建立兩個分頁：一個是原本乾淨的單字查詢與發音，一個是 YouTube 影音學習
+tab1, tab2 = st.tabs(["📚 單字總表與查字發音", "🎬 YouTube 影音隨看隨學"])
+
+with tab1:
+    st.subheader("📋 單字總表（點擊表格列即可聽發音）：")
+
+    if not df.empty:
+        display_df = df[['word', 'trans', 'kk', 'level']]
+        
+        event = st.dataframe(
+            display_df,
+            use_container_width=True,
+            hide_index=True,
+            on_select="rerun",
+            selection_mode="single-row",
+            key="vocab_click_table_clean"
+        )
+
+        if len(event.selection.rows) > 0:
+            selected_index = event.selection.rows[0]
+            clicked_word = df.iloc[selected_index]['word']
+            if st.session_state.selected_word != clicked_word:
+                st.session_state.selected_word = clicked_word
+                
+                tts = gTTS(text=str(clicked_word), lang='en')
+                fp = io.BytesIO()
+                tts.write_to_fp(fp)
+                st.audio(fp, autoplay=True)
+
+        st.divider()
+
+        word_list = df['word'].tolist()
+        if st.session_state.selected_word not in word_list:
+            st.session_state.selected_word = word_list[0]
+
+        st.subheader("🎯 單字快速搜尋與聆聽：")
+        selected_word = st.selectbox(
+            "目前選取的單字：",
+            word_list,
+            index=word_list.index(st.session_state.selected_word),
+            key="selected_word_clean"
+        )
+
+        target_row = df[df['word'] == selected_word]
+        if not target_row.empty:
+            trans_w = target_row['trans'].values[0]
+            kk_w = target_row['kk'].values[0] if 'kk' in target_row.columns else ""
+            w_level = target_row['level'].values[0] if 'level' in target_row.columns else ""
             
-    except Exception as e:
-        # 如果尚未設定 API Key 或連線失敗時的提示
-        eng_sent = f"Please configure GOOGLE_API_KEY in Streamlit Secrets to let AI generate sentences for: {w1}, {w2}, {w3}."
-        chi_sent = f"請在 Streamlit Secrets 設定 GOOGLE_API_KEY，才能讓 AI 為這三個單字產出完美句子：{t1}({w1})、{t2}({w2})、{t3}({w3})。"
-    
-    st.session_state.challenge = sample_rows
-    st.session_state.raw_eng_sentence = eng_sent
-    st.session_state.raw_chi_sentence = chi_sent
+            with st.container(border=True):
+                st.markdown(f"### 🔍 單字詳情：`{selected_word}`")
+                st.markdown(f"**中文翻譯：** {trans_w}")
+                st.markdown(f"**KK 音標：** {kk_w} | **難度級別：** Level {w_level}")
+                
+                if st.button(f"🔊 播放 [{selected_word}] 標準發音", key="play_selected_word_btn"):
+                    tts = gTTS(text=str(selected_word), lang='en')
+                    fp = io.BytesIO()
+                    tts.write_to_fp(fp)
+                    st.audio(fp, autoplay=True)
+    else:
+        st.warning("目前沒有找到任何單字資料！")
 
-# 如果切換了等級，或者第一次進來，或手動按換一題，就重新出題
-if ('current_selected_level' not in st.session_state 
-    or st.session_state.current_selected_level != selected_level
-    or 'challenge' not in st.session_state):
-    st.session_state.current_selected_level = selected_level
-    generate_new_challenge(filtered_df)
+with tab2:
+    st.subheader("🌐 YouTube 影片隨看隨學與多段速練功坊")
+    yt_url = st.text_input("請在此貼上 YouTube 影片或 Shorts 網址：", placeholder="https://www.youtube.com/watch?v=...", key="yt_url_input_clean")
 
-# 取得目前的目標單字清單與相關資訊
-words = st.session_state.challenge['word'].tolist()
-trans_list = st.session_state.challenge['trans'].tolist()
-
-# 檢查 CSV 中是否有 kk 音標欄位
-kk_col = None
-for col in ['kk', 'phonetic', 'KK', '音標']:
-    if col in st.session_state.challenge.columns:
-        kk_col = col
-        break
-
-level_col = 'level' if 'level' in df.columns else 'Level'
-
-# 頂部區塊：寬鬆的標題與「換一題」按鈕
-col_top1, col_top2 = st.columns([5, 1])
-with col_top1:
-    st.subheader(f"🎯 今日目標單字（來自 {selected_level}）：")
-with col_top2:
-    if st.button("🔄 換一題", key="top_refresh_btn"):
-        generate_new_challenge(filtered_df)
-        st.rerun()
-
-for idx, row in st.session_state.challenge.iterrows():
-    col_audio, col_word = st.columns([2, 5])
-    word_str = str(row['word'])
-    trans_str = str(row['trans'])
-    lvl_val = row[level_col]
-    
-    kk_str = ""
-    if kk_col and pd.notna(row[kk_col]):
-        kk_str = f" [{row[kk_col]}]"
-    
-    with col_audio:
-        if st.button(f"🔊 讀音: {word_str}", key=f"word_btn_{idx}"):
-            tts = gTTS(text=word_str, lang='en')
-            fp = io.BytesIO()
-            tts.write_to_fp(fp)
-            st.audio(fp, autoplay=True)
+    if yt_url:
+        st.success("✅ 成功載入影片！請一邊觀看影片，一邊利用下方多段速按鈕進行聽力特訓：")
+        st.video(yt_url)
+        
+        st.divider()
+        st.subheader("📚 影音精選實用短句與多段速發音控制")
+        
+        sample_yt_sentences = [
+            {"word": "effort", "trans": "努力", "sentence": "Persistent effort is the key to mastering any language."},
+            {"word": "splendor", "trans": "壯麗", "sentence": "No travel guide could fully describe the true splendor of this place."},
+            {"word": "routine", "trans": "日常", "sentence": "I try to learn something new in my daily routine."}
+        ]
+        
+        for idx, item in enumerate(sample_yt_sentences):
+            w = item["word"]
+            trans = item["trans"]
+            sentence = item["sentence"]
             
-    with col_word:
-        st.markdown(f"### {word_str}{kk_str} ({trans_str}) <span style='font-size: 20px; color: #888888;'>(L{lvl_val})</span>", unsafe_allow_html=True)
-
-st.divider()
-
-# 處理助教示範句的紅字標註
-eng_sentence = st.session_state.raw_eng_sentence
-chi_sentence = st.session_state.raw_chi_sentence
-
-colored_sentence = eng_sentence
-for w in words:
-    import re
-    pattern = re.compile(r'\b' + re.escape(str(w)) + r'\b', re.IGNORECASE)
-    colored_sentence = pattern.sub(f"<span class='red-word'>{w}</span>", colored_sentence)
-
-vocab_notes = "、".join([f"{trans} ({w})" for w, trans in zip(words, trans_list)])
-formatted_chi_sentence = f"{chi_sentence}  【本句核心單字：{vocab_notes}】"
-
-st.subheader("💡 助教示範句：")
-
-speed_option = st.selectbox(
-    "🐢 選擇語音播放速度（專為慢速跟讀設計）：",
-    [
-        "正常速", 
-        "慢速 (gTTS 內建慢速)", 
-        "超慢速 (重複單字拉長練習)", 
-        "極慢速 (每個單字拆開慢慢念)"
-    ],
-    key="audio_speed_select"
-)
-
-if st.button("🔊 播放示範句", key="play_demo_sentence"):
-    is_slow = False
-    text_to_speak = eng_sentence
-    
-    if speed_option == "正常速":
-        is_slow = False
-    elif speed_option == "慢速 (gTTS 內建慢速)":
-        is_slow = True
-    elif speed_option == "超慢速 (重複單字拉長練習)":
-        is_slow = True
-        text_to_speak = f"{eng_sentence} ...... {eng_sentence}"
-    elif speed_option == "極慢速 (每個單字拆開慢慢念)":
-        is_slow = True
-        words_spaced = " ... ".join(words)
-        text_to_speak = f"Key words: {words_spaced} ...... Sentence: {eng_sentence}"
-
-    tts = gTTS(text=text_to_speak, lang='en', slow=is_slow)
-    fp = io.BytesIO()
-    tts.write_to_fp(fp)
-    st.audio(fp, autoplay=True)
-
-st.markdown(f"### {colored_sentence}", unsafe_allow_html=True)
-st.markdown(f"*(中文：{formatted_chi_sentence})*", unsafe_allow_html=True)
-
-st.divider()
-st.subheader("📝 請輸入您的句子：")
-user_input = st.text_area("在這裡輸入...", height=150)
-
-col_a, col_b = st.columns(2)
-with col_a:
-    if st.button("✅ 檢查句子", key="check_user_sentence"):
-        is_correct = all(str(w).lower() in user_input.lower() for w in words)
-        if is_correct:
-            st.success("## 太棒了！完全正確！")
-            st.balloons()
-        else:
-            st.error("## ❌ 缺少關鍵字，請再試試！")
-
-with col_b:
-    if st.button("🔄 換一題", key="refresh_challenge_bottom"):
-        generate_new_challenge(filtered_df)
-        st.rerun()
+            with st.container(border=True):
+                st.markdown(f"### 🔹 精選單字：`{w}` （{trans}）")
+                st.markdown(f"**💡 例句：** {sentence}")
+                
+                st.markdown("🔊 **多段速發音練習：**")
+                col_s1, col_s2, col_s3 = st.columns(3)
+                
+                with col_s1:
+                    if st.button(f"正常速度 🔊", key=f"norm_clean_{idx}_{w}"):
+                        tts = gTTS(text=sentence, lang='en', slow=False)
+                        fp = io.BytesIO()
+                        tts.write_to_fp(fp)
+                        st.audio(fp, autoplay=True)
+                with col_s2:
+                    if st.button(f"慢速練習 🐢", key=f"slow_clean_{idx}_{w}"):
+                        tts = gTTS(text=sentence, lang='en', slow=True)
+                        fp = io.BytesIO()
+                        tts.write_to_fp(fp)
+                        st.audio(fp, autoplay=True)
+                with col_s3:
+                    if st.button(f"極慢拆解 🐌", key=f"x_slow_clean_{idx}_{w}"):
+                        tts = gTTS(text=f"{w}... {w}... {sentence}", lang='en', slow=True)
+                        fp = io.BytesIO()
+                        tts.write_to_fp(fp)
+                        st.audio(fp, autoplay=True)
+    else:
+        st.info("💡 請在上方輸入框貼上想要學習的 YouTube 網址，即可在分頁中展開專屬影音學習！")
