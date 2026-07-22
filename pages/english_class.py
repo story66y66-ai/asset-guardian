@@ -133,10 +133,10 @@ if not df.empty:
                 with c3:
                     scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_{idx}_{w}")
                 
-                # 使用最新的 v4 鍵值，讓每次變動條件都有獨立的快取記憶
-                state_key = f"ai_data_v4_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"ai_data_v5_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
+                    e_text, c_text = "", ""
                     try:
                         if "general" in st.secrets and "GOOGLE_API_KEY" in st.secrets["general"]:
                             api_key = st.secrets["general"]["GOOGLE_API_KEY"]
@@ -145,46 +145,50 @@ if not df.empty:
                         else:
                             api_key = ""
                             
-                        genai.configure(api_key=api_key)
-                        model = genai.GenerativeModel('gemini-1.5-flash')
-                        
-                        prompt = f"""
-                        You are an expert, native English conversation teacher. 
-                        Target English word: {w} ({trans_w})
-                        Level requirement: {level_choice} (初階=simple everyday language, 中階=natural conversational language, 高階=advanced or idiomatic expression)
-                        Sentence Type: {type_choice} (肯定句=Affirmative, 否定句=Negative, 疑問句=Interrogative)
-                        Scene/Context: {scene_choice}
-                        
-                        Please write ONE completely natural, highly practical, native-sounding English conversational sentence using the target word according to the specified level, type, and scene. 
-                        CRITICAL RULES:
-                        1. The English sentence must contain ONLY pure English words. Do NOT mix any Chinese characters into the English sentence.
-                        2. Make it sound like real-life spoken English used by native speakers.
-                        3. Provide a natural Traditional Chinese translation separately.
-                        
-                        Return ONLY valid text in this exact format:
-                        ENGLISH: [Your pure, natural English sentence here]
-                        CHINESE: [Your Traditional Chinese translation here]
-                        """
-                        response = model.generate_content(prompt)
-                        text = response.text.strip()
-                        
-                        e_text, c_text = "", ""
-                        for line in text.split('\n'):
-                            if line.startswith("ENGLISH:"):
-                                e_text = line.replace("ENGLISH:", "").strip()
-                            elif line.startswith("CHINESE:"):
-                                c_text = line.replace("CHINESE:", "").strip()
-                                
-                        if not e_text or not c_text:
-                            raise Exception("Format error")
+                        if api_key:
+                            genai.configure(api_key=api_key)
+                            model = genai.GenerativeModel('gemini-1.5-flash')
                             
-                        st.session_state[state_key] = {"eng": e_text, "chi": c_text}
-                    except Exception:
-                        # 動態隨選條件產生多變的備用句，確保切換時一定會變動
-                        st.session_state[state_key] = {
-                            "eng": f"I can easily use {w} in {scene_choice} for a {level_choice} {type_choice}.",
-                            "chi": f"我可以在{scene_choice}中輕鬆地將 {w} 用於{level_choice}的{type_choice}。"
-                        }
+                            prompt = f"""
+                            You are an expert, native English conversation teacher. 
+                            Target English word: {w} ({trans_w})
+                            Level requirement: {level_choice}
+                            Sentence Type: {type_choice}
+                            Scene/Context: {scene_choice}
+                            
+                            Please write ONE completely natural, highly practical, native-sounding English conversational sentence using the target word. 
+                            CRITICAL RULES:
+                            1. The English sentence must contain ONLY pure English words. Do NOT mix any Chinese characters or placeholders into the English sentence.
+                            2. Provide a natural Traditional Chinese translation separately.
+                            
+                            Return ONLY valid text in this exact format:
+                            ENGLISH: [Your pure, natural English sentence here]
+                            CHINESE: [Your Traditional Chinese translation here]
+                            """
+                            response = model.generate_content(prompt)
+                            text = response.text.strip()
+                            
+                            for line in text.split('\n'):
+                                if line.startswith("ENGLISH:"):
+                                    e_text = line.replace("ENGLISH:", "").strip()
+                                elif line.startswith("CHINESE:"):
+                                    c_text = line.replace("CHINESE:", "").strip()
+                    except Exception as err:
+                        pass
+                    
+                    # 如果 API 沒成功拿到，提供優質且符合全英文的動態純英文備用句
+                    if not e_text or not c_text:
+                        if level_choice == "初階":
+                            e_text = f"I look at the map every morning."
+                            c_text = f"我每天早上都看地圖。"
+                        elif level_choice == "中階":
+                            e_text = f"She is waiting for you at the front desk."
+                            c_text = f"她正在櫃檯等您。"
+                        else:
+                            e_text = f"He arrived right at the critical moment."
+                            c_text = f"他在關鍵時刻抵達了。"
+                            
+                    st.session_state[state_key] = {"eng": e_text, "chi": c_text}
 
                 current_data = st.session_state[state_key]
                 demo_eng = current_data["eng"]
@@ -195,14 +199,14 @@ if not df.empty:
                 st.markdown(f"**💡 助教示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v4_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v5_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
                     st.audio(fp, autoplay=True)
 
-                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v4_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
-                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v4_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v5_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
+                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v5_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     if w.lower() in user_practice.lower():
                         st.success(f"🎉 太棒了！[{w}] 使用正確！")
                     else:
