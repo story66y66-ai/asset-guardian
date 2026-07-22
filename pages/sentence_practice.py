@@ -8,27 +8,31 @@ st.markdown("""
     [data-testid="stSidebar"] { font-size: 28px !important; }
     [data-testid="stSidebar"] div, [data-testid="stSidebar"] a { font-size: 28px !important; }
     .red-word { color: #ff2b2b !important; font-weight: bold !important; }
-    .stTextArea textarea { font-size: 24px !important; color: #000000 !important; font-weight: bold !important; }
+    /* 設定文字框高度自由伸縮，預設加大 */
+    .stTextArea textarea { 
+        font-size: 22px !important; 
+        color: #000000 !important; 
+        font-weight: bold !important; 
+        height: 300px !important;
+        resize: vertical !important; 
+    }
     div.stButton > button { font-size: 20px !important; padding: 10px 20px !important; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("📖 澄玄大學 - 自訂文字與歌詞語音朗讀工坊")
 
-st.subheader("✍️ 請在下方文字框輸入或貼上你想練習的文字／句子：")
+st.subheader("✍️ 請在下方文字框輸入或貼上整首歌詞（可自由拉曳放大）：")
 
-# 初始化 session_state
 if "my_text_input" not in st.session_state:
     st.session_state.my_text_input = "I can do all things through Christ who strengthens me."
 
-# 使用者自訂文字輸入框（不直接用 key 綁定衝突的狀態）
+# 使用者自訂文字輸入框
 user_input_text = st.text_area(
     "輸入文字或歌詞：",
-    value=st.session_state.my_text_input,
-    height=120
+    value=st.session_state.my_text_input
 )
 
-# 同步更新變數
 st.session_state.my_text_input = user_input_text
 
 col1, col2 = st.columns([1, 4])
@@ -52,9 +56,8 @@ if play_btn and user_input_text.strip():
 
 st.divider()
 
-# 拆解單字與互動區塊
 if user_input_text.strip():
-    st.subheader("🔍 句子單字解析與個別發音：")
+    st.subheader("🔍 歌詞單字解析與個別發音：")
     
     words_in_text = re.findall(r'\b[A-Za-z]+\b', user_input_text)
     unique_words = sorted(list(set(words_in_text)), key=lambda x: words_in_text.index(x))
@@ -75,6 +78,6 @@ if user_input_text.strip():
             with cols[2]:
                 st.write("")
     else:
-        st.info("請輸入包含英文的句子以便拆解單字。")
+        st.info("請輸入包含英文的歌詞以便拆解單字。")
 else:
-    st.warning("目前文字框是空的，請輸入想練習的英文句子！")
+    st.warning("目前文字框是空的，請輸入或貼上想練習的整首歌詞！")
