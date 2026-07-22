@@ -1,6 +1,7 @@
 import streamlit as st
 from gtts import gTTS
 import io
+import re
 
 st.markdown("""
     <style>
@@ -16,13 +17,19 @@ st.title("📖 澄玄大學 - 自訂文字與歌詞語音朗讀工坊")
 
 st.subheader("✍️ 請在下方文字框輸入或貼上你想練習的文字／句子：")
 
-# 使用者自訂文字輸入框
+# 初始化 session_state
+if "my_text_input" not in st.session_state:
+    st.session_state.my_text_input = "I can do all things through Christ who strengthens me."
+
+# 使用者自訂文字輸入框（不直接用 key 綁定衝突的狀態）
 user_input_text = st.text_area(
     "輸入文字或歌詞：",
-    value=st.session_state.get("user_custom_text", "I can do all things through Christ who strengthens me."),
-    height=120,
-    key="user_custom_text"
+    value=st.session_state.my_text_input,
+    height=120
 )
+
+# 同步更新變數
+st.session_state.my_text_input = user_input_text
 
 col1, col2 = st.columns([1, 4])
 with col1:
@@ -31,7 +38,7 @@ with col2:
     clear_btn = st.button("🗑️ 清空文字框")
 
 if clear_btn:
-    st.session_state["user_custom_text"] = ""
+    st.session_state.my_text_input = ""
     st.rerun()
 
 if play_btn and user_input_text.strip():
@@ -49,15 +56,12 @@ st.divider()
 if user_input_text.strip():
     st.subheader("🔍 句子單字解析與個別發音：")
     
-    # 將輸入的句子用空格和標點符號拆解出獨立單字
-    import re
     words_in_text = re.findall(r'\b[A-Za-z]+\b', user_input_text)
     unique_words = sorted(list(set(words_in_text)), key=lambda x: words_in_text.index(x))
     
     if unique_words:
         st.markdown(f"**偵測到以下英文單字（共 {len(unique_words)} 個）：**")
         
-        # 建立表格或清單讓每個單字都可以獨立聽發音
         for i, w in enumerate(unique_words):
             cols = st.columns([2, 1, 3])
             with cols[0]:
@@ -69,7 +73,7 @@ if user_input_text.strip():
                     w_tts.write_to_fp(w_fp)
                     st.audio(w_fp, autoplay=True)
             with cols[2]:
-                st.write("") # 留空排版
+                st.write("")
     else:
         st.info("請輸入包含英文的句子以便拆解單字。")
 else:
