@@ -58,11 +58,15 @@ tab1, tab2 = st.tabs(["✍️ 新增烘焙配方", "🔍 搜尋與瀏覽配方"]
 with tab1:
     st.subheader("🥐 新增一筆烘焙紀錄與配方")
     
-    # 使用 Session State 來記住輸入框的內容，支援按鈕即時更新
+    # 使用 Session State 來記住輸入框的內容
     if "input_ingredients" not in st.session_state:
         st.session_state["input_ingredients"] = ""
     if "input_steps" not in st.session_state:
         st.session_state["input_steps"] = ""
+    if "input_improvement" not in st.session_state:
+        st.session_state["input_improvement"] = ""
+    if "input_notes" not in st.session_state:
+        st.session_state["input_notes"] = ""
 
     # 點擊按鈕觸發排版函數
     def handle_format():
@@ -71,24 +75,46 @@ with tab1:
     with st.form("recipe_form"):
         recipe_name = st.text_input("📝 烘焙名稱（例如：鮮奶吐司、手作貝果）")
         
-        # 材料輸入區與即時整理按鈕
         st.markdown("⚖️ 材料與比例")
+        # 將高度從 120 放大到 220，讓多行文字更容易檢視與編輯
         st.session_state["input_ingredients"] = st.text_area(
             "材料內容", 
             value=st.session_state["input_ingredients"], 
-            height=120, 
+            height=220, 
             placeholder="直接整段貼上後，點下方按鈕自動排版...", 
             label_visibility="collapsed"
         )
         
-        # 安排一個排版小按鈕
         if st.form_submit_button("✨ 點我自動整理材料排版"):
             handle_format()
             st.rerun()
 
-        recipe_steps = st.text_area("👩‍🍳 製作步驟", height=150, placeholder="直接貼上即可...")
-        recipe_improvement = st.text_area("💡 改良做法", height=100, placeholder="心得與調整記錄...")
-        recipe_notes = st.text_area("📌 備註", height=80, placeholder="備註事項...")
+        st.markdown("👩‍🍳 製作步驟")
+        st.session_state["input_steps"] = st.text_area(
+            "步驟內容", 
+            value=st.session_state["input_steps"], 
+            height=200, 
+            placeholder="直接貼上製作步驟...", 
+            label_visibility="collapsed"
+        )
+        
+        st.markdown("💡 改良做法")
+        st.session_state["input_improvement"] = st.text_area(
+            "改良內容", 
+            value=st.session_state["input_improvement"], 
+            height=120, 
+            placeholder="心得與調整記錄...", 
+            label_visibility="collapsed"
+        )
+        
+        st.markdown("📌 備註")
+        st.session_state["input_notes"] = st.text_area(
+            "備註內容", 
+            value=st.session_state["input_notes"], 
+            height=100, 
+            placeholder="備註事項...", 
+            label_visibility="collapsed"
+        )
         
         submitted = st.form_submit_button("💾 儲存並寫入資料庫")
         
@@ -97,9 +123,9 @@ with tab1:
                 new_data = pd.DataFrame([{
                     "name": recipe_name,
                     "ingredients": st.session_state["input_ingredients"],
-                    "steps": recipe_steps,
-                    "improvement": recipe_improvement,
-                    "notes": recipe_notes
+                    "steps": st.session_state["input_steps"],
+                    "improvement": st.session_state["input_improvement"],
+                    "notes": st.session_state["input_notes"]
                 }])
                 
                 updated_df = pd.concat([df, new_data], ignore_index=True)
@@ -108,6 +134,9 @@ with tab1:
                 
                 # 清空暫存
                 st.session_state["input_ingredients"] = ""
+                st.session_state["input_steps"] = ""
+                st.session_state["input_improvement"] = ""
+                st.session_state["input_notes"] = ""
                 
                 st.success(f"成功新增烘焙品項：【{recipe_name}】！")
                 st.rerun()
