@@ -295,7 +295,6 @@ if not df.empty:
                         tts_m.write_to_fp(fp_m)
                         st.audio(fp_m, autoplay=True)
 
-                    # 新增：讓您自己貼上中文翻譯與發音
                     memine_trans_key = f"memine_trans_input_{idx}_{w}"
                     memine_translation = st.text_input(f"📝 請輸入或貼上 Memine 示範句的中文翻譯：", key=memine_trans_key, placeholder="在此輸入中文翻譯...")
                     
@@ -311,7 +310,8 @@ if not df.empty:
                 user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v17_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
                 
                 if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v17_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
-                    if w.lower() in user_practice.lower():
+                    pattern = r'\b' + re.escape(str(w)) + r'\b'
+                    if re.search(pattern, user_practice, flags=re.IGNORECASE):
                         st.success(f"🎉 太棒了！[{w}] 使用正確！您寫的句子結構很棒喔！")
                     else:
                         st.error(f"❌ 檢查結果：句子裡好像漏掉了單字 [{w}] 喔，再試一次!")
