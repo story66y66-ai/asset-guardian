@@ -9,17 +9,23 @@ st.write("---")
 
 CSV_FILE = "baking_recipes.csv"
 
-# 初始化 CSV 檔案
+# 初始化 CSV 檔案（對應欄位順序：name, ingredients, steps, notes, improvement）
 if not os.path.exists(CSV_FILE):
-    df_init = pd.DataFrame(columns=["name", "ingredients", "steps", "improvement", "notes"])
+    df_init = pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement"])
     df_init.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
 
 @st.cache_data
 def load_recipes():
     try:
-        return pd.read_csv(CSV_FILE, encoding="utf-8-sig")
+        df_loaded = pd.read_csv(CSV_FILE, encoding="utf-8-sig")
+        # 確保舊版的欄位名稱也能相容轉成新的順序
+        expected_cols = ["name", "ingredients", "steps", "notes", "improvement"]
+        for col in expected_cols:
+            if col not in df_loaded.columns:
+                df_loaded[col] = ""
+        return df_loaded[expected_cols]
     except Exception:
-        return pd.DataFrame(columns=["name", "ingredients", "steps", "improvement", "notes"])
+        return pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement"])
 
 df = load_recipes()
 
@@ -30,7 +36,6 @@ def format_text(text):
     
     t = str(text)
     
-    # 涵蓋麵包、餅乾、蛋糕所有常見材料與配方標頭
     ingredients_keywords = [
         "配方一", "配方二", "配方三",
         "中筋麵粉", "高筋麵粉", "低筋麵粉", "全麥麵粉", "黑麥粉", "粘米粉", "糯米粉", "太白粉", "玉米澱粉", "地瓜粉",
@@ -44,11 +49,9 @@ def format_text(text):
         "葡萄乾", "蔓越莓乾", "核桃", "杏仁片", "腰果", "芝麻", "乳酪", "起司片", "卡士達醬"
     ]
     
-    # 強制在每個關鍵字前面加上換行與項目符號
     for kw in ingredients_keywords:
         t = t.replace(kw, f"\n• {kw}")
         
-    # 清理多餘空行
     lines = [line.strip() for line in t.split('\n') if line.strip()]
     return "\n".join(lines)
 
@@ -58,17 +61,15 @@ tab1, tab2 = st.tabs(["✍️ 新增烘焙配方", "🔍 搜尋與瀏覽配方"]
 with tab1:
     st.subheader("🥐 新增一筆烘焙紀錄與配方")
     
-    # 使用 Session State 來記住輸入框的內容
     if "input_ingredients" not in st.session_state:
         st.session_state["input_ingredients"] = ""
     if "input_steps" not in st.session_state:
         st.session_state["input_steps"] = ""
-    if "input_improvement" not in st.session_state:
-        st.session_state["input_improvement"] = ""
     if "input_notes" not in st.session_state:
         st.session_state["input_notes"] = ""
+    if "input_improvement" not in st.session_state:
+        st.session_state["input_improvement"] = ""
 
-    # 點擊按鈕觸發排版函數
     def handle_format():
         st.session_state["input_ingredients"] = format_text(st.session_state["input_ingredients"])
 
@@ -76,7 +77,6 @@ with tab1:
         recipe_name = st.text_input("📝 烘焙名稱（例如：鮮奶吐司、手作貝果）")
         
         st.markdown("⚖️ 材料與比例")
-        # 將高度從 120 放大到 220，讓多行文字更容易檢視與編輯
         st.session_state["input_ingredients"] = st.text_area(
             "材料內容", 
             value=st.session_state["input_ingredients"], 
@@ -98,21 +98,22 @@ with tab1:
             label_visibility="collapsed"
         )
         
+        # 欄位順序對調：先注意事項，改良做法放最後
+        st.markdown("📌 注意事項")
+        st.session_state["input_notes"] = st.text_area(
+            "注意事項內容", 
+            value=st.session_state["input_notes"], 
+            height=100, 
+            placeholder="注意事項事項...", 
+            label_visibility="collapsed"
+        )
+        
         st.markdown("💡 改良做法")
         st.session_state["input_improvement"] = st.text_area(
             "改良內容", 
             value=st.session_state["input_improvement"], 
             height=120, 
             placeholder="心得與調整記錄...", 
-            label_visibility="collapsed"
-        )
-        
-        st.markdown("📌 備註")
-        st.session_state["input_notes"] = st.text_area(
-            "備註內容", 
-            value=st.session_state["input_notes"], 
-            height=100, 
-            placeholder="備註事項...", 
             label_visibility="collapsed"
         )
         
@@ -124,19 +125,18 @@ with tab1:
                     "name": recipe_name,
                     "ingredients": st.session_state["input_ingredients"],
                     "steps": st.session_state["input_steps"],
-                    "improvement": st.session_state["input_improvement"],
-                    "notes": st.session_state["input_notes"]
+                    "notes": st.session_state["input_notes"],
+                    "improvement": st.session_state["input_improvement"]
                 }])
                 
                 updated_df = pd.concat([df, new_data], ignore_index=True)
                 updated_df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
                 st.cache_data.clear()
                 
-                # 清空暫存
                 st.session_state["input_ingredients"] = ""
                 st.session_state["input_steps"] = ""
-                st.session_state["input_improvement"] = ""
                 st.session_state["input_notes"] = ""
+                st.session_state["input_improvement"] = ""
                 
                 st.success(f"成功新增烘焙品項：【{recipe_name}】！")
                 st.rerun()
@@ -169,7 +169,8 @@ with tab2:
                     st.markdown("##### ⚖️ 材料與比例：")
                     st.text(row["ingredients"])
                     
-                    st.markdown("##### 📌 備註：")
+                    # 右邊瀏覽區的順序也同步對調
+                    st.markdown("##### 📌 注意事項：")
                     st.text(row["notes"])
                     
                 with col2:
