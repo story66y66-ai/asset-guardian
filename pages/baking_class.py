@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import os
-import re
 
 st.set_page_config(page_title="烘焙教室 - 澄玄大學", layout="wide", page_icon="🍞")
 
@@ -25,14 +24,20 @@ def load_recipes():
 
 df = load_recipes()
 
-# 自動排版與換行處理函數（專門用來把擠在一起的文字自動斷行）
-def auto_format_text(text):
-    if not text:
-        return ""
-    # 如果原本就已經有換行，就保留；如果擠成一線，根據常見的關鍵字或空格自動加入換行
-    # 這裡會自動把連續的空白、項目符號或特定中文字眼前後轉為條列
-    formatted = text.replace("；", "；\n").replace("。", "。\n").replace("克 ", "克\n").replace("配方", "\n配方")
-    return formatted
+# 自動解析並排版文字的函數（專門用在下方顯示區，自動把黏在一起的關鍵字拆行）
+def display_formatted_text(text):
+    if not pd.notna(text) or not str(text).strip():
+        return "無"
+    
+    # 將文字轉為字串
+    t = str(text)
+    
+    # 自動在常見的烘焙關鍵字或標點符號前加上換行，讓它自動變條列
+    keywords = ["中筋麵粉", "高筋麵粉", "低筋麵粉", "全脂鮮乳", "清水", "速發酵母", "砂糖", "植物油", "配方一", "配方二", "1.", "2.", "3.", "4.", "5."]
+    for kw in keywords:
+        t = t.replace(kw, f"\n{kw}")
+    
+    return t.strip()
 
 # --- 分頁籤設計：新增配方 / 搜尋與瀏覽 ---
 tab1, tab2 = st.tabs(["✍️ 新增烘焙配方", "🔍 搜尋與瀏覽配方"])
@@ -42,23 +47,19 @@ with tab1:
     
     with st.form("recipe_form", clear_on_submit=True):
         recipe_name = st.text_input("📝 烘焙名稱（例如：鮮奶吐司、手作貝果）")
-        recipe_ingredients = st.text_area("⚖️ 材料與比例", height=120, placeholder="直接整段貼上，系統會自動幫您排版...")
-        recipe_steps = st.text_area("👩‍🍳 製作步驟", height=150, placeholder="1. 揉麵團...\n2. 基礎發酵...")
+        recipe_ingredients = st.text_area("⚖️ 材料與比例", height=120, placeholder="直接整段貼上即可，不用管換行...")
+        recipe_steps = st.text_area("👩‍🍳 製作步驟", height=150, placeholder="直接整段貼上即可...")
         recipe_improvement = st.text_area("💡 改良做法（心得、失敗檢討或調整記錄）", height=100, placeholder="例如：下次水可以少減 10克...")
         recipe_notes = st.text_area("📌 備註", height=80, placeholder="例如：口感Q軟...")
         
-        submitted = st.form_submit_button("💾 儲存並自動排版寫入資料庫")
+        submitted = st.form_submit_button("💾 儲存並寫入資料庫")
         
         if submitted:
             if recipe_name.strip():
-                # 自動進行排版轉換
-                processed_ingredients = auto_format_text(recipe_ingredients)
-                processed_steps = auto_format_text(recipe_steps)
-                
                 new_data = pd.DataFrame([{
                     "name": recipe_name,
-                    "ingredients": processed_ingredients,
-                    "steps": processed_steps,
+                    "ingredients": recipe_ingredients,
+                    "steps": recipe_steps,
                     "improvement": recipe_improvement,
                     "notes": recipe_notes
                 }])
@@ -67,7 +68,7 @@ with tab1:
                 updated_df = pd.concat([df, new_data], ignore_index=True)
                 updated_df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
                 st.cache_data.clear() # 清除快取以便立即讀取新資料
-                st.success(f"成功新增烘焙品項：【{recipe_name}】！系統已自動排版並存入資料庫。")
+                st.success(f"成功新增烘焙品項：【{recipe_name}】！")
                 st.rerun()
             else:
                 st.error("請至少填寫「烘焙名稱」才能儲存唷！")
@@ -98,14 +99,15 @@ with tab2:
                 col1, col2 = st.columns(2)
                 with col1:
                     st.markdown("##### ⚖️ 材料與比例：")
-                    st.text(row["ingredients"] if pd.notna(row["ingredients"]) else "無")
+                    # 使用自動排版函數讓下方顯示乾淨整齊
+                    st.text(display_formatted_text(row["ingredients"]))
                     
                     st.markdown("##### 📌 備註：")
-                    st.text(row["notes"] if pd.notna(row["notes"]) else "無")
+                    st.text(display_formatted_text(row["notes"]))
                     
                 with col2:
                     st.markdown("##### 👩‍🍳 製作步驟：")
-                    st.text(row["steps"] if pd.notna(row["steps"]) else "無")
+                    st.text(display_formatted_text(row["steps"]))
                     
                     st.markdown("##### 💡 改良做法：")
-                    st.text(row["improvement"] if pd.notna(row["improvement"]) else "無")
+                    st.text(display_formatted_text(row["improvement"]))
