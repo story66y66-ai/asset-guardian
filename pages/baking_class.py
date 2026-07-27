@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+import re
 
 st.set_page_config(page_title="烘焙教室 - 澄玄大學", layout="wide", page_icon="🍞")
 
@@ -24,20 +25,25 @@ def load_recipes():
 
 df = load_recipes()
 
-# 自動解析並排版文字的函數（專門用在下方顯示區，自動把黏在一起的關鍵字拆行）
-def display_formatted_text(text):
+# 萬能智慧自動排版函數：利用正規表達式自動偵測數量單位與編號換行
+def universal_smart_format(text):
     if not pd.notna(text) or not str(text).strip():
         return "無"
     
-    # 將文字轉為字串
     t = str(text)
     
-    # 自動在常見的烘焙關鍵字或標點符號前加上換行，讓它自動變條列
-    keywords = ["中筋麵粉", "高筋麵粉", "低筋麵粉", "全脂鮮乳", "清水", "速發酵母", "砂糖", "植物油", "配方一", "配方二", "1.", "2.", "3.", "4.", "5."]
-    for kw in keywords:
-        t = t.replace(kw, f"\n{kw}")
+    # 1. 針對材料：如果遇到「數字 + 單位（克、g、ml、毫升、顆、匙、包、滴、g...）」或「配方一/二」，自動在前面加換行與項目符號
+    # 這裡用萬能正規表達式抓取：例如 500克、25克、1顆 等
+    pattern_ingredients = r'(?=([0-9０-９]+(?:\.[0-9０-９]+)?\s*(?:克|g|ml|毫升|顆|匙|包|滴|cc|kg|斤|兩|片|滴|小匙|大匙)))|(?=配方[一二三四五六七八九十]))'
+    t_formatted = re.sub(pattern_ingredients, r'\n• ', t)
     
-    return t.strip()
+    # 2. 針對步驟：如果遇到數字編號（如 1. 2. 3. 或 (1) (2)），自動換行
+    pattern_steps = r'(?=(\s+[0-9０-９]+\.\s*))|(?=(\s*\([0-9０-９]+\)\s*))'
+    t_formatted = re.sub(pattern_steps, r'\n', t_formatted)
+    
+    # 清理多餘的空白或重複換行
+    lines = [line.strip() for line in t_formatted.split('\n') if line.strip()]
+    return "\n".join(lines)
 
 # --- 分頁籤設計：新增配方 / 搜尋與瀏覽 ---
 tab1, tab2 = st.tabs(["✍️ 新增烘焙配方", "🔍 搜尋與瀏覽配方"])
@@ -47,7 +53,7 @@ with tab1:
     
     with st.form("recipe_form", clear_on_submit=True):
         recipe_name = st.text_input("📝 烘焙名稱（例如：鮮奶吐司、手作貝果）")
-        recipe_ingredients = st.text_area("⚖️ 材料與比例", height=120, placeholder="直接整段貼上即可，不用管換行...")
+        recipe_ingredients = st.text_area("⚖️ 材料與比例", height=120, placeholder="直接整段貼上即可，系統會自動辨識單位換行...")
         recipe_steps = st.text_area("👩‍🍳 製作步驟", height=150, placeholder="直接整段貼上即可...")
         recipe_improvement = st.text_area("💡 改良做法（心得、失敗檢討或調整記錄）", height=100, placeholder="例如：下次水可以少減 10克...")
         recipe_notes = st.text_area("📌 備註", height=80, placeholder="例如：口感Q軟...")
@@ -64,10 +70,9 @@ with tab1:
                     "notes": recipe_notes
                 }])
                 
-                # 將新資料附加到舊資料後方並寫入 CSV
                 updated_df = pd.concat([df, new_data], ignore_index=True)
                 updated_df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
-                st.cache_data.clear() # 清除快取以便立即讀取新資料
+                st.cache_data.clear()
                 st.success(f"成功新增烘焙品項：【{recipe_name}】！")
                 st.rerun()
             else:
@@ -77,9 +82,8 @@ with tab2:
     st.subheader("📚 烘焙配方清單與搜尋")
     
     if df.empty:
-        st.info("目前還沒有任何烘焙配方，快去「新增烘焙配方」頁籤新增第一道美味點心吧！")
+        st.info("目前還沒有任何烘焙配方，快去新增第一道美味點心吧！")
     else:
-        # 搜尋功能
         search_query = st.text_input("🔍 輸入關鍵字搜尋烘焙名稱或材料：", "").strip().lower()
         
         if search_query:
@@ -93,21 +97,20 @@ with tab2:
         st.write(f"共找到 **{len(filtered_df)}** 筆烘焙紀錄：")
         st.write("---")
         
-        # 逐筆呈現卡片或展開清單
         for index, row in filtered_df.iterrows():
             with st.expander(f"🍞 {row['name']}"):
                 col1, col2 = st.columns(2)
                 with col1:
                     st.markdown("##### ⚖️ 材料與比例：")
-                    # 使用自動排版函數讓下方顯示乾淨整齊
-                    st.text(display_formatted_text(row["ingredients"]))
+                    # 採用萬能智慧排版呈現
+                    st.text(universal_smart_format(row["ingredients"]))
                     
                     st.markdown("##### 📌 備註：")
-                    st.text(display_formatted_text(row["notes"]))
+                    st.text(universal_smart_format(row["notes"]))
                     
                 with col2:
                     st.markdown("##### 👩‍🍳 製作步驟：")
-                    st.text(display_formatted_text(row["steps"]))
+                    st.text(universal_smart_format(row["steps"]))
                     
                     st.markdown("##### 💡 改良做法：")
-                    st.text(display_formatted_text(row["improvement"]))
+                    st.text(universal_smart_format(row["improvement"]))
