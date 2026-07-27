@@ -9,3 +9,9 @@ st.subheader("📚 語言學院")
 # 關鍵：將跳轉指令放在 button 被點擊的事件內，不要放在最外層
 if st.button("進入語言學院"):
     st.switch_page("pages/english_class.py")
+
+st.write("---")
+st.subheader("🍲 食品學院")
+
+if st.button("進入食品學院"):
+    st.switch_page("pages/food_class.py")
