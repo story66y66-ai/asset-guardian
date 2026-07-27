@@ -9,16 +9,16 @@ st.write("---")
 
 CSV_FILE = "baking_recipes.csv"
 
-# 初始化 CSV 檔案（對應欄位順序：name, ingredients, steps, notes, improvement）
+# 初始化 CSV 檔案
 if not os.path.exists(CSV_FILE):
     df_init = pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement"])
     df_init.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
 
-@st.cache_data
+# 移除快取，確保每次重新整理網頁時，都會直接從 GitHub 或最新檔案讀取資料
 def load_recipes():
     try:
-        df_loaded = pd.read_csv(CSV_FILE, encoding="utf-8-sig")
-        # 確保舊版的欄位名稱也能相容轉成新的順序
+        # 加上 on_bad_lines="skip" 確保格式萬一有一點小誤差也不會崩潰
+        df_loaded = pd.read_csv(CSV_FILE, encoding="utf-8-sig", on_bad_lines="skip")
         expected_cols = ["name", "ingredients", "steps", "notes", "improvement"]
         for col in expected_cols:
             if col not in df_loaded.columns:
@@ -98,7 +98,6 @@ with tab1:
             label_visibility="collapsed"
         )
         
-        # 欄位順序對調：先注意事項，改良做法放最後
         st.markdown("📌 注意事項")
         st.session_state["input_notes"] = st.text_area(
             "注意事項內容", 
@@ -131,7 +130,6 @@ with tab1:
                 
                 updated_df = pd.concat([df, new_data], ignore_index=True)
                 updated_df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
-                st.cache_data.clear()
                 
                 st.session_state["input_ingredients"] = ""
                 st.session_state["input_steps"] = ""
@@ -169,12 +167,12 @@ with tab2:
                     st.markdown("##### ⚖️ 材料與比例：")
                     st.text(row["ingredients"])
                     
-                    # 右邊瀏覽區的順序也同步對調
                     st.markdown("##### 📌 注意事項：")
                     st.text(row["notes"])
                     
                 with col2:
                     st.markdown("##### 👩‍🍳 製作步驟：")
+                    # 使用 st.text 完整呈現換行步驟
                     st.text(row["steps"])
                     
                     st.markdown("##### 💡 改良做法：")
