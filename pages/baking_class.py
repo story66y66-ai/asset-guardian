@@ -23,19 +23,18 @@ def load_recipes():
 
 df = load_recipes()
 
-# 強效排版清理函數：把黏在一起的材料用「克」或「配方」自動切開換行
-def clean_and_format(text):
+# 終極強效排版：把常見材料前強制加上換行
+def ultimate_format(text):
     if not pd.notna(text) or not str(text).strip():
         return "無"
     
     t = str(text)
     
-    # 如果裡面含有「克」，我們在「克」的後面強制加一個換行，讓每個材料獨立一行
-    # 同時把「配方一」、「配方二」前面也換行
-    t = t.replace("克", "克\n• ")
-    t = t.replace("配方", "\n\n配方")
-    
-    # 確保不會有多餘的重複符號
+    # 強制把這些關鍵字前面加上換行與條列符號
+    keywords = ["中筋麵粉", "高筋麵粉", "低筋麵粉", "清水", "鮮乳", "全脂鮮乳", "速發酵母", "砂糖", "植物油", "配方一", "配方二"]
+    for kw in keywords:
+        t = t.replace(kw, f"\n• {kw}")
+        
     return t.strip()
 
 # --- 分頁籤設計 ---
@@ -95,15 +94,15 @@ with tab2:
                 col1, col2 = st.columns(2)
                 with col1:
                     st.markdown("##### ⚖️ 材料與比例：")
-                    # 透過強效排版函數處理顯示
-                    st.text(clean_and_format(row["ingredients"]))
+                    # 使用終極強效排版
+                    st.markdown(ultimate_format(row["ingredients"]))
                     
                     st.markdown("##### 📌 備註：")
-                    st.text(clean_and_format(row["notes"]))
+                    st.markdown(ultimate_format(row["notes"]))
                     
                 with col2:
                     st.markdown("##### 👩‍🍳 製作步驟：")
-                    st.text(clean_and_format(row["steps"]))
+                    st.markdown(ultimate_format(row["steps"]))
                     
                     st.markdown("##### 💡 改良做法：")
-                    st.text(clean_and_format(row["improvement"]))
+                    st.markdown(ultimate_format(row["improvement"]))
