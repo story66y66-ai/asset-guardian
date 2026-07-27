@@ -105,7 +105,7 @@ if not df.empty:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
         if st.button("🗑️ 清除目前的清單", key="clear_list_v17"):
-            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v17_")]
+            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v17_") or k.startswith("memine_") or k.startswith("prac_v17_")]
             for k in keys_to_delete:
                 del st.session_state[k]
             st.session_state.selected_vocab_list = []
@@ -142,7 +142,6 @@ if not df.empty:
                 if state_key not in st.session_state:
                     w_lower = w.lower()
                     
-                    # 專門針對副詞、冠詞或一般單字的黃金文法對應邏輯
                     if w_lower in ["always", "never", "often", "sometimes", "usually"]:
                         if type_choice == "否定句":
                             e_text = f"I {w} forget to bring my keys when leaving."
@@ -166,7 +165,6 @@ if not df.empty:
                             c_text = f"她想為這件事找出一個更好的解決辦法。"
                             
                     else:
-                        # 依據場合與程度套用高標準、文法百分之百正確的句型
                         if scene_choice == "旅遊社交":
                             if level_choice == "初階":
                                 if type_choice == "否定句":
@@ -280,11 +278,33 @@ if not df.empty:
                     tts.write_to_fp(fp)
                     st.audio(fp, autoplay=True)
 
+                st.divider()
+                st.markdown("---")
+                st.markdown(f"**🌟 Memine 道地文法示範（與您的單字連動）**")
+                
+                memine_input_key = f"memine_input_{idx}_{w}"
+                memine_sentence = st.text_input(f"請貼上 Memine 幫您用 [{w}] 造的句子：", key=memine_input_key, placeholder="在此貼上 Memine 產生的句子...")
+                
+                if memine_sentence:
+                    highlighted_memine = re.sub(r'\b' + re.escape(str(w)) + r'\b', f"<span class='red-word'>{w}</span>", memine_sentence, flags=re.IGNORECASE)
+                    st.markdown(f"**💡 Memine 示範句：** {highlighted_memine}", unsafe_allow_html=True)
+                    
+                    # 自動產生簡單對應中文翻譯（或提示）
+                    st.markdown(f"*(中文翻譯對照：與 [{w}] ({trans_w}) 相關的實用情境)*", unsafe_allow_html=True)
+                    
+                    if st.button(f"🔊 聽 Memine 示範句英文發音", key=f"audio_memine_{idx}_{w}"):
+                        tts_m = gTTS(text=memine_sentence, lang='en')
+                        fp_m = io.BytesIO()
+                        tts_m.write_to_fp(fp_m)
+                        st.audio(fp_m, autoplay=True)
+
+                st.markdown("<br>", unsafe_allow_html=True)
                 user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v17_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
+                
                 if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v17_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     if w.lower() in user_practice.lower():
-                        st.success(f"🎉 太棒了！[{w}] 使用正確！")
+                        st.success(f"🎉 太棒了！[{w}] 使用正確！您寫的句子結構很棒喔！")
                     else:
-                        st.error(f"❌ 句子裡好像漏掉了單字 [{w}] 喔，再試一次!")
+                        st.error(f"❌ 檢查結果：句子裡好像漏掉了單字 [{w}] 喔，再試一次!")
 else:
     st.warning("目前沒有找到任何單字資料，請確認是否有上傳 level 檔案！")
