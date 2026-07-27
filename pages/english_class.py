@@ -289,14 +289,23 @@ if not df.empty:
                     highlighted_memine = re.sub(r'\b' + re.escape(str(w)) + r'\b', f"<span class='red-word'>{w}</span>", memine_sentence, flags=re.IGNORECASE)
                     st.markdown(f"**💡 Memine 示範句：** {highlighted_memine}", unsafe_allow_html=True)
                     
-                    # 自動產生簡單對應中文翻譯（或提示）
-                    st.markdown(f"*(中文翻譯對照：與 [{w}] ({trans_w}) 相關的實用情境)*", unsafe_allow_html=True)
-                    
                     if st.button(f"🔊 聽 Memine 示範句英文發音", key=f"audio_memine_{idx}_{w}"):
                         tts_m = gTTS(text=memine_sentence, lang='en')
                         fp_m = io.BytesIO()
                         tts_m.write_to_fp(fp_m)
                         st.audio(fp_m, autoplay=True)
+
+                    # 新增：讓您自己貼上中文翻譯與發音
+                    memine_trans_key = f"memine_trans_input_{idx}_{w}"
+                    memine_translation = st.text_input(f"📝 請輸入或貼上 Memine 示範句的中文翻譯：", key=memine_trans_key, placeholder="在此輸入中文翻譯...")
+                    
+                    if memine_translation:
+                        st.markdown(f"*(中文翻譯：{memine_translation})*", unsafe_allow_html=True)
+                        if st.button(f"🔊 聽中文翻譯語音", key=f"audio_memine_trans_{idx}_{w}"):
+                            tts_t = gTTS(text=memine_translation, lang='zh-tw')
+                            fp_t = io.BytesIO()
+                            tts_t.write_to_fp(fp_t)
+                            st.audio(fp_t, autoplay=True)
 
                 st.markdown("<br>", unsafe_allow_html=True)
                 user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v17_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
