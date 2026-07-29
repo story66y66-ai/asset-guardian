@@ -9,10 +9,12 @@ st.write("---")
 
 CSV_FILE = "baking_recipes.csv"
 
+# 初始化 CSV 檔案
 if not os.path.exists(CSV_FILE):
     df_init = pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement"])
     df_init.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
 
+# 讀取檔案函式：每次都直接從真正的檔案讀
 def load_recipes():
     try:
         df_loaded = pd.read_csv(CSV_FILE, encoding="utf-8-sig", on_bad_lines="skip")
@@ -24,9 +26,7 @@ def load_recipes():
     except Exception:
         return pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement"])
 
-df = load_recipes()
-
-# 1. 材料智慧排版
+# 智慧排版函式
 def smart_format_ingredients(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
@@ -44,7 +44,6 @@ def smart_format_ingredients(text):
     t = t.replace("材料準備", "\n📌 材料準備")
     return t.strip()
 
-# 2. 製作步驟智慧排版
 def smart_format_steps(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
@@ -62,7 +61,6 @@ def smart_format_steps(text):
         t = t.replace(f"，{kw}", f"，\n• {kw}")
     return t.strip()
 
-# 3. 注意事項智慧排版
 def smart_format_notes(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
@@ -72,7 +70,6 @@ def smart_format_notes(text):
     t = t.replace("。", "。\n• ")
     return "• " + t.strip()
 
-# 4. 改良做法智慧排版
 def smart_format_improvement(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
@@ -95,11 +92,10 @@ if "input_improvement" not in st.session_state:
     st.session_state["input_improvement"] = ""
 if "edit_index" not in st.session_state:
     st.session_state["edit_index"] = None
-
 if "active_tab" not in st.session_state:
     st.session_state["active_tab"] = 0
 
-# --- 分頁籤設計 ---
+# 分頁籤
 tab_selection = st.radio(
     "選擇功能", 
     ["✍️ 新增與修改配方", "🔍 搜尋與瀏覽配方"], 
@@ -108,13 +104,9 @@ tab_selection = st.radio(
     label_visibility="collapsed"
 )
 
-if tab_selection == "✍️ 新增與修改配方":
-    st.session_state["active_tab"] = 0
-else:
-    st.session_state["active_tab"] = 1
+st.session_state["active_tab"] = 0 if tab_selection == "✍️ 新增與修改配方" else 1
 
 if st.session_state["active_tab"] == 0:
-    # --- 頁面一：新增與修改配方 ---
     if st.session_state["edit_index"] is not None:
         st.subheader(f"✏️ 正在修改配方（第 {st.session_state['edit_index'] + 1} 筆）")
         save_btn_text = "💾 儲存修改內容（更新資料）"
@@ -124,44 +116,19 @@ if st.session_state["active_tab"] == 0:
 
     with st.form("recipe_form"):
         recipe_name = st.text_input("📝 烘焙名稱（例如：鮮奶吐司、手作貝果）", value=st.session_state["input_name"])
-        
         submitted_format = st.form_submit_button("✨ 點我一鍵自動整理「全部四個欄位」排版")
         
         st.markdown("⚖️ 材料與比例")
-        st.session_state["input_ingredients"] = st.text_area(
-            "材料內容", 
-            value=st.session_state["input_ingredients"], 
-            height=200, 
-            placeholder="直接整段貼上...", 
-            label_visibility="collapsed"
-        )
+        st.session_state["input_ingredients"] = st.text_area("材料內容", value=st.session_state["input_ingredients"], height=200, label_visibility="collapsed")
 
         st.markdown("👩‍🍳 製作步驟")
-        st.session_state["input_steps"] = st.text_area(
-            "步驟內容", 
-            value=st.session_state["input_steps"], 
-            height=200, 
-            placeholder="直接貼上製作步驟...", 
-            label_visibility="collapsed"
-        )
+        st.session_state["input_steps"] = st.text_area("步驟內容", value=st.session_state["input_steps"], height=200, label_visibility="collapsed")
         
         st.markdown("📌 注意事項")
-        st.session_state["input_notes"] = st.text_area(
-            "注意事項內容", 
-            value=st.session_state["input_notes"], 
-            height=120, 
-            placeholder="注意事項...", 
-            label_visibility="collapsed"
-        )
+        st.session_state["input_notes"] = st.text_area("注意事項內容", value=st.session_state["input_notes"], height=120, label_visibility="collapsed")
         
         st.markdown("💡 改良做法")
-        st.session_state["input_improvement"] = st.text_area(
-            "改良內容", 
-            value=st.session_state["input_improvement"], 
-            height=120, 
-            placeholder="心得與調整記錄...", 
-            label_visibility="collapsed"
-        )
+        st.session_state["input_improvement"] = st.text_area("改良內容", value=st.session_state["input_improvement"], height=120, label_visibility="collapsed")
         
         col_f1, col_f2 = st.columns(2)
         with col_f1:
@@ -189,6 +156,9 @@ if st.session_state["active_tab"] == 0:
 
         if submitted_save:
             if recipe_name.strip():
+                # 每次儲存前，立刻重新讀取最新檔案，避免蓋掉其他人或剛加的資料
+                current_df = load_recipes()
+                
                 final_ingredients = smart_format_ingredients(st.session_state["input_ingredients"])
                 final_steps = smart_format_steps(st.session_state["input_steps"])
                 final_notes = smart_format_notes(st.session_state["input_notes"])
@@ -196,11 +166,12 @@ if st.session_state["active_tab"] == 0:
                 
                 if st.session_state["edit_index"] is not None:
                     idx = st.session_state["edit_index"]
-                    df.at[idx, "name"] = recipe_name
-                    df.at[idx, "ingredients"] = final_ingredients
-                    df.at[idx, "steps"] = final_steps
-                    df.at[idx, "notes"] = final_notes
-                    df.at[idx, "improvement"] = final_improvement
+                    if idx < len(current_df):
+                        current_df.at[idx, "name"] = recipe_name
+                        current_df.at[idx, "ingredients"] = final_ingredients
+                        current_df.at[idx, "steps"] = final_steps
+                        current_df.at[idx, "notes"] = final_notes
+                        current_df.at[idx, "improvement"] = final_improvement
                     st.session_state["edit_index"] = None
                     success_msg = f"成功更新烘焙品項：【{recipe_name}】！"
                 else:
@@ -211,10 +182,11 @@ if st.session_state["active_tab"] == 0:
                         "notes": final_notes,
                         "improvement": final_improvement
                     }])
-                    df = pd.concat([df, new_data], ignore_index=True)
+                    current_df = pd.concat([current_df, new_data], ignore_index=True)
                     success_msg = f"成功新增烘焙品項：【{recipe_name}】！"
                 
-                df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
+                # 直接寫入檔案！
+                current_df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
                 
                 st.session_state["input_name"] = ""
                 st.session_state["input_ingredients"] = ""
@@ -228,8 +200,8 @@ if st.session_state["active_tab"] == 0:
                 st.error("請至少填寫「烘焙名稱」才能儲存唷！")
 
 else:
-    # --- 頁面二：搜尋與瀏覽配方 ---
     st.subheader("📚 烘焙配方清單與搜尋")
+    df = load_recipes()
     
     if df.empty:
         st.info("目前還沒有任何烘焙配方，快去新增第一道美味點心吧！")
@@ -253,14 +225,11 @@ else:
                 with col1:
                     st.markdown("##### ⚖️ 材料與比例：")
                     st.text(smart_format_ingredients(row["ingredients"]))
-                    
                     st.markdown("##### 📌 注意事項：")
                     st.text(smart_format_notes(row["notes"]))
-                    
                 with col2:
                     st.markdown("##### 👩‍🍳 製作步驟：")
                     st.text(smart_format_steps(row["steps"]))
-                    
                     st.markdown("##### 💡 改良做法：")
                     st.text(smart_format_improvement(row["improvement"]))
                 
@@ -282,14 +251,3 @@ else:
                         df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
                         st.success(f"已刪除【{row['name']}】")
                         st.rerun()
-
-        # 在頁面最下方新增下載按鈕，隨時把最新資料下載成 CSV 備份！
-        st.write("---")
-        st.subheader("💾 資料備份與匯出")
-        csv_data = df.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
-        st.download_button(
-            label="📥 下載最新完整的 baking_recipes.csv 檔案",
-            data=csv_data,
-            file_name="baking_recipes.csv",
-            mime="text/csv",
-        )
