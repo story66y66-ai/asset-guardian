@@ -26,39 +26,26 @@ def load_recipes():
     except Exception:
         return pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement"])
 
-# 智慧排版：材料（終極完美版：自動偵測頓號、分號與標題換行，永不漏掉任何食材）
+# 智慧排版：材料（穩健的關鍵字清單模式，隨時可幫澄玄擴充！）
 def smart_format_ingredients(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
     t = str(text).strip()
     
-    # 清理舊有的項目符號
+    # 清理舊有的項目符號與多餘空白
     t = t.replace("• ", "").replace("\n", " ").strip()
     
-    # 讓大標題（如材料準備、配方一等）獨立一行並加上黑點
-    headers = ["配方一", "配方二", "材料準備", "材料與比例", "裝飾物"]
-    for h in headers:
-        t = t.replace(h, f"\n• {h}")
-    
-    # 讓分號（；）後面自動換行加黑點
-    t = t.replace("；", "；\n• ")
-    
-    # 讓頓號（、）後面自動換行加黑點（但避開數字之間的頓號，如 10-12）
-    # 這裡我們用最穩定的方式處理：以頓號斷行
-    t = t.replace("、", "\n• ")
-    
-    # 清理多餘空白與空行
+    # 收錄所有已知食材與結構關鍵字（以後缺什麼隨時加進來！）
+    keywords = [
+        "配方一", "配方二", "材料準備", "材料與比例", "裝飾物",
+        "中筋麵粉", "高筋麵粉", "低筋麵粉", "清水", "全脂鮮乳", "鮮乳", "牛奶",
+        "雞蛋", "速發酵母", "砂糖", "植物油", "無鹽奶油"
+    ]
+    for kw in keywords:
+        t = t.replace(kw, f"\n• {kw}")
+        
     lines = [line.strip() for line in t.split("\n") if line.strip()]
-    
-    # 確保第一行前面也有黑點（如果沒有的話）
-    formatted_lines = []
-    for line in lines:
-        if not line.startswith("•"):
-            formatted_lines.append(f"• {line}")
-        else:
-            formatted_lines.append(line)
-            
-    return "\n".join(formatted_lines)
+    return "\n".join(lines)
 
 # 智慧排版：步驟
 def smart_format_steps(text):
