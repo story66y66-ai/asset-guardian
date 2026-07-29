@@ -26,51 +26,41 @@ def load_recipes():
     except Exception:
         return pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement"])
 
-# 智慧排版：材料（支援多配方與關鍵字自動斷行）
+# 智慧排版：材料
 def smart_format_ingredients(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
     t = str(text).strip()
-    
-    # 如果已經排過版，先清理乾淨避免重複增加
     t = t.replace("• ", "").replace("\n", " ").strip()
-    
-    # 針對像「配方一」、「配方二」或是材料關鍵字進行友善換行
     keywords = ["配方一", "配方二", "中筋麵粉", "高筋麵粉", "低筋麵粉", "清水", "全脂鮮乳", "速發酵母", "砂糖", "植物油", "無鹽奶油"]
     for kw in keywords:
         t = t.replace(kw, f"\n• {kw}")
-    
     return t.strip()
 
-# 智慧排版：步驟（防止重複疊加標題，精準依句號斷行）
+# 智慧排版：步驟
 def smart_format_steps(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
     t = str(text)
-    
-    # 清理掉之前可能重複疊加的所有標題與多餘符號
     while "👨‍🍳 製作步驟：" in t:
         t = t.replace("👨‍🍳 製作步驟：", "")
     while "👨‍🍳" in t:
         t = t.replace("👨‍🍳", "")
-    
     t = t.replace("\n• ", "").replace("• ", "").strip()
     
-    # 重新以句號切開每一句
     parts = t.split("。")
     formatted_parts = ["👨‍🍳 製作步驟："]
     for p in parts:
         cleaned = p.strip()
         if not cleaned:
             continue
-        # 過濾掉純標題文字
         if cleaned in ["製作步驟", "萬用麵糰操作步驟（從冷凍到上桌）"]:
             formatted_parts.append(f"📋 {cleaned}")
         else:
             formatted_parts.append(f"• {cleaned}。")
-            
     return "\n".join(formatted_parts)
 
+# 智慧排版：注意事項
 def smart_format_notes(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
@@ -78,6 +68,7 @@ def smart_format_notes(text):
     t = t.replace("。", "。\n• ")
     return "• " + t.strip()
 
+# 智慧排版：改良做法
 def smart_format_improvement(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
@@ -242,11 +233,12 @@ else:
                 col_b1, col_b2, _ = st.columns([1, 1, 4])
                 with col_b1:
                     if st.button("✏️ 帶入至新增頁面修改", key=f"edit_to_tab1_{index}"):
+                        # 核心修改：帶入的瞬間直接套用智慧排版！
                         st.session_state["input_name"] = row["name"]
-                        st.session_state["input_ingredients"] = row["ingredients"]
-                        st.session_state["input_steps"] = row["steps"]
-                        st.session_state["input_notes"] = row["notes"]
-                        st.session_state["input_improvement"] = row["improvement"]
+                        st.session_state["input_ingredients"] = smart_format_ingredients(row["ingredients"])
+                        st.session_state["input_steps"] = smart_format_steps(row["steps"])
+                        st.session_state["input_notes"] = smart_format_notes(row["notes"])
+                        st.session_state["input_improvement"] = smart_format_improvement(row["improvement"])
                         st.session_state["edit_index"] = index
                         st.session_state["active_tab"] = 0
                         st.rerun()
