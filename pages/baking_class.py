@@ -26,7 +26,7 @@ def load_recipes():
 
 df = load_recipes()
 
-# 超強智慧排版函數：自動抓取常見材料名稱，或利用「名稱：」的結構自動換行加項目符號
+# 全能智慧排版函數：自動抓取所有帶有冒號「：」的材料項目並自動換行加項目符號！
 def smart_format_ingredients(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
@@ -36,7 +36,7 @@ def smart_format_ingredients(text):
     if "\n" in t:
         return t
     
-    # 擴充的材料關鍵字
+    # 擴充所有可能的材料與標頭名稱
     keywords = [
         "配方一", "配方二", "配方三",
         "高筋麵粉", "中筋麵粉", "低筋麵粉", "全麥麵粉", "黑麥粉", "粘米粉", "糯米粉", "太白粉", "玉米澱粉", "地瓜粉",
@@ -48,14 +48,16 @@ def smart_format_ingredients(text):
         "鹽", "細鹽", "玫瑰鹽",
         "可可粉", "巧克力", "抹茶粉", "香草精", "肉桂粉", "咖啡粉", "檸檬汁", "檸檬皮屑",
         "葡萄乾", "蔓越莓乾", "核桃", "杏仁片", "腰果", "芝麻", "乳酪", "起司片", "卡士達醬",
-        "裝飾物", "海苔粉", "材料準備"
+        "裝飾物", "海苔粉", "材料準備", "低筋麵粉", "雞蛋", "融化無鹽奶油", "砂糖"
     ]
     
     t = t.replace("配方一", "\n💧 配方一").replace("配方二", "\n\n🥛 配方二").replace("配方三", "\n\n🥄 配方三")
     
     for kw in keywords:
         if kw not in ["配方一", "配方二", "配方三"]:
-            t = t.replace(kw, f"\n• {kw}")
+            # 讓程式自動抓取「關鍵字：」的結構並強制斷行加上項目符號
+            t = t.replace(f"{kw}：", f"\n• {kw}：")
+            t = t.replace(f" {kw}:", f"\n• {kw}:")
             
     return t.strip()
 
