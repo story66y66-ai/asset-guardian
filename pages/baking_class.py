@@ -26,26 +26,24 @@ def load_recipes():
     except Exception:
         return pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement"])
 
-# 智慧排版：材料（全自動升級版：自動抓取結構與頓號斷行）
+# 智慧排版：材料（精準關鍵字清單，包含牛奶與各類食材，完美斷行）
 def smart_format_ingredients(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
     t = str(text).strip()
     
-    # 清理舊有的項目符號
+    # 清理舊有的項目符號與多餘空白
     t = t.replace("• ", "").replace("\n", " ").strip()
     
-    # 強制將常見的結構標題加上換行
+    # 完整收錄所有材料與結構關鍵字（包含牛奶）
     keywords = [
-        "配方一", "配方二", "材料準備", "材料與比例", "裝飾物"
+        "配方一", "配方二", "材料準備", "材料與比例", "裝飾物",
+        "中筋麵粉", "高筋麵粉", "低筋麵粉", "清水", "全脂鮮乳", "牛奶",
+        "速發酵母", "砂糖", "植物油", "無鹽奶油"
     ]
     for kw in keywords:
         t = t.replace(kw, f"\n• {kw}")
         
-    # 全自動魔法：如果遇到頓號「、」，代表它是條列食材，直接自動幫忙換行加黑點！
-    t = t.replace("、", "\n• ")
-    
-    # 清理多餘空白與空行
     lines = [line.strip() for line in t.split("\n") if line.strip()]
     return "\n".join(lines)
 
