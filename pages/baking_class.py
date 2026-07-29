@@ -48,18 +48,31 @@ def smart_format_steps(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
     t = str(text)
-    if "\n•" in t:
-        return t
-    action_keywords = [
-        "打發", "加入", "篩入", "混合", "調整", "香草精", 
-        "預熱", "鋪上", "用湯匙", "覆蓋", "壓成", "烘烤", 
-        "取出", "再鋪", "完全冷卻", "出爐"
-    ]
-    t = t.replace("製作步驟：", "\n👨‍🍳 製作步驟：")
-    for kw in action_keywords:
-        t = t.replace(f"。{kw}", f"。\n• {kw}")
-        t = t.replace(f"，{kw}", f"，\n• {kw}")
-    return t.strip()
+    
+    # 確保開頭有標題
+    if "製作步驟" not in t:
+        t = "👨‍🍳 製作步驟：\n" + t
+    else:
+        t = t.replace("製作步驟：", "👨‍🍳 製作步驟：\n").replace("製作步驟", "👨‍🍳 製作步驟：\n")
+
+    # 移除多餘的項目符號避免重複疊加
+    t = t.replace("\n• ", "").replace("• ", "")
+
+    # 核心新規則：看到句號就自動換行並加上項目符號
+    # 針對常見的中文句號與結尾進行斷行處理
+    parts = t.split("。")
+    formatted_parts = []
+    for i, p in enumerate(parts):
+        cleaned = p.strip()
+        if not cleaned:
+            continue
+        # 如果是第一部分（標題），不要加項目符號
+        if "👨‍🍳 製作步驟：" in cleaned and i == 0:
+            formatted_parts.append(cleaned)
+        else:
+            formatted_parts.append(f"• {cleaned}。")
+            
+    return "\n".join(formatted_parts)
 
 def smart_format_notes(text):
     if not pd.notna(text) or not str(text).strip():
@@ -156,7 +169,6 @@ if st.session_state["active_tab"] == 0:
 
         if submitted_save:
             if recipe_name.strip():
-                # 每次儲存前，立刻重新讀取最新檔案，避免蓋掉其他人或剛加的資料
                 current_df = load_recipes()
                 
                 final_ingredients = smart_format_ingredients(st.session_state["input_ingredients"])
@@ -185,7 +197,6 @@ if st.session_state["active_tab"] == 0:
                     current_df = pd.concat([current_df, new_data], ignore_index=True)
                     success_msg = f"成功新增烘焙品項：【{recipe_name}】！"
                 
-                # 直接寫入檔案！
                 current_df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
                 
                 st.session_state["input_name"] = ""
