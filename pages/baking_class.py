@@ -26,16 +26,13 @@ def load_recipes():
     except Exception:
         return pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement"])
 
-# 智慧排版：材料（穩健的關鍵字清單模式，隨時可幫澄玄擴充！）
+# 智慧排版：材料（穩健的關鍵字清單模式）
 def smart_format_ingredients(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
     t = str(text).strip()
-    
-    # 清理舊有的項目符號與多餘空白
     t = t.replace("• ", "").replace("\n", " ").strip()
     
-    # 收錄所有已知食材與結構關鍵字（以後缺什麼隨時加進來！）
     keywords = [
         "配方一", "配方二", "材料準備", "材料與比例", "裝飾物",
         "中筋麵粉", "高筋麵粉", "低筋麵粉", "清水", "全脂鮮乳", "鮮乳", "牛奶",
@@ -171,27 +168,24 @@ if st.session_state["active_tab"] == 0:
                 final_notes = smart_format_notes(st.session_state["input_notes"])
                 final_improvement = smart_format_improvement(st.session_state["input_improvement"])
                 
+                # 終極安全存檔法：如果是修改，先刪除舊的那一筆，再把新資料加進去
                 if st.session_state["edit_index"] is not None:
                     idx = st.session_state["edit_index"]
                     if idx < len(current_df):
-                        # 安全更新特定列的欄位
-                        current_df.loc[idx, "name"] = recipe_name
-                        current_df.loc[idx, "ingredients"] = final_ingredients
-                        current_df.loc[idx, "steps"] = final_steps
-                        current_df.loc[idx, "notes"] = final_notes
-                        current_df.loc[idx, "improvement"] = final_improvement
+                        current_df = current_df.drop(idx).reset_index(drop=True)
                     st.session_state["edit_index"] = None
                     success_msg = f"成功更新烘焙品項：【{recipe_name}】！"
                 else:
-                    new_data = pd.DataFrame([{
-                        "name": recipe_name,
-                        "ingredients": final_ingredients,
-                        "steps": final_steps,
-                        "notes": final_notes,
-                        "improvement": final_improvement
-                    }])
-                    current_df = pd.concat([current_df, new_data], ignore_index=True)
                     success_msg = f"成功新增烘焙品項：【{recipe_name}】！"
+                
+                new_data = pd.DataFrame([{
+                    "name": recipe_name,
+                    "ingredients": final_ingredients,
+                    "steps": final_steps,
+                    "notes": final_notes,
+                    "improvement": final_improvement
+                }])
+                current_df = pd.concat([current_df, new_data], ignore_index=True)
                 
                 current_df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
                 
