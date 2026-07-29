@@ -26,14 +26,13 @@ def load_recipes():
 
 df = load_recipes()
 
-# 超強智慧排版函數：只要有冒號就自動斷行加項目符號
+# 材料智慧排版函數
 def smart_format_ingredients(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
     
     t = str(text)
     
-    # 如果已經有換行了就保持原狀
     if "\n•" in t:
         return t
     
@@ -51,6 +50,31 @@ def smart_format_ingredients(text):
     
     return t.strip()
 
+# 製作步驟智慧排版函數：自動抓取關鍵動作或句號後自動分行
+def smart_format_steps(text):
+    if not pd.notna(text) or not str(text).strip():
+        return ""
+    
+    t = str(text)
+    
+    if "\n" in t:
+        return t
+    
+    # 針對常見的烘焙動作關鍵字自動斷行加上編號或項目
+    action_keywords = [
+        "打發", "加入", "篩入", "混合", "調整", "香草精", 
+        "預熱", "鋪上", "用湯匙", "覆蓋", "壓成", "烘烤", 
+        "取出", "再鋪", "完全冷卻", "出爐"
+    ]
+    
+    t = t.replace("製作步驟：", "\n👨‍🍳 製作步驟：")
+    
+    for kw in action_keywords:
+        t = t.replace(f"。{kw}", f"。\n• {kw}")
+        t = t.replace(f"，{kw}", f"，\n• {kw}")
+        
+    return t.strip()
+
 # --- 分頁籤設計 ---
 tab1, tab2 = st.tabs(["✍️ 新增烘焙配方", "🔍 搜尋與瀏覽配方"])
 
@@ -66,9 +90,10 @@ with tab1:
     if "input_improvement" not in st.session_state:
         st.session_state["input_improvement"] = ""
 
-    # 新增一個「一鍵自動排版」按鈕，只要貼上後按一下，文字立刻在輸入框裡排好！
-    def auto_format():
+    # 一鍵自動排版所有內容
+    def auto_format_all():
         st.session_state["input_ingredients"] = smart_format_ingredients(st.session_state["input_ingredients"])
+        st.session_state["input_steps"] = smart_format_steps(st.session_state["input_steps"])
 
     with st.form("recipe_form"):
         recipe_name = st.text_input("📝 烘焙名稱（例如：鮮奶吐司、手作貝果）")
@@ -77,15 +102,10 @@ with tab1:
         st.session_state["input_ingredients"] = st.text_area(
             "材料內容", 
             value=st.session_state["input_ingredients"], 
-            height=220, 
+            height=200, 
             placeholder="直接整段貼上...", 
             label_visibility="collapsed"
         )
-        
-        # 點一下這個按鈕，輸入框裡的文字立刻自動排版好！
-        if st.form_submit_button("✨ 點我自動整理材料排版"):
-            auto_format()
-            st.rerun()
 
         st.markdown("👩‍🍳 製作步驟")
         st.session_state["input_steps"] = st.text_area(
@@ -95,6 +115,11 @@ with tab1:
             placeholder="直接貼上製作步驟...", 
             label_visibility="collapsed"
         )
+        
+        # 點一下這個按鈕，材料跟步驟全部自動排版好！
+        if st.form_submit_button("✨ 點我自動整理「材料與步驟」排版"):
+            auto_format_all()
+            st.rerun()
         
         st.markdown("📌 注意事項")
         st.session_state["input_notes"] = st.text_area(
@@ -118,12 +143,13 @@ with tab1:
         
         if submitted:
             if recipe_name.strip():
-                # 儲存前再自動排版一次，確保資料庫跟搜尋結果都完美
                 final_ingredients = smart_format_ingredients(st.session_state["input_ingredients"])
+                final_steps = smart_format_steps(st.session_state["input_steps"])
+                
                 new_data = pd.DataFrame([{
                     "name": recipe_name,
                     "ingredients": final_ingredients,
-                    "steps": st.session_state["input_steps"],
+                    "steps": final_steps,
                     "notes": st.session_state["input_notes"],
                     "improvement": st.session_state["input_improvement"]
                 }])
@@ -172,7 +198,7 @@ with tab2:
                     
                 with col2:
                     st.markdown("##### 👩‍🍳 製作步驟：")
-                    st.text(row["steps"])
+                    st.text(smart_format_steps(row["steps"]))
                     
                     st.markdown("##### 💡 改良做法：")
                     st.text(row["improvement"])
