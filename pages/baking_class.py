@@ -69,7 +69,6 @@ def smart_format_notes(text):
     t = str(text)
     if "\n•" in t:
         return t
-    # 遇到句號或特定分段處自動換行
     t = t.replace("。", "。\n• ")
     return "• " + t.strip()
 
@@ -83,25 +82,51 @@ def smart_format_improvement(text):
     t = t.replace("。", "。\n• ")
     return "• " + t.strip()
 
-# --- 分頁籤設計 ---
-tab1, tab2 = st.tabs(["✍️ 新增烘焙配方", "🔍 搜尋與瀏覽配方"])
+# 初始化 Session State
+if "input_name" not in st.session_state:
+    st.session_state["input_name"] = ""
+if "input_ingredients" not in st.session_state:
+    st.session_state["input_ingredients"] = ""
+if "input_steps" not in st.session_state:
+    st.session_state["input_steps"] = ""
+if "input_notes" not in st.session_state:
+    st.session_state["input_notes"] = ""
+if "input_improvement" not in st.session_state:
+    st.session_state["input_improvement"] = ""
+if "edit_index" not in st.session_state:
+    st.session_state["edit_index"] = None
 
-with tab1:
-    st.subheader("🥐 新增一筆烘焙紀錄與配方")
-    
-    if "input_ingredients" not in st.session_state:
-        st.session_state["input_ingredients"] = ""
-    if "input_steps" not in st.session_state:
-        st.session_state["input_steps"] = ""
-    if "input_notes" not in st.session_state:
-        st.session_state["input_notes"] = ""
-    if "input_improvement" not in st.session_state:
-        st.session_state["input_improvement"] = ""
+# 用來控制當前顯示哪個分頁 (0 = 新增/修改頁, 1 = 搜尋瀏覽頁)
+if "active_tab" not in st.session_state:
+    st.session_state["active_tab"] = 0
+
+# --- 分頁籤設計 ---
+tab_selection = st.radio(
+    "選擇功能", 
+    ["✍️ 新增與修改配方", "🔍 搜尋與瀏覽配方"], 
+    index=st.session_state["active_tab"], 
+    horizontal=True, 
+    label_visibility="collapsed"
+)
+
+# 同步 radio 與 session_state
+if tab_selection == "✍️ 新增與修改配方":
+    st.session_state["active_tab"] = 0
+else:
+    st.session_state["active_tab"] = 1
+
+if st.session_state["active_tab"] == 0:
+    # --- 頁面一：新增與修改配方 ---
+    if st.session_state["edit_index"] is not None:
+        st.subheader(f"✏️ 正在修改配方（第 {st.session_state['edit_index'] + 1} 筆）")
+        save_btn_text = "💾 儲存修改內容（更新資料）"
+    else:
+        st.subheader("🥐 新增一筆烘焙紀錄與配方")
+        save_btn_text = "💾 儲存並寫入資料庫"
 
     with st.form("recipe_form"):
-        recipe_name = st.text_input("📝 烘焙名稱（例如：鮮奶吐司、手作貝果）")
+        recipe_name = st.text_input("📝 烘焙名稱（例如：鮮奶吐司、手作貝果）", value=st.session_state["input_name"])
         
-        # 把一鍵自動整理按鈕放在最上方，隨時點了四格全自動排版！
         submitted_format = st.form_submit_button("✨ 點我一鍵自動整理「全部四個欄位」排版")
         
         st.markdown("⚖️ 材料與比例")
@@ -140,15 +165,30 @@ with tab1:
             label_visibility="collapsed"
         )
         
-        submitted_save = st.form_submit_button("💾 儲存並寫入資料庫")
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            submitted_save = st.form_submit_button(save_btn_text)
+        with col_f2:
+            submitted_cancel = st.form_submit_button("❌ 放棄修改 / 清空重來")
         
         if submitted_format:
+            st.session_state["input_name"] = recipe_name
             st.session_state["input_ingredients"] = smart_format_ingredients(st.session_state["input_ingredients"])
             st.session_state["input_steps"] = smart_format_steps(st.session_state["input_steps"])
             st.session_state["input_notes"] = smart_format_notes(st.session_state["input_notes"])
             st.session_state["input_improvement"] = smart_format_improvement(st.session_state["input_improvement"])
             st.rerun()
             
+        if submitted_cancel:
+            st.session_state["input_name"] = ""
+            st.session_state["input_ingredients"] = ""
+            st.session_state["input_steps"] = ""
+            st.session_state["input_notes"] = ""
+            st.session_state["input_improvement"] = ""
+            st.session_state["edit_index"] = None
+            st.success("已清除或取消編輯！")
+            st.rerun()
+
         if submitted_save:
             if recipe_name.strip():
                 final_ingredients = smart_format_ingredients(st.session_state["input_ingredients"])
@@ -156,28 +196,43 @@ with tab1:
                 final_notes = smart_format_notes(st.session_state["input_notes"])
                 final_improvement = smart_format_improvement(st.session_state["input_improvement"])
                 
-                new_data = pd.DataFrame([{
-                    "name": recipe_name,
-                    "ingredients": final_ingredients,
-                    "steps": final_steps,
-                    "notes": final_notes,
-                    "improvement": final_improvement
-                }])
+                if st.session_state["edit_index"] is not None:
+                    # 更新指定的舊資料
+                    idx = st.session_state["edit_index"]
+                    df.at[idx, "name"] = recipe_name
+                    df.at[idx, "ingredients"] = final_ingredients
+                    df.at[idx, "steps"] = final_steps
+                    df.at[idx, "notes"] = final_notes
+                    df.at[idx, "improvement"] = final_improvement
+                    st.session_state["edit_index"] = None
+                    success_msg = f"成功更新烘焙品項：【{recipe_name}】！"
+                else:
+                    # 新增新資料
+                    new_data = pd.DataFrame([{
+                        "name": recipe_name,
+                        "ingredients": final_ingredients,
+                        "steps": final_steps,
+                        "notes": final_notes,
+                        "improvement": final_improvement
+                    }])
+                    df = pd.concat([df, new_data], ignore_index=True)
+                    success_msg = f"成功新增烘焙品項：【{recipe_name}】！"
                 
-                updated_df = pd.concat([df, new_data], ignore_index=True)
-                updated_df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
+                df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
                 
+                st.session_state["input_name"] = ""
                 st.session_state["input_ingredients"] = ""
                 st.session_state["input_steps"] = ""
                 st.session_state["input_notes"] = ""
                 st.session_state["input_improvement"] = ""
                 
-                st.success(f"成功新增烘焙品項：【{recipe_name}】！")
+                st.success(success_msg)
                 st.rerun()
             else:
                 st.error("請至少填寫「烘焙名稱」才能儲存唷！")
 
-with tab2:
+else:
+    # --- 頁面二：搜尋與瀏覽配方 ---
     st.subheader("📚 烘焙配方清單與搜尋")
     
     if df.empty:
@@ -212,3 +267,23 @@ with tab2:
                     
                     st.markdown("##### 💡 改良做法：")
                     st.text(smart_format_improvement(row["improvement"]))
+                
+                st.write("---")
+                col_b1, col_b2, _ = st.columns([1, 1, 4])
+                with col_b1:
+                    # 點擊後，自動把資料帶入「新增頁面」的大格子裡，並切過去讓澄玄修改！
+                    if st.button("✏️ 帶入至新增頁面修改", key=f"edit_to_tab1_{index}"):
+                        st.session_state["input_name"] = row["name"]
+                        st.session_state["input_ingredients"] = row["ingredients"]
+                        st.session_state["input_steps"] = row["steps"]
+                        st.session_state["input_notes"] = row["notes"]
+                        st.session_state["input_improvement"] = row["improvement"]
+                        st.session_state["edit_index"] = index
+                        st.session_state["active_tab"] = 0
+                        st.rerun()
+                with col_b2:
+                    if st.button("🗑️ 刪除", key=f"del_{index}"):
+                        df = df.drop(index).reset_index(drop=True)
+                        df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
+                        st.success(f"已刪除【{row['name']}】")
+                        st.rerun()
