@@ -14,7 +14,7 @@ if not os.path.exists(CSV_FILE):
     df_init = pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement"])
     df_init.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
 
-# 讀取檔案函式：每次都直接從真正的檔案讀
+# 讀取檔案函式
 def load_recipes():
     try:
         df_loaded = pd.read_csv(CSV_FILE, encoding="utf-8-sig", on_bad_lines="skip")
@@ -26,48 +26,46 @@ def load_recipes():
     except Exception:
         return pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement"])
 
-# 智慧排版函式
+# 智慧排版：材料（支援多配方與關鍵字自動斷行）
 def smart_format_ingredients(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
-    t = str(text)
-    if "\n•" in t:
-        return t
-    keywords = [
-        "材料準備", "中筋麵粉", "低筋麵粉", "高筋麵粉", "雞蛋", 
-        "融化無鹽奶油", "無鹽奶油", "植物油", "砂糖", "鮮乳", "牛奶", 
-        "香草精", "裝飾物", "海苔粉", "白芝麻", "配方一", "配方二"
-    ]
+    t = str(text).strip()
+    
+    # 如果已經排過版，先清理乾淨避免重複增加
+    t = t.replace("• ", "").replace("\n", " ").strip()
+    
+    # 針對像「配方一」、「配方二」或是材料關鍵字進行友善換行
+    keywords = ["配方一", "配方二", "中筋麵粉", "高筋麵粉", "低筋麵粉", "清水", "全脂鮮乳", "速發酵母", "砂糖", "植物油", "無鹽奶油"]
     for kw in keywords:
-        t = t.replace(f"{kw}：", f"\n• {kw}：")
-        t = t.replace(f"{kw}:", f"\n• {kw}:")
-    t = t.replace("材料準備", "\n📌 材料準備")
+        t = t.replace(kw, f"\n• {kw}")
+    
     return t.strip()
 
+# 智慧排版：步驟（防止重複疊加標題，精準依句號斷行）
 def smart_format_steps(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
     t = str(text)
     
-    # 確保開頭有標題
-    if "製作步驟" not in t:
-        t = "👨‍🍳 製作步驟：\n" + t
-    else:
-        t = t.replace("製作步驟：", "👨‍🍳 製作步驟：\n").replace("製作步驟", "👨‍🍳 製作步驟：\n")
-
-    # 移除多餘的項目符號避免重複疊加
-    t = t.replace("\n• ", "").replace("• ", "")
-
-    # 核心新規則：看到句號就自動換行並加上項目符號
+    # 清理掉之前可能重複疊加的所有標題與多餘符號
+    while "👨‍🍳 製作步驟：" in t:
+        t = t.replace("👨‍🍳 製作步驟：", "")
+    while "👨‍🍳" in t:
+        t = t.replace("👨‍🍳", "")
+    
+    t = t.replace("\n• ", "").replace("• ", "").strip()
+    
+    # 重新以句號切開每一句
     parts = t.split("。")
-    formatted_parts = []
-    for i, p in enumerate(parts):
+    formatted_parts = ["👨‍🍳 製作步驟："]
+    for p in parts:
         cleaned = p.strip()
         if not cleaned:
             continue
-        # 如果是第一部分（標題），不要加項目符號
-        if "👨‍🍳 製作步驟：" in cleaned and i == 0:
-            formatted_parts.append(cleaned)
+        # 過濾掉純標題文字
+        if cleaned in ["製作步驟", "萬用麵糰操作步驟（從冷凍到上桌）"]:
+            formatted_parts.append(f"📋 {cleaned}")
         else:
             formatted_parts.append(f"• {cleaned}。")
             
@@ -76,18 +74,14 @@ def smart_format_steps(text):
 def smart_format_notes(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
-    t = str(text)
-    if "\n•" in t:
-        return t
+    t = str(text).replace("• ", "").replace("\n", "").strip()
     t = t.replace("。", "。\n• ")
     return "• " + t.strip()
 
 def smart_format_improvement(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
-    t = str(text)
-    if "\n•" in t:
-        return t
+    t = str(text).replace("• ", "").replace("\n", "").strip()
     t = t.replace("。", "。\n• ")
     return "• " + t.strip()
 
@@ -107,7 +101,7 @@ if "edit_index" not in st.session_state:
 if "active_tab" not in st.session_state:
     st.session_state["active_tab"] = 0
 
-# 分頁籤：透過 index 綁定 st.session_state["active_tab"]
+# 分頁籤
 tab_options = ["✍️ 新增與修改配方", "🔍 搜尋與瀏覽配方"]
 tab_selection = st.radio(
     "選擇功能", 
@@ -117,7 +111,6 @@ tab_selection = st.radio(
     label_visibility="collapsed"
 )
 
-# 同步更新當前頁籤狀態
 st.session_state["active_tab"] = tab_options.index(tab_selection)
 
 if st.session_state["active_tab"] == 0:
@@ -136,7 +129,7 @@ if st.session_state["active_tab"] == 0:
         st.session_state["input_ingredients"] = st.text_area("材料內容", value=st.session_state["input_ingredients"], height=200, label_visibility="collapsed")
 
         st.markdown("👩‍🍳 製作步驟")
-        st.session_state["input_steps"] = st.text_area("步驟內容", value=st.session_state["input_steps"], height=200, label_visibility="collapsed")
+        st.session_state["input_steps"] = st.text_area("步驟內容", value=st.session_state["input_steps"], height=250, label_visibility="collapsed")
         
         st.markdown("📌 注意事項")
         st.session_state["input_notes"] = st.text_area("注意事項內容", value=st.session_state["input_notes"], height=120, label_visibility="collapsed")
@@ -255,7 +248,7 @@ else:
                         st.session_state["input_notes"] = row["notes"]
                         st.session_state["input_improvement"] = row["improvement"]
                         st.session_state["edit_index"] = index
-                        st.session_state["active_tab"] = 0  # 設定跳回第一頁
+                        st.session_state["active_tab"] = 0
                         st.rerun()
                 with col_b2:
                     if st.button("🗑️ 刪除", key=f"del_{index}"):
