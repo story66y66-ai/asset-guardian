@@ -96,7 +96,6 @@ if "input_improvement" not in st.session_state:
 if "edit_index" not in st.session_state:
     st.session_state["edit_index"] = None
 
-# 用來控制當前顯示哪個分頁 (0 = 新增/修改頁, 1 = 搜尋瀏覽頁)
 if "active_tab" not in st.session_state:
     st.session_state["active_tab"] = 0
 
@@ -109,7 +108,6 @@ tab_selection = st.radio(
     label_visibility="collapsed"
 )
 
-# 同步 radio 與 session_state
 if tab_selection == "✍️ 新增與修改配方":
     st.session_state["active_tab"] = 0
 else:
@@ -197,7 +195,6 @@ if st.session_state["active_tab"] == 0:
                 final_improvement = smart_format_improvement(st.session_state["input_improvement"])
                 
                 if st.session_state["edit_index"] is not None:
-                    # 更新指定的舊資料
                     idx = st.session_state["edit_index"]
                     df.at[idx, "name"] = recipe_name
                     df.at[idx, "ingredients"] = final_ingredients
@@ -207,7 +204,6 @@ if st.session_state["active_tab"] == 0:
                     st.session_state["edit_index"] = None
                     success_msg = f"成功更新烘焙品項：【{recipe_name}】！"
                 else:
-                    # 新增新資料
                     new_data = pd.DataFrame([{
                         "name": recipe_name,
                         "ingredients": final_ingredients,
@@ -271,7 +267,6 @@ else:
                 st.write("---")
                 col_b1, col_b2, _ = st.columns([1, 1, 4])
                 with col_b1:
-                    # 點擊後，自動把資料帶入「新增頁面」的大格子裡，並切過去讓澄玄修改！
                     if st.button("✏️ 帶入至新增頁面修改", key=f"edit_to_tab1_{index}"):
                         st.session_state["input_name"] = row["name"]
                         st.session_state["input_ingredients"] = row["ingredients"]
@@ -287,3 +282,14 @@ else:
                         df.to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
                         st.success(f"已刪除【{row['name']}】")
                         st.rerun()
+
+        # 在頁面最下方新增下載按鈕，隨時把最新資料下載成 CSV 備份！
+        st.write("---")
+        st.subheader("💾 資料備份與匯出")
+        csv_data = df.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
+        st.download_button(
+            label="📥 下載最新完整的 baking_recipes.csv 檔案",
+            data=csv_data,
+            file_name="baking_recipes.csv",
+            mime="text/csv",
+        )
