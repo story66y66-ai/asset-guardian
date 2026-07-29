@@ -26,53 +26,62 @@ def load_recipes():
 
 df = load_recipes()
 
-# 材料智慧排版函數
+# 1. 材料智慧排版
 def smart_format_ingredients(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
-    
     t = str(text)
-    
     if "\n•" in t:
         return t
-    
     keywords = [
         "材料準備", "中筋麵粉", "低筋麵粉", "高筋麵粉", "雞蛋", 
         "融化無鹽奶油", "無鹽奶油", "植物油", "砂糖", "鮮乳", "牛奶", 
         "香草精", "裝飾物", "海苔粉", "白芝麻", "配方一", "配方二"
     ]
-    
     for kw in keywords:
         t = t.replace(f"{kw}：", f"\n• {kw}：")
         t = t.replace(f"{kw}:", f"\n• {kw}:")
-        
     t = t.replace("材料準備", "\n📌 材料準備")
-    
     return t.strip()
 
-# 製作步驟智慧排版函數
+# 2. 製作步驟智慧排版
 def smart_format_steps(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
-    
     t = str(text)
-    
     if "\n•" in t:
         return t
-    
     action_keywords = [
         "打發", "加入", "篩入", "混合", "調整", "香草精", 
         "預熱", "鋪上", "用湯匙", "覆蓋", "壓成", "烘烤", 
         "取出", "再鋪", "完全冷卻", "出爐"
     ]
-    
     t = t.replace("製作步驟：", "\n👨‍🍳 製作步驟：")
-    
     for kw in action_keywords:
         t = t.replace(f"。{kw}", f"。\n• {kw}")
         t = t.replace(f"，{kw}", f"，\n• {kw}")
-        
     return t.strip()
+
+# 3. 注意事項智慧排版
+def smart_format_notes(text):
+    if not pd.notna(text) or not str(text).strip():
+        return ""
+    t = str(text)
+    if "\n•" in t:
+        return t
+    # 遇到句號或特定分段處自動換行
+    t = t.replace("。", "。\n• ")
+    return "• " + t.strip()
+
+# 4. 改良做法智慧排版
+def smart_format_improvement(text):
+    if not pd.notna(text) or not str(text).strip():
+        return ""
+    t = str(text)
+    if "\n•" in t:
+        return t
+    t = t.replace("。", "。\n• ")
+    return "• " + t.strip()
 
 # --- 分頁籤設計 ---
 tab1, tab2 = st.tabs(["✍️ 新增烘焙配方", "🔍 搜尋與瀏覽配方"])
@@ -92,11 +101,14 @@ with tab1:
     with st.form("recipe_form"):
         recipe_name = st.text_input("📝 烘焙名稱（例如：鮮奶吐司、手作貝果）")
         
+        # 把一鍵自動整理按鈕放在最上方，隨時點了四格全自動排版！
+        submitted_format = st.form_submit_button("✨ 點我一鍵自動整理「全部四個欄位」排版")
+        
         st.markdown("⚖️ 材料與比例")
         st.session_state["input_ingredients"] = st.text_area(
             "材料內容", 
             value=st.session_state["input_ingredients"], 
-            height=240, 
+            height=200, 
             placeholder="直接整段貼上...", 
             label_visibility="collapsed"
         )
@@ -105,19 +117,16 @@ with tab1:
         st.session_state["input_steps"] = st.text_area(
             "步驟內容", 
             value=st.session_state["input_steps"], 
-            height=240, 
+            height=200, 
             placeholder="直接貼上製作步驟...", 
             label_visibility="collapsed"
         )
-        
-        # 讓整理按鈕排在最順手的中間位置！
-        submitted_format = st.form_submit_button("✨ 點我一鍵自動整理「材料與步驟」排版")
         
         st.markdown("📌 注意事項")
         st.session_state["input_notes"] = st.text_area(
             "注意事項內容", 
             value=st.session_state["input_notes"], 
-            height=100, 
+            height=120, 
             placeholder="注意事項...", 
             label_visibility="collapsed"
         )
@@ -136,19 +145,23 @@ with tab1:
         if submitted_format:
             st.session_state["input_ingredients"] = smart_format_ingredients(st.session_state["input_ingredients"])
             st.session_state["input_steps"] = smart_format_steps(st.session_state["input_steps"])
+            st.session_state["input_notes"] = smart_format_notes(st.session_state["input_notes"])
+            st.session_state["input_improvement"] = smart_format_improvement(st.session_state["input_improvement"])
             st.rerun()
             
         if submitted_save:
             if recipe_name.strip():
                 final_ingredients = smart_format_ingredients(st.session_state["input_ingredients"])
                 final_steps = smart_format_steps(st.session_state["input_steps"])
+                final_notes = smart_format_notes(st.session_state["input_notes"])
+                final_improvement = smart_format_improvement(st.session_state["input_improvement"])
                 
                 new_data = pd.DataFrame([{
                     "name": recipe_name,
                     "ingredients": final_ingredients,
                     "steps": final_steps,
-                    "notes": st.session_state["input_notes"],
-                    "improvement": st.session_state["input_improvement"]
+                    "notes": final_notes,
+                    "improvement": final_improvement
                 }])
                 
                 updated_df = pd.concat([df, new_data], ignore_index=True)
@@ -191,11 +204,11 @@ with tab2:
                     st.text(smart_format_ingredients(row["ingredients"]))
                     
                     st.markdown("##### 📌 注意事項：")
-                    st.text(row["notes"])
+                    st.text(smart_format_notes(row["notes"]))
                     
                 with col2:
                     st.markdown("##### 👩‍🍳 製作步驟：")
                     st.text(smart_format_steps(row["steps"]))
                     
                     st.markdown("##### 💡 改良做法：")
-                    st.text(row["improvement"])
+                    st.text(smart_format_improvement(row["improvement"]))
