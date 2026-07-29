@@ -110,7 +110,7 @@ with tab1:
             label_visibility="collapsed"
         )
         
-        # 把智慧排版按鈕做得醒目又好按
+        # 讓整理按鈕排在最順手的中間位置！
         submitted_format = st.form_submit_button("✨ 點我一鍵自動整理「材料與步驟」排版")
         
         st.markdown("📌 注意事項")
