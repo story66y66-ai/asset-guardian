@@ -26,39 +26,29 @@ def load_recipes():
 
 df = load_recipes()
 
-# 全能智慧排版函數：自動抓取所有帶有冒號「：」的材料項目並自動換行加項目符號！
+# 超強智慧排版函數：只要有冒號就自動斷行加項目符號
 def smart_format_ingredients(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
     
     t = str(text)
     
-    if "\n" in t:
+    # 如果已經有換行了就保持原狀
+    if "\n•" in t:
         return t
     
-    # 擴充所有可能的材料與標頭名稱
     keywords = [
-        "配方一", "配方二", "配方三",
-        "高筋麵粉", "中筋麵粉", "低筋麵粉", "全麥麵粉", "黑麥粉", "粘米粉", "糯米粉", "太白粉", "玉米澱粉", "地瓜粉",
-        "清水", "冰水", "溫水", "全脂鮮乳", "低脂鮮乳", "牛奶", "奶粉", "動物性鮮奶油", "植物性鮮奶油", "優格", "優酪乳", "煉乳",
-        "雞蛋", "蛋白", "蛋黃",
-        "速發酵母", "新鮮酵母", "老麵", "泡打粉", "小蘇打粉", "塔塔粉",
-        "細砂糖", "黃砂糖", "紅糖", "黑糖", "糖粉", "海藻糖", "麥芽糖", "蜂蜜", "楓糖漿",
-        "無鹽奶油", "有鹽奶油", "融化無鹽奶油", "酥油", "豬油", "植物油", "沙拉油", "橄欖油", "玉米油", "椰子油",
-        "鹽", "細鹽", "玫瑰鹽",
-        "可可粉", "巧克力", "抹茶粉", "香草精", "肉桂粉", "咖啡粉", "檸檬汁", "檸檬皮屑",
-        "葡萄乾", "蔓越莓乾", "核桃", "杏仁片", "腰果", "芝麻", "乳酪", "起司片", "卡士達醬",
-        "裝飾物", "海苔粉", "材料準備", "低筋麵粉", "雞蛋", "融化無鹽奶油", "砂糖"
+        "材料準備", "低筋麵粉", "中筋麵粉", "高筋麵粉", "雞蛋", 
+        "融化無鹽奶油", "無鹽奶油", "植物油", "砂糖", "牛奶", 
+        "香草精", "裝飾物", "海苔粉", "配方一", "配方二"
     ]
     
-    t = t.replace("配方一", "\n💧 配方一").replace("配方二", "\n\n🥛 配方二").replace("配方三", "\n\n🥄 配方三")
-    
     for kw in keywords:
-        if kw not in ["配方一", "配方二", "配方三"]:
-            # 讓程式自動抓取「關鍵字：」的結構並強制斷行加上項目符號
-            t = t.replace(f"{kw}：", f"\n• {kw}：")
-            t = t.replace(f" {kw}:", f"\n• {kw}:")
-            
+        t = t.replace(f"{kw}：", f"\n• {kw}：")
+        t = t.replace(f"{kw}:", f"\n• {kw}:")
+        
+    t = t.replace("材料準備", "\n📌 材料準備")
+    
     return t.strip()
 
 # --- 分頁籤設計 ---
@@ -76,6 +66,10 @@ with tab1:
     if "input_improvement" not in st.session_state:
         st.session_state["input_improvement"] = ""
 
+    # 新增一個「一鍵自動排版」按鈕，只要貼上後按一下，文字立刻在輸入框裡排好！
+    def auto_format():
+        st.session_state["input_ingredients"] = smart_format_ingredients(st.session_state["input_ingredients"])
+
     with st.form("recipe_form"):
         recipe_name = st.text_input("📝 烘焙名稱（例如：鮮奶吐司、手作貝果）")
         
@@ -87,6 +81,11 @@ with tab1:
             placeholder="直接整段貼上...", 
             label_visibility="collapsed"
         )
+        
+        # 點一下這個按鈕，輸入框裡的文字立刻自動排版好！
+        if st.form_submit_button("✨ 點我自動整理材料排版"):
+            auto_format()
+            st.rerun()
 
         st.markdown("👩‍🍳 製作步驟")
         st.session_state["input_steps"] = st.text_area(
@@ -119,9 +118,11 @@ with tab1:
         
         if submitted:
             if recipe_name.strip():
+                # 儲存前再自動排版一次，確保資料庫跟搜尋結果都完美
+                final_ingredients = smart_format_ingredients(st.session_state["input_ingredients"])
                 new_data = pd.DataFrame([{
                     "name": recipe_name,
-                    "ingredients": st.session_state["input_ingredients"],
+                    "ingredients": final_ingredients,
                     "steps": st.session_state["input_steps"],
                     "notes": st.session_state["input_notes"],
                     "improvement": st.session_state["input_improvement"]
