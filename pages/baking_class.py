@@ -59,7 +59,6 @@ def smart_format_steps(text):
     t = t.replace("\n• ", "").replace("• ", "")
 
     # 核心新規則：看到句號就自動換行並加上項目符號
-    # 針對常見的中文句號與結尾進行斷行處理
     parts = t.split("。")
     formatted_parts = []
     for i, p in enumerate(parts):
@@ -108,16 +107,18 @@ if "edit_index" not in st.session_state:
 if "active_tab" not in st.session_state:
     st.session_state["active_tab"] = 0
 
-# 分頁籤
+# 分頁籤：透過 index 綁定 st.session_state["active_tab"]
+tab_options = ["✍️ 新增與修改配方", "🔍 搜尋與瀏覽配方"]
 tab_selection = st.radio(
     "選擇功能", 
-    ["✍️ 新增與修改配方", "🔍 搜尋與瀏覽配方"], 
+    tab_options, 
     index=st.session_state["active_tab"], 
     horizontal=True, 
     label_visibility="collapsed"
 )
 
-st.session_state["active_tab"] = 0 if tab_selection == "✍️ 新增與修改配方" else 1
+# 同步更新當前頁籤狀態
+st.session_state["active_tab"] = tab_options.index(tab_selection)
 
 if st.session_state["active_tab"] == 0:
     if st.session_state["edit_index"] is not None:
@@ -254,7 +255,7 @@ else:
                         st.session_state["input_notes"] = row["notes"]
                         st.session_state["input_improvement"] = row["improvement"]
                         st.session_state["edit_index"] = index
-                        st.session_state["active_tab"] = 0
+                        st.session_state["active_tab"] = 0  # 設定跳回第一頁
                         st.rerun()
                 with col_b2:
                     if st.button("🗑️ 刪除", key=f"del_{index}"):
