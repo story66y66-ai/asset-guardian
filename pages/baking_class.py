@@ -174,11 +174,12 @@ if st.session_state["active_tab"] == 0:
                 if st.session_state["edit_index"] is not None:
                     idx = st.session_state["edit_index"]
                     if idx < len(current_df):
-                        current_df.at[idx, "name"] = recipe_name
-                        current_df.at[idx, "ingredients"] = final_ingredients
-                        current_df.at[idx, "steps"] = final_steps
-                        current_df.at[idx, "notes"] = final_notes
-                        current_df.at[idx, "improvement"] = final_improvement
+                        # 安全更新特定列的欄位
+                        current_df.loc[idx, "name"] = recipe_name
+                        current_df.loc[idx, "ingredients"] = final_ingredients
+                        current_df.loc[idx, "steps"] = final_steps
+                        current_df.loc[idx, "notes"] = final_notes
+                        current_df.loc[idx, "improvement"] = final_improvement
                     st.session_state["edit_index"] = None
                     success_msg = f"成功更新烘焙品項：【{recipe_name}】！"
                 else:
