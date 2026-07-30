@@ -4,7 +4,6 @@ import random
 
 st.set_page_config(page_title="中文學院 - 澄玄旗艦成語挑戰賽", layout="wide", page_icon="📖")
 
-# 載入校長大人親自建立的真實成語題庫（真實且隨著校長新增而成長）
 @st.cache_data
 def load_golden_flagship_database():
     golden_idioms = [
@@ -213,22 +212,22 @@ df = load_golden_flagship_database()
 st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆真實真題）")
 st.write("---")
 
-st.success(f"🔥 系統已精準載入校長親自建立的 **{len(df)} 筆** 真實成語與解釋！未來只要您隨時增加新的成語，這裡的總筆數就會同步增加，清清楚楚絕不重複！")
+st.success(f"🔥 系統已載入 **{len(df)} 筆** 真實成語！下方每句成語旁邊都有專屬的 **🔊 朗讀按鈕**，點了直接發音，不用再打勾取消囉！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
 
 with tab1:
-    st.subheader("📚 完整成語資料庫預覽（點擊表格任一列即可聆聽語音朗讀）")
+    st.subheader("📚 完整成語資料庫預覽")
     
-    page_size = 50  # 每頁顯示 50 筆，更方便校長大人精細檢視與點選
+    page_size = 20  # 每頁 20 筆，按鈕操作更加俐落好點
     total_pages = (len(df) + page_size - 1) // page_size
     if total_pages < 1:
         total_pages = 1
     
     col_p1, col_p2, col_p3 = st.columns([2, 2, 3])
     with col_p1:
-        current_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁，每頁 {page_size} 筆)：", min_value=1, max_value=total_pages, value=1, step=1)
+        current_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁)：", min_value=1, max_value=total_pages, value=1, step=1)
     
     with col_p2:
         st.write("") 
@@ -244,58 +243,33 @@ with tab1:
     end_idx = min(start_idx + page_size, len(df))
     
     st.write(f"目前顯示第 **{current_page}** 頁（第 {start_idx + 1} ~ {end_idx} 筆，總計 **{len(df)} 筆**）：")
+    st.write("---")
     
-    page_df = df.iloc[start_idx:end_idx].copy()
-    page_df.insert(0, "選擇", False)
-    
-    st.markdown("""
-        <style>
-            div[data-testid="stDataEditor"] {
-                direction: ltr;
-            }
-        </style>
-    """, unsafe_allow_html=True)
-
-    edited_df = st.data_editor(
-        page_df,
-        column_config={
-            "選擇": st.column_config.CheckboxColumn(
-                "選取",
-                help="點擊選取該行以進行語音朗讀",
-                default=False,
-                width="small",
-            ),
-            "成語": st.column_config.TextColumn(
-                "成語",
-                width="medium",
-            ),
-            "解釋": st.column_config.TextColumn(
-                "解釋",
-                width="large",
-            )
-        },
-        disabled=["成語", "解釋"],
-        hide_index=True,
-        use_container_width=True,
-        key=f"editor_page_{current_page}"
-    )
-    
-    selected_rows = edited_df[edited_df["選擇"] == True]
-    if not selected_rows.empty:
-        spoken_idiom = selected_rows.iloc[0]["成語"]
-        spoken_meaning = selected_rows.iloc[0]["解釋"]
-        text_to_speak = f"{spoken_idiom}。{spoken_meaning}"
+    # 迴圈印出每一筆成語與專屬朗讀按鈕
+    page_data = df.iloc[start_idx:end_idx]
+    for idx, row in page_data.iterrows():
+        idiom = row["成語"]
+        meaning = row["解釋"]
         
-        speech_html = f"""
-        <script>
-            const utterance = new SpeechSynthesisUtterance("{text_to_speak}");
-            utterance.lang = 'zh-TW';
-            utterance.rate = 0.9;
-            window.speechSynthesis.speak(utterance);
-        </script>
-        """
-        st.components.v1.html(speech_html, height=0)
-        st.info(f"🔊 正在朗讀成語：**{spoken_idiom}**（{spoken_meaning}）")
+        c1, c2, c3 = st.columns([1.5, 3.5, 1])
+        with c1:
+            st.markdown(f"**{idiom}**")
+        with c2:
+            st.markdown(f"{meaning}")
+        with c3:
+            if st.button("🔊 朗讀", key=f"speak_{idx}"):
+                text_to_speak = f"{idiom}。{meaning}"
+                speech_html = f"""
+                <script>
+                    const utterance = new SpeechSynthesisUtterance("{text_to_speak}");
+                    utterance.lang = 'zh-TW';
+                    utterance.rate = 0.9;
+                    window.speechSynthesis.speak(utterance);
+                </script>
+                """
+                st.components.v1.html(speech_html, height=0)
+                st.toast(f"正在朗讀：{idiom}", icon="🔊")
+        st.write("")
 
 with tab2:
     st.subheader("🎯 挑戰您的無敵成語腦力")
