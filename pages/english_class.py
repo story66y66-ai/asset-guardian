@@ -5,6 +5,7 @@ import os
 from gtts import gTTS
 import io
 import re
+import base64
 
 st.markdown("""
     <style>
@@ -289,19 +290,40 @@ if not df.empty:
                     highlighted_memine = re.sub(r'\b' + re.escape(str(w)) + r'\b', f"<span class='red-word'>{w}</span>", memine_sentence, flags=re.IGNORECASE)
                     st.markdown(f"**💡 Memine 示範句：** {highlighted_memine}", unsafe_allow_html=True)
                     
-                    # 選擇語速
+                    # 調整為三個精準速度選擇
                     speed_choice = st.selectbox(
                         "🐢 選擇 Memine 示範句發音速度：",
-                        ["正常速度", "慢速（適合跟讀）", "極慢速（適合拆解發音）"],
+                        ["1. 正常 (1.0x)", "2. 0.5倍速", "3. 0.2倍速"],
                         key=f"speed_memine_{idx}_{w}"
                     )
-                    is_slow_flag = (speed_choice != "正常速度")
                     
-                    if st.button(f"🔊 聽 Memine 示範句英文發音 ({speed_choice})", key=f"audio_memine_{idx}_{w}"):
-                        tts_m = gTTS(text=memine_sentence, lang='en', slow=is_slow_flag)
+                    # 對應的播放速率 (playbackRate)
+                    rate_map = {
+                        "1. 正常 (1.0x)": 1.0,
+                        "2. 0.5倍速": 0.5,
+                        "3. 0.2倍速": 0.2
+                    }
+                    selected_rate = rate_map[speed_choice]
+                    
+                    if st.button(f"🔊 播放 Memine 示範句發音 ({speed_choice})", key=f"audio_memine_{idx}_{w}"):
+                        # 產生語音
+                        tts_m = gTTS(text=memine_sentence, lang='en')
                         fp_m = io.BytesIO()
                         tts_m.write_to_fp(fp_m)
-                        st.audio(fp_m, autoplay=True)
+                        audio_bytes = fp_m.getvalue()
+                        b64_audio = base64.b64encode(audio_bytes).decode()
+                        
+                        # 使用 HTML5 audio 搭配 JavaScript 來精準控制播放速度 (支援 0.5x 與 0.2x 極慢速)
+                        audio_html = f"""
+                            <audio id="player_{idx}_{w}" controls autoplay>
+                                <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
+                            </audio>
+                            <script>
+                                var audioEl = document.getElementById("player_{idx}_{w}");
+                                audioEl.playbackRate = {selected_rate};
+                            </script>
+                        """
+                        st.components.v1.html(audio_html, height=60)
 
                     memine_trans_key = f"memine_trans_input_{idx}_{w}"
                     memine_translation = st.text_input(f"📝 請輸入或貼上 Memine 示範句的中文翻譯：", key=memine_trans_key, placeholder="在此輸入中文翻譯...")
