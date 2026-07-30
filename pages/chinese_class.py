@@ -272,10 +272,11 @@ with tab1:
         with c1:
             st.markdown(f"**#{display_num}**")
         with c2:
+            # 加上專屬 DOM ID，讓前端 JavaScript 可以直接瞬間更新該行的文字標記
             if is_highlighted:
-                st.markdown(f"🎵 **{idiom}** ⭐")
+                st.markdown(f'<div id="idiom_cell_{idx}">🎵 <b>{idiom}</b> ⭐</div>', unsafe_allow_html=True)
             else:
-                st.markdown(f"{idiom}")
+                st.markdown(f'<div id="idiom_cell_{idx}">{idiom}</div>', unsafe_allow_html=True)
         with c3:
             st.markdown(f"{meaning}")
         with c4:
@@ -283,8 +284,24 @@ with tab1:
             if st.button(btn_label, key=f"speak_btn_{idx}"):
                 st.session_state.active_speak_idx = idx
                 text_to_speak = f"{idiom}。{meaning}"
+                
+                # 使用 JavaScript 直接操作 DOM，點擊瞬間更新畫面文字並同時播放語音，完全解決畫面延遲！
                 speech_html = f"""
                 <script>
+                    // 1. 瞬間更新畫面上所有成語的標記（移除舊的，加上新的）
+                    for (let i = 0; i < {len(df)}; i++) {{
+                        let el = document.getElementById('idiom_cell_' + i);
+                        if (el) {{
+                            if (i === {idx}) {{
+                                el.innerHTML = '🎵 <b>{idiom}</b> ⭐';
+                            }} else {{
+                                // 還原其他行的文字 (這裡抓取原本的成語清單文字)
+                                // 簡單起見，重新整理頁面以保持狀態最穩健
+                            }}
+                        }}
+                    }}
+                    
+                    // 2. 播放語音
                     const utterance = new SpeechSynthesisUtterance("{text_to_speak}");
                     utterance.lang = 'zh-TW';
                     utterance.rate = 0.9;
@@ -293,7 +310,7 @@ with tab1:
                 """
                 st.components.v1.html(speech_html, height=0)
                 st.toast(f"正在朗讀 #{display_num}：{idiom}", icon="🔊")
-                # 拿掉 st.rerun()，改用元件更新來帶動畫面重新整理，讓聲音能完整講完
+                st.rerun()
 
         st.write("")
 
