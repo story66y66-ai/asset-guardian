@@ -247,6 +247,15 @@ with tab1:
                 "🔊 點擊發音",
                 help="點擊方框勾選，即可朗讀該成語！",
                 default=False,
+                width="small",
+            ),
+            "成語": st.column_config.TextColumn(
+                "成語",
+                width="medium",
+            ),
+            "解釋": st.column_config.TextColumn(
+                "解釋",
+                width="large",
             )
         },
         disabled=["成語", "解釋"],
