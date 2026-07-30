@@ -245,7 +245,6 @@ with tab1:
     with col_p1:
         current_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁，每頁 100 筆)：", min_value=1, max_value=total_pages, value=1, step=1)
     
-    # 也可以用按鈕快速切換上下頁
     with col_p2:
         st.write("") # 留空對齊
         sub_col1, sub_col2 = st.columns(2)
@@ -272,7 +271,7 @@ with tab1:
                 "選取",
                 help="點擊選取該行以進行語音朗讀",
                 default=False,
-                width="small",
+                width=80,  # 固定設定最小寬度，不再自動放大
             ),
             "成語": st.column_config.TextColumn(
                 "成語",
