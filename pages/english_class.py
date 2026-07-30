@@ -12,7 +12,7 @@ st.markdown("""
     [data-testid="stSidebar"] { font-size: 28px !important; }
     [data-testid="stSidebar"] div, [data-testid="stSidebar"] a { font-size: 28px !important; }
     .red-word { color: #ff2b2b !important; font-weight: bold !important; }
-    .stTextArea textarea { font-size: 28px !important; color: #000000 !important; font-weight: bold !important; }
+    .stTextInput input { font-size: 28px !important; color: #000000 !important; font-weight: bold !important; }
     div.stButton > button { font-size: 22px !important; padding: 10px 20px !important; }
     </style>
     """, unsafe_allow_html=True)
@@ -68,7 +68,7 @@ if not df.empty:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
-        key="vocab_click_table_v20"
+        key="vocab_click_table_v21"
     )
 
     if len(event.selection.rows) > 0:
@@ -98,15 +98,15 @@ if not df.empty:
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("➕ 把此字加入清單", key="add_to_list_v20"):
+        if st.button("➕ 把此字加入清單", key="add_to_list_v21"):
             if selected_word not in st.session_state.selected_vocab_list:
                 if len(st.session_state.selected_vocab_list) < 3:
                     st.session_state.selected_vocab_list.append(selected_word)
                 else:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
-        if st.button("🗑️ 清除目前的清單", key="clear_list_v20"):
-            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v20_") or k.startswith("memine_") or k.startswith("prac_v20_")]
+        if st.button("🗑️ 清除目前的清單", key="clear_list_v21"):
+            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v21_") or k.startswith("memine_") or k.startswith("prac_v21_")]
             for k in keys_to_delete:
                 del st.session_state[k]
             st.session_state.selected_vocab_list = []
@@ -132,13 +132,13 @@ if not df.empty:
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v20_{idx}_{w}")
+                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v21_{idx}_{w}")
                 with c2:
-                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v20_{idx}_{w}")
+                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v21_{idx}_{w}")
                 with c3:
-                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v20_{idx}_{w}")
+                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v21_{idx}_{w}")
                 
-                state_key = f"grammar_v20_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"grammar_v21_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     w_lower = w.lower()
@@ -273,7 +273,7 @@ if not df.empty:
                 st.markdown(f"**💡 道地文法示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v20_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v21_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
@@ -293,15 +293,11 @@ if not df.empty:
 
                 def process_pasted_sentence():
                     raw_val = st.session_state.get(memine_input_key, "")
-                    
-                    # 1. 檢查是否有刮號格式，例如: The cat is above the box (貓在箱子上面)
                     match_paren = re.search(r'^(.*?)\s*[\(\（](.*?)[\)\）]\s*$', raw_val)
                     if match_paren:
                         st.session_state[memine_input_key] = match_paren.group(1).strip()
                         st.session_state[trans_input_key] = match_paren.group(2).strip()
                         return
-                        
-                    # 2. 檢查是否為英文後面接句點或空格後直接接中文，例如: The cat is above the box. 貓咪在箱子上面。
                     match_dot = re.search(r'^([A-Za-z0-9\s,\.\?!\'\"-]+[.?!])\s+([\u4e00-\u9fa5].*)$', raw_val)
                     if match_dot:
                         st.session_state[memine_input_key] = match_dot.group(1).strip()
@@ -379,13 +375,34 @@ if not df.empty:
                             st.audio(fp_t, autoplay=True)
 
                 st.markdown("<br>", unsafe_allow_html=True)
-                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v20_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
                 
-                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v20_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                # 改為單行文字輸入框 (st.text_input)，按 Enter 即可直接觸發檢查邏輯
+                prac_key = f"prac_v21_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                status_key = f"status_v21_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                
+                def check_user_practice():
+                    user_val = st.session_state.get(prac_key, "")
                     pattern = r'\b' + re.escape(str(w)) + r'\b'
-                    if re.search(pattern, user_practice, flags=re.IGNORECASE):
-                        st.success(f"🎉 太棒了！[{w}] 使用正確！您寫的句子結構很棒喔！")
+                    if user_val:
+                        if re.search(pattern, user_val, flags=re.IGNORECASE):
+                            st.session_state[status_key] = ("success", f"🎉 太棒了！[{w}] 使用正確！您寫的句子結構很棒喔！")
+                        else:
+                            st.session_state[status_key] = ("error", f"❌ 檢查結果：句子裡好像漏掉了單字 [{w}] 喔，再試一次!")
                     else:
-                        st.error(f"❌ 檢查結果：句子裡好像漏掉了單字 [{w}] 喔，再試一次!")
+                        st.session_state[status_key] = None
+
+                user_practice = st.text_input(
+                    f"📝 請輸入您用 [{w}] 練習造的句子（輸入完直接按 Enter 檢查）：",
+                    key=prac_key,
+                    on_change=check_user_practice,
+                    placeholder="在此輸入句子後按 Enter..."
+                )
+                
+                if status_key in st.session_state and st.session_state[status_key]:
+                    st_type, st_msg = st.session_state[status_key]
+                    if st_type == "success":
+                        st.success(st_msg)
+                    elif st_type == "error":
+                        st.error(st_msg)
 else:
     st.warning("目前沒有找到任何單字資料，請確認是否有上傳 level 檔案！")
