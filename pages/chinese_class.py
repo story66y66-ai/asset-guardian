@@ -141,7 +141,7 @@ def load_golden_flagship_database():
         ("雄心壯志", "偉大的志向和宏偉的抱負。"),
         ("器宇非凡", "人的氣度、胸襟不平常。"),
         ("落落大方", "形容言談舉止自然、大方。"),
-        ("儀態萬千", "姿態美麗多變，各種風情都有。"),
+        ("儀態萬千", "姿態萬千，各種風情都有。"),
         ("煥然一新", "形容出現了嶄新的面貌。"),
         ("生氣勃勃", "形容充滿生氣和活力。"),
         ("朝氣蓬勃", "充滿朝氣和旺盛的生命力。"),
@@ -236,17 +236,15 @@ tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
 with tab1:
     st.subheader("📚 完整成語資料庫預覽（點擊表格任一列即可聆聽語音朗讀）")
     
-    # 計算總頁數（每頁 100 筆）
     page_size = 100
     total_pages = (len(df) + page_size - 1) // page_size
     
-    # 建立分頁選擇介面（數字輸入框與上下頁按鈕）
     col_p1, col_p2, col_p3 = st.columns([2, 2, 3])
     with col_p1:
         current_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁，每頁 100 筆)：", min_value=1, max_value=total_pages, value=1, step=1)
     
     with col_p2:
-        st.write("") # 留空對齊
+        st.write("") 
         sub_col1, sub_col2 = st.columns(2)
         with sub_col1:
             if st.button("⬅️ 上一頁") and current_page > 1:
@@ -260,7 +258,6 @@ with tab1:
     
     st.write(f"目前顯示第 **{current_page}** 頁（第 {start_idx + 1} ~ {end_idx} 筆，總計 **{len(df):,} 筆**）：")
     
-    # 取得當前頁面的資料
     page_df = df.iloc[start_idx:end_idx].copy()
     page_df.insert(0, "選擇", False)
     
@@ -271,7 +268,7 @@ with tab1:
                 "選取",
                 help="點擊選取該行以進行語音朗讀",
                 default=False,
-                width=80,  # 固定設定最小寬度，不再自動放大
+                width=5,  # 縮到最小寬度 5
             ),
             "成語": st.column_config.TextColumn(
                 "成語",
