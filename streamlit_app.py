@@ -12,10 +12,6 @@ if st.button("進入英文學院"):
 if st.button("進入中文學院"):
     st.switch_page("pages/chinese_class.py")
 
-# 新增進入萬句旗艦成語挑戰賽的按鈕
-if st.button("進入萬句旗艦成語挑戰賽"):
-    st.switch_page("idiom_game.py")
-
 st.write("---")
 st.subheader("🍲 食品學院")
 
