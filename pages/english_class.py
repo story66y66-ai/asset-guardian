@@ -289,8 +289,16 @@ if not df.empty:
                     highlighted_memine = re.sub(r'\b' + re.escape(str(w)) + r'\b', f"<span class='red-word'>{w}</span>", memine_sentence, flags=re.IGNORECASE)
                     st.markdown(f"**💡 Memine 示範句：** {highlighted_memine}", unsafe_allow_html=True)
                     
-                    if st.button(f"🔊 聽 Memine 示範句英文發音", key=f"audio_memine_{idx}_{w}"):
-                        tts_m = gTTS(text=memine_sentence, lang='en')
+                    # 選擇語速
+                    speed_choice = st.selectbox(
+                        "🐢 選擇 Memine 示範句發音速度：",
+                        ["正常速度", "慢速（適合跟讀）", "極慢速（適合拆解發音）"],
+                        key=f"speed_memine_{idx}_{w}"
+                    )
+                    is_slow_flag = (speed_choice != "正常速度")
+                    
+                    if st.button(f"🔊 聽 Memine 示範句英文發音 ({speed_choice})", key=f"audio_memine_{idx}_{w}"):
+                        tts_m = gTTS(text=memine_sentence, lang='en', slow=is_slow_flag)
                         fp_m = io.BytesIO()
                         tts_m.write_to_fp(fp_m)
                         st.audio(fp_m, autoplay=True)
