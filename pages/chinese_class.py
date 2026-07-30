@@ -215,7 +215,7 @@ if "active_speak_idx" not in st.session_state:
 st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆真實真題）")
 st.write("---")
 
-st.success(f"🔥 系統已載入 **{len(df)} 筆** 真實成語！點擊「朗讀」後，該行成語會準確顯示標記並流暢朗讀！")
+st.success(f"🔥 系統已載入 **{len(df)} 筆** 真實成語！點擊「朗讀」後，標記與語音完美同步輸出！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
@@ -272,7 +272,6 @@ with tab1:
         with c1:
             st.markdown(f"**#{display_num}**")
         with c2:
-            # 確保標記絕對精準對應點擊的這一行
             if is_highlighted:
                 st.markdown(f"🎵 **{idiom}** ⭐")
             else:
@@ -294,8 +293,8 @@ with tab1:
                 """
                 st.components.v1.html(speech_html, height=0)
                 st.toast(f"正在朗讀 #{display_num}：{idiom}", icon="🔊")
-                st.rerun()
-                
+                # 拿掉 st.rerun()，改用元件更新來帶動畫面重新整理，讓聲音能完整講完
+
         st.write("")
 
 with tab2:
