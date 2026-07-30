@@ -231,9 +231,16 @@ df = load_golden_flagship_database()
 st.success(f"🔥 系統已成功載入 **{len(df):,} 筆** 頂級成語題庫（包含校長精選 200 句真題）！")
 st.write("---")
 
-tab1, tab2 = st.tabs(["🎮 成語填空挑戰賽", "📚 完整題庫總覽"])
+# 將順序對調：完整題庫總覽在前面，成語填空挑戰賽在後面
+tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
 
 with tab1:
+    st.subheader("📚 完整成語資料庫預覽")
+    st.write(f"目前資料庫總筆數：**{len(df):,} 筆**（前 200 筆為校長精選真題）")
+    st.dataframe(df.head(100), use_container_width=True)
+    st.caption("（上方顯示前 100 筆預覽，完整 10,000 筆在背景隨時支援隨機抽題！）")
+
+with tab2:
     st.subheader("🎯 挑戰您的無敵成語腦力")
     difficulty = st.radio("請選擇難易度：", ["🌱 初級（提示首字）", "⭐ 中級（提示字數）", "🔥 高級（盲猜挑戰）"], horizontal=True)
     
@@ -264,12 +271,6 @@ with tab1:
             st.balloons()
         else:
             st.error("❌ 哎呀，答案不太對喔，再挑戰看看吧！")
-
-with tab2:
-    st.subheader("📚 完整成語資料庫預覽")
-    st.write(f"目前資料庫總筆數：**{len(df):,} 筆**（前 200 筆為校長精選真題）")
-    st.dataframe(df.head(100), use_container_width=True)
-    st.caption("（上方顯示前 100 筆預覽，完整 10,000 筆在背景隨時支援隨機抽題！）")
 
 st.write("---")
 
