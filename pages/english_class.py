@@ -68,7 +68,7 @@ if not df.empty:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
-        key="vocab_click_table_v18"
+        key="vocab_click_table_v19"
     )
 
     if len(event.selection.rows) > 0:
@@ -98,15 +98,15 @@ if not df.empty:
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("➕ 把此字加入清單", key="add_to_list_v18"):
+        if st.button("➕ 把此字加入清單", key="add_to_list_v19"):
             if selected_word not in st.session_state.selected_vocab_list:
                 if len(st.session_state.selected_vocab_list) < 3:
                     st.session_state.selected_vocab_list.append(selected_word)
                 else:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
-        if st.button("🗑️ 清除目前的清單", key="clear_list_v18"):
-            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v18_") or k.startswith("memine_") or k.startswith("prac_v18_")]
+        if st.button("🗑️ 清除目前的清單", key="clear_list_v19"):
+            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v19_") or k.startswith("memine_") or k.startswith("prac_v19_")]
             for k in keys_to_delete:
                 del st.session_state[k]
             st.session_state.selected_vocab_list = []
@@ -132,13 +132,13 @@ if not df.empty:
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v18_{idx}_{w}")
+                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v19_{idx}_{w}")
                 with c2:
-                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v18_{idx}_{w}")
+                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v19_{idx}_{w}")
                 with c3:
-                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v18_{idx}_{w}")
+                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v19_{idx}_{w}")
                 
-                state_key = f"grammar_v18_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"grammar_v19_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     w_lower = w.lower()
@@ -273,7 +273,7 @@ if not df.empty:
                 st.markdown(f"**💡 道地文法示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v18_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v19_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
@@ -284,7 +284,30 @@ if not df.empty:
                 st.markdown(f"**🌟 Memine 道地文法示範（與您的單字連動）**")
                 
                 memine_input_key = f"memine_input_{idx}_{w}"
-                memine_sentence = st.text_input(f"請貼上 Memine 幫您用 [{w}] 造的句子：", key=memine_input_key, placeholder="在此貼上 Memine 產生的句子...")
+                trans_input_key = f"memine_trans_input_{idx}_{w}"
+
+                # 智慧初始化 session state 確保自動拆解能順利寫入輸入框
+                if memine_input_key not in st.session_state:
+                    st.session_state[memine_input_key] = ""
+                if trans_input_key not in st.session_state:
+                    st.session_state[trans_input_key] = ""
+
+                def process_pasted_sentence():
+                    raw_val = st.session_state.get(memine_input_key, "")
+                    # 檢查是否有中文括號或括號包覆的中文
+                    match = re.search(r'^(.*?)\s*[\(\（](.*?)[\)\）]\s*$', raw_val)
+                    if match:
+                        eng_part = match.group(1).strip()
+                        chi_part = match.group(2).strip()
+                        st.session_state[memine_input_key] = eng_part
+                        st.session_state[trans_input_key] = chi_part
+
+                memine_sentence = st.text_input(
+                    f"請貼上 Memine 幫您用 [{w}] 造的句子（若帶有中文括號會自動幫您拆解）：",
+                    key=memine_input_key,
+                    on_change=process_pasted_sentence,
+                    placeholder="在此貼上句子，例如：The cat is above the box. (貓在箱子上面。)"
+                )
                 
                 if memine_sentence:
                     highlighted_memine = re.sub(r'\b' + re.escape(str(w)) + r'\b', f"<span class='red-word'>{w}</span>", memine_sentence, flags=re.IGNORECASE)
@@ -293,7 +316,6 @@ if not df.empty:
                     st.markdown("🐢 **選擇 Memine 示範句發音速度：**")
                     b_col1, b_col2, b_col3 = st.columns(3)
                     
-                    # 產生語音位元組
                     tts_m = gTTS(text=memine_sentence, lang='en')
                     fp_m = io.BytesIO()
                     tts_m.write_to_fp(fp_m)
@@ -337,8 +359,11 @@ if not df.empty:
                             """
                             st.components.v1.html(audio_html, height=60)
 
-                    memine_trans_key = f"memine_trans_input_{idx}_{w}"
-                    memine_translation = st.text_input(f"📝 請輸入或貼上 Memine 示範句的中文翻譯：", key=memine_trans_key, placeholder="在此輸入中文翻譯...")
+                    memine_translation = st.text_input(
+                        f"📝 中文翻譯（已自動帶入）：",
+                        key=trans_input_key,
+                        placeholder="在此輸入或檢查中文翻譯..."
+                    )
                     
                     if memine_translation:
                         st.markdown(f"*(中文翻譯：{memine_translation})*", unsafe_allow_html=True)
@@ -349,9 +374,9 @@ if not df.empty:
                             st.audio(fp_t, autoplay=True)
 
                 st.markdown("<br>", unsafe_allow_html=True)
-                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v18_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
+                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v19_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
                 
-                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v18_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v19_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     pattern = r'\b' + re.escape(str(w)) + r'\b'
                     if re.search(pattern, user_practice, flags=re.IGNORECASE):
                         st.success(f"🎉 太棒了！[{w}] 使用正確！您寫的句子結構很棒喔！")
