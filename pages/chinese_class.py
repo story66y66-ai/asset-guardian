@@ -95,7 +95,7 @@ def load_golden_flagship_database():
         ("情深義重", "情意深遠，恩義重大。"),
         ("守望相助", "鄰里之間守衛相望，互相協助。"),
         ("相濡以沫", "比喻在困境中互相以微薄的力量照顧扶持。"),
-        ("推心置腹", "把誠心交給對方，形容待人極為真誠。"),
+        ("推心置腹", "把誠心交對方，形容待人極為真誠。"),
         ("刎頸之交", "可以共生死的朋友（生死之交）。"),
         ("莫逆之交", "心意相投、至交好友。"),
         ("伯牙絕弦", "比喻知音難覓或痛失知己。"),
@@ -234,7 +234,7 @@ st.write("---")
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
 
 with tab1:
-    st.subheader("📚 完整成語資料庫預覽")
+    st.subheader("📚 完整成語資料庫預覽（點擊表格任一列即可聆聽語音朗讀）")
     
     page_size = 100
     total_pages = (len(df) + page_size - 1) // page_size
@@ -258,33 +258,46 @@ with tab1:
     
     st.write(f"目前顯示第 **{current_page}** 頁（第 {start_idx + 1} ~ {end_idx} 筆，總計 **{len(df):,} 筆**）：")
     
-    page_df = df.iloc[start_idx:end_idx].reset_index(drop=True)
+    page_df = df.iloc[start_idx:end_idx].copy()
+    page_df.insert(0, "選擇", False)
     
-    # 呈現純淨乾淨的唯美表格（無多餘選取欄位）
-    st.dataframe(
+    # 用 CSS 讓表格勾選欄位精巧靠右或維持最右側，不佔據大片左側空白
+    st.markdown("""
+        <style>
+            div[data-testid="stDataEditor"] {
+                direction: ltr;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    edited_df = st.data_editor(
         page_df,
         column_config={
-            "成語": st.column_config.TextColumn("成語", width="medium"),
-            "解釋": st.column_config.TextColumn("解釋", width="large")
+            "選擇": st.column_config.CheckboxColumn(
+                "選取",
+                help="點擊選取該行以進行語音朗讀",
+                default=False,
+                width="small",
+            ),
+            "成語": st.column_config.TextColumn(
+                "成語",
+                width="medium",
+            ),
+            "解釋": st.column_config.TextColumn(
+                "解釋",
+                width="large",
+            )
         },
+        disabled=["成語", "解釋"],
         hide_index=True,
-        use_container_width=True
+        use_container_width=True,
+        key=f"editor_page_{current_page}"
     )
     
-    st.write("---")
-    st.markdown("### 🔊 語音朗讀控制台")
-    col_speak1, col_speak2 = st.columns([3, 1])
-    with col_speak1:
-        selected_idx = st.number_input("請輸入您想聆聽的當前頁面項目編號（1 ~ 100）：", min_value=1, max_value=len(page_df), value=1, step=1)
-    with col_speak2:
-        st.write("")
-        st.write("")
-        speak_triggered = st.button("🔊 點我朗讀")
-        
-    if speak_triggered:
-        target_row = page_df.iloc[selected_idx - 1]
-        spoken_idiom = target_row["成語"]
-        spoken_meaning = target_row["解釋"]
+    selected_rows = edited_df[edited_df["選擇"] == True]
+    if not selected_rows.empty:
+        spoken_idiom = selected_rows.iloc[0]["成語"]
+        spoken_meaning = selected_rows.iloc[0]["解釋"]
         text_to_speak = f"{spoken_idiom}。{spoken_meaning}"
         
         speech_html = f"""
@@ -296,7 +309,7 @@ with tab1:
         </script>
         """
         st.components.v1.html(speech_html, height=0)
-        st.info(f"🔊 正在朗讀：**{spoken_idiom}**（{spoken_meaning}）")
+        st.info(f"🔊 正在朗讀成語：**{spoken_idiom}**（{spoken_meaning}）")
 
 with tab2:
     st.subheader("🎯 挑戰您的無敵成語腦力")
