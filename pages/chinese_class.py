@@ -91,7 +91,7 @@ def load_golden_flagship_database():
         ("情深義重", "情意深遠，恩義重大。"),
         ("守望相助", "鄰里之間守衛相望，互相協助。"),
         ("相濡以沫", "比喻在困境中互相以微薄的力量照顧扶持。"),
-        ("推心置腹", "把誠心交給對方，形容待人極為真誠。"),
+        ("推心置腹", "把誠心交對手，形容待人極為真誠。"),
         ("刎頸之交", "可以共生死的朋友（生死之交）。"),
         ("莫逆之交", "心意相投、至交好友。"),
         ("伯牙絕弦", "比喻知音難覓或痛失知己。"),
@@ -209,22 +209,21 @@ def load_golden_flagship_database():
 
 df = load_golden_flagship_database()
 
-# 初始化目前朗讀的高亮列記憶
 if "active_speak_idx" not in st.session_state:
     st.session_state.active_speak_idx = None
 
 st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆真實真題）")
 st.write("---")
 
-st.success(f"🔥 系統已載入 **{len(df)} 筆** 真實成語！點擊朗讀後，該行會自動呈現**高亮背景與邊框**，讓您一眼掌握目前朗讀進度！")
+st.success(f"🔥 系統已載入 **{len(df)} 筆** 真實成語！點擊朗讀後，該行會完美呈現**整行高亮背景與左側邊框**，且聲音流暢播放不中斷！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
 
 with tab1:
-    st.subheader("📚 完整成語資料庫預覽（支援點擊高亮朗讀）")
+    st.subheader("📚 完整成語資料庫預覽（完美整行高亮與流暢朗讀）")
     
-    page_size = 20  # 每頁 20 筆
+    page_size = 20
     total_pages = (len(df) + page_size - 1) // page_size
     if total_pages < 1:
         total_pages = 1
@@ -249,7 +248,6 @@ with tab1:
     st.write(f"目前顯示第 **{current_page}** 頁（第 {start_idx + 1} ~ {end_idx} 筆，總計 **{len(df)} 筆**）：")
     st.write("---")
     
-    # 表格標題列
     h1, h2, h3, h4 = st.columns([1, 2, 5, 2])
     with h1:
         st.markdown("**序號**")
@@ -262,26 +260,26 @@ with tab1:
     
     st.write("---")
     
-    # 迴圈印出每一筆帶序號與動態高亮效果的成語
     page_data = df.iloc[start_idx:end_idx]
     for idx, row in page_data.iterrows():
         idiom = row["成語"]
         meaning = row["解釋"]
-        display_num = idx + 1  # 顯示真實序號
+        display_num = idx + 1
         
-        # 判斷這一行是否為目前正在朗讀的高亮行
         is_highlighted = (st.session_state.active_speak_idx == idx)
         
+        # 使用 container 確保這一行的所有元件都被包裹在同一個視覺區塊內
+        row_container = st.container()
+        
         if is_highlighted:
-            # 加上亮眼的背景色與左側邊框強調目前朗讀行
-            st.markdown(
+            row_container.markdown(
                 f"""
-                <div style="background-color: #fff9db; padding: 10px; border-radius: 8px; border-left: 5px solid #f59f00; margin-bottom: 8px;">
+                <div style="background-color: #fff3bf; padding: 12px; border-radius: 8px; border-left: 6px solid #f59f00; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                 """, 
                 unsafe_allow_html=True
             )
             
-        c1, c2, c3, c4 = st.columns([1, 2, 5, 2])
+        c1, c2, c3, c4 = row_container.columns([1, 2, 5, 2])
         with c1:
             st.markdown(f"**#{display_num}**")
         with c2:
@@ -290,7 +288,7 @@ with tab1:
             st.markdown(f"{meaning}")
         with c4:
             btn_label = "🔊 朗讀中..." if is_highlighted else "🔊 朗讀"
-            if st.button(btn_label, key=f"speak_btn_{idx}Y"):
+            if st.button(btn_label, key=f"speak_btn_{idx}"):
                 st.session_state.active_speak_idx = idx
                 text_to_speak = f"{idiom}。{meaning}"
                 speech_html = f"""
@@ -302,10 +300,10 @@ with tab1:
                 </script>
                 """
                 st.components.v1.html(speech_html, height=0)
-                st.rerun()
+                st.toast(f"正在朗讀 #{display_num}：{idiom}", icon="🔊")
                 
         if is_highlighted:
-            st.markdown("</div>", unsafe_allow_html=True)
+            row_container.markdown("</div>", unsafe_allow_html=True)
             
         st.write("")
 
