@@ -23,7 +23,7 @@ df = load_flagship_database()
 st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆全覆蓋真題）")
 st.write("---")
 
-st.success(f"🔥 系統已成功從 GitHub 載入 **{len(df)} 筆** 完整不重複成語！支援「自動連續朗讀 + 畫面同步跟隨」！")
+st.success(f"🔥 系統已成功從 GitHub 載入 **{len(df)} 筆** 完整不重複成語！支援「本頁無限循環」與「全書自動換頁朗讀」！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
@@ -36,20 +36,27 @@ with tab1:
     if total_pages < 1:
         total_pages = 1
     
+    # 建立 Session State 來記錄當前頁數，以便自動換頁時直接控制
+    if "current_page" not in st.session_state:
+        st.session_state.current_page = 1
+
     col_p1, col_p2, col_p3 = st.columns([2, 2, 3])
     with col_p1:
-        current_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁)：", min_value=1, max_value=total_pages, value=1, step=1)
+        st.session_state.current_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁)：", min_value=1, max_value=total_pages, value=st.session_state.current_page, step=1)
     
     with col_p2:
         st.write("") 
         sub_col1, sub_col2 = st.columns(2)
         with sub_col1:
-            if st.button("⬅️ 上一頁") and current_page > 1:
-                current_page -= 1
+            if st.button("⬅️ 上一頁") and st.session_state.current_page > 1:
+                st.session_state.current_page -= 1
+                st.rerun()
         with sub_col2:
-            if st.button("下一頁 ➡️") and current_page < total_pages:
-                current_page += 1
+            if st.button("下一頁 ➡️") and st.session_state.current_page < total_pages:
+                st.session_state.current_page += 1
+                st.rerun()
 
+    current_page = st.session_state.current_page
     start_idx = (current_page - 1) * page_size
     end_idx = min(start_idx + page_size, len(df))
     
@@ -81,15 +88,18 @@ with tab1:
         """
     
     full_table_html = f"""
-    <div style="margin-bottom: 15px; background-color: #f9f9f9; padding: 10px; border-radius: 6px; border: 1px solid #e0e0e0;">
-        <span style="font-weight: bold; margin-right: 15px;">🎧 吃飯免手動控制台：</span>
-        <button onclick="startAutoPlay()" id="auto_play_btn" style="background-color: #28a745; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 10px;">
-            ▶ 開始本頁自動連續朗讀
+    <div style="margin-bottom: 15px; background-color: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #e0e0e0;">
+        <div style="font-weight: bold; margin-bottom: 8px;">🎧 吃飯免手動控制台：</div>
+        <button onclick="startLoopPlay()" id="loop_btn" style="background-color: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 8px;">
+            🔁 本頁循環朗讀
         </button>
-        <button onclick="stopAutoPlay()" style="background-color: #dc3545; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+        <button onclick="startAutoNextPagePlay()" id="autonext_btn" style="background-color: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 8px;">
+            📚 全書自動換頁朗讀
+        </button>
+        <button onclick="stopAutoPlay()" style="background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">
             ⏹ 停止朗讀
         </button>
-        <span id="auto_status" style="margin-left: 15px; color: #555; font-size: 14px;">狀態：待命中</span>
+        <span id="auto_status" style="margin-left: 15px; color: #555; font-size: 14px; font-weight: bold;">狀態：待命中</span>
     </div>
 
     <table style="width: 100%; border-collapse: collapse;">
@@ -109,6 +119,9 @@ with tab1:
     <script>
     const currentStartIndex = {start_idx};
     const currentEndIndex = {end_idx};
+    const totalPages = {total_pages};
+    const currentPageNum = {current_page};
+    
     const pageIdiomsData = [
     """
     
@@ -122,6 +135,7 @@ with tab1:
     ];
 
     let autoPlaying = false;
+    let playMode = ''; // 'loop' 或 'autonext'
     let currentAutoIdx = 0;
 
     function clearAllHighlights(totalRows) {{
@@ -176,20 +190,56 @@ with tab1:
         window.speechSynthesis.speak(utterance);
     }}
 
-    function startAutoPlay() {{
+    function startLoopPlay() {{
         if (pageIdiomsData.length === 0) return;
         autoPlaying = true;
+        playMode = 'loop';
         currentAutoIdx = 0;
-        document.getElementById('auto_status').innerText = '狀態：自動連續播放中...';
-        document.getElementById('auto_play_btn').style.backgroundColor = '#6c757d';
+        document.getElementById('auto_status').innerText = '狀態：[本頁循環] 播放中...';
+        document.getElementById('loop_btn').style.backgroundColor = '#6c757d';
+        playNextInQueue();
+    }}
+
+    function startAutoNextPagePlay() {{
+        if (pageIdiomsData.length === 0) return;
+        autoPlaying = true;
+        playMode = 'autonext';
+        currentAutoIdx = 0;
+        document.getElementById('auto_status').innerText = '狀態：[全書換頁] 播放中...';
+        document.getElementById('autonext_btn').style.backgroundColor = '#6c757d';
         playNextInQueue();
     }}
 
     function playNextInQueue() {{
-        if (!autoPlaying || currentAutoIdx >= pageIdiomsData.length) {{
-            stopAutoPlay();
-            document.getElementById('auto_status').innerText = '狀態：本頁播放完畢！';
-            return;
+        if (!autoPlaying) return;
+
+        // 如果本頁讀完了
+        if (currentAutoIdx >= pageIdiomsData.length) {{
+            if (playMode === 'loop') {{
+                // 循環模式：重頭再來
+                currentAutoIdx = 0;
+            }} else if (playMode === 'autonext') {{
+                // 自動換頁模式：檢查是否還有下一頁
+                if (currentPageNum < totalPages) {{
+                    document.getElementById('auto_status').innerText = '狀態：本頁讀完，自動跳至下一頁...';
+                    // 利用 Streamlit 的數字輸入框與網頁跳轉模擬換頁
+                    setTimeout(function() {{
+                        const numberInputs = window.parent.document.querySelectorAll('input[type="number"]');
+                        if (numberInputs.length > 0) {{
+                            let inputElem = numberInputs[0];
+                            let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                            nativeInputValueSetter.call(inputElem, currentPageNum + 1);
+                            inputElem.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                            inputElem.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                        }}
+                    }}, 1000);
+                    return;
+                }} else {{
+                    stopAutoPlay();
+                    document.getElementById('auto_status').innerText = '狀態：全書所有成語已全部播畢！';
+                    return;
+                }}
+            }}
         }}
 
         let item = pageIdiomsData[currentAutoIdx];
@@ -208,11 +258,10 @@ with tab1:
         }}
         if (targetBtn) {{
             targetBtn.innerText = '🔊 播放中';
-            targetBtn.style.backgroundColor = '#28a745';
+            targetBtn.style.backgroundColor = '#17a2b8';
             targetBtn.style.color = 'white';
         }}
         
-        // 自動捲動視窗將當前朗讀行置中，吃飯時不用動手也能一眼看到！
         if (targetRow) {{
             targetRow.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
         }}
@@ -239,12 +288,15 @@ with tab1:
 
     function stopAutoPlay() {{
         autoPlaying = false;
+        playMode = '';
         window.speechSynthesis.cancel();
         clearAllHighlights({len(df)});
-        let autoBtn = document.getElementById('auto_play_btn');
-        if (autoBtn) {{
-            autoBtn.style.backgroundColor = '#28a745';
-        }}
+        
+        let loopBtn = document.getElementById('loop_btn');
+        let autonextBtn = document.getElementById('autonext_btn');
+        if (loopBtn) loopBtn.style.backgroundColor = '#17a2b8';
+        if (autonextBtn) autonextBtn.style.backgroundColor = '#28a745';
+        
         let statusElem = document.getElementById('auto_status');
         if (statusElem) {{
             statusElem.innerText = '狀態：已停止';
