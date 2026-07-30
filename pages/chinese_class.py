@@ -91,7 +91,7 @@ def load_golden_flagship_database():
         ("情深義重", "情意深遠，恩義重大。"),
         ("守望相助", "鄰里之間守衛相望，互相協助。"),
         ("相濡以沫", "比喻在困境中互相以微薄的力量照顧扶持。"),
-        ("推心置腹", "把誠心交對手，形容待人極為真誠。"),
+        ("推心置腹", "把誠心交給對方，形容待人極為真誠。"),
         ("刎頸之交", "可以共生死的朋友（生死之交）。"),
         ("莫逆之交", "心意相投、至交好友。"),
         ("伯牙絕弦", "比喻知音難覓或痛失知己。"),
@@ -215,13 +215,13 @@ if "active_speak_idx" not in st.session_state:
 st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆真實真題）")
 st.write("---")
 
-st.success(f"🔥 系統已載入 **{len(df)} 筆** 真實成語！點擊朗讀後，該行會完美呈現**整行高亮背景與左側邊框**，且聲音流暢播放不中斷！")
+st.success(f"🔥 系統已載入 **{len(df)} 筆** 真實成語！點擊朗讀後，該行會完美套用**整行清楚的覆蓋底色與左側標記**！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
 
 with tab1:
-    st.subheader("📚 完整成語資料庫預覽（完美整行高亮與流暢朗讀）")
+    st.subheader("📚 完整成語資料庫預覽（完美覆蓋與清晰朗讀）")
     
     page_size = 20
     total_pages = (len(df) + page_size - 1) // page_size
@@ -268,18 +268,16 @@ with tab1:
         
         is_highlighted = (st.session_state.active_speak_idx == idx)
         
-        # 使用 container 確保這一行的所有元件都被包裹在同一個視覺區塊內
-        row_container = st.container()
-        
+        # 建立外層區塊，如果被選中則直接整行覆蓋舒適的背景色與左側邊框
         if is_highlighted:
-            row_container.markdown(
+            st.markdown(
                 f"""
-                <div style="background-color: #fff3bf; padding: 12px; border-radius: 8px; border-left: 6px solid #f59f00; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="background-color: #fff9db; padding: 12px 15px; border-radius: 8px; border-left: 6px solid #f59f00; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
                 """, 
                 unsafe_allow_html=True
             )
-            
-        c1, c2, c3, c4 = row_container.columns([1, 2, 5, 2])
+        
+        c1, c2, c3, c4 = st.columns([1, 2, 5, 2])
         with c1:
             st.markdown(f"**#{display_num}**")
         with c2:
@@ -301,9 +299,10 @@ with tab1:
                 """
                 st.components.v1.html(speech_html, height=0)
                 st.toast(f"正在朗讀 #{display_num}：{idiom}", icon="🔊")
+                st.rerun()
                 
         if is_highlighted:
-            row_container.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
             
         st.write("")
 
