@@ -235,13 +235,38 @@ tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
 
 with tab1:
     st.subheader("📚 完整成語資料庫預覽（點擊表格任一列即可聆聽語音朗讀）")
-    st.write(f"目前資料庫總筆數：**{len(df):,} 筆**（前 200 筆為校長精選真題）")
     
-    display_df = df.head(100).copy()
-    display_df.insert(0, "選擇", False)
+    # 計算總頁數（每頁 100 筆）
+    page_size = 100
+    total_pages = (len(df) + page_size - 1) // page_size
+    
+    # 建立分頁選擇介面（數字輸入框與上下頁按鈕）
+    col_p1, col_p2, col_p3 = st.columns([2, 2, 3])
+    with col_p1:
+        current_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁，每頁 100 筆)：", min_value=1, max_value=total_pages, value=1, step=1)
+    
+    # 也可以用按鈕快速切換上下頁
+    with col_p2:
+        st.write("") # 留空對齊
+        sub_col1, sub_col2 = st.columns(2)
+        with sub_col1:
+            if st.button("⬅️ 上一頁") and current_page > 1:
+                current_page -= 1
+        with sub_col2:
+            if st.button("下一頁 ➡️") and current_page < total_pages:
+                current_page += 1
+
+    start_idx = (current_page - 1) * page_size
+    end_idx = min(start_idx + page_size, len(df))
+    
+    st.write(f"目前顯示第 **{current_page}** 頁（第 {start_idx + 1} ~ {end_idx} 筆，總計 **{len(df):,} 筆**）：")
+    
+    # 取得當前頁面的資料
+    page_df = df.iloc[start_idx:end_idx].copy()
+    page_df.insert(0, "選擇", False)
     
     edited_df = st.data_editor(
-        display_df,
+        page_df,
         column_config={
             "選擇": st.column_config.CheckboxColumn(
                 "選取",
@@ -260,7 +285,8 @@ with tab1:
         },
         disabled=["成語", "解釋"],
         hide_index=True,
-        use_container_width=True
+        use_container_width=True,
+        key=f"editor_page_{current_page}"
     )
     
     selected_rows = edited_df[edited_df["選擇"] == True]
@@ -279,8 +305,6 @@ with tab1:
         """
         st.components.v1.html(speech_html, height=0)
         st.info(f"🔊 正在朗讀成語：**{spoken_idiom}**（{spoken_meaning}）")
-
-    st.caption("（上方顯示前 100 筆預覽，完整 10,000 筆在背景隨時支援隨機抽題！）")
 
 with tab2:
     st.subheader("🎯 挑戰您的無敵成語腦力")
