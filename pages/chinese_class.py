@@ -4,10 +4,7 @@ import random
 
 st.set_page_config(page_title="中文學院 - 澄玄旗艦成語挑戰賽", layout="wide", page_icon="📖")
 
-st.title("📖 中文學院（校長精選 200 句真題 + 萬句旗艦大挑戰）")
-st.write("---")
-
-# 透過校長大人精選的 200 句真實成語結合數學公式擴充至 10,000 筆題庫
+# 載入校長大人親自建立的真實成語題庫（真實且隨著校長新增而成長）
 @st.cache_data
 def load_golden_flagship_database():
     golden_idioms = [
@@ -95,7 +92,7 @@ def load_golden_flagship_database():
         ("情深義重", "情意深遠，恩義重大。"),
         ("守望相助", "鄰里之間守衛相望，互相協助。"),
         ("相濡以沫", "比喻在困境中互相以微薄的力量照顧扶持。"),
-        ("推心置腹", "把誠心交對方，形容待人極為真誠。"),
+        ("推心置腹", "把誠心交給對方，形容待人極為真誠。"),
         ("刎頸之交", "可以共生死的朋友（生死之交）。"),
         ("莫逆之交", "心意相投、至交好友。"),
         ("伯牙絕弦", "比喻知音難覓或痛失知己。"),
@@ -208,27 +205,15 @@ def load_golden_flagship_database():
         ("相得益彰", "兩件事物互相配合，雙方的長處更能顯露出來。")
     ]
     
-    data = []
-    prefixes = ["大", "超", "極", "全", "真", "妙", "神", "新", "巧", "精", "通", "博", "雅", "奧"]
-    suffixes = ["通", "達", "妙", "造", "化", "境", "成", "全", "貫", "融", "深", "遠", "明", "智"]
-    
-    total_target = 10000
-    for i in range(1, total_target + 1):
-        if i <= len(golden_idioms):
-            idiom, meaning = golden_idioms[i-1]
-        else:
-            p = prefixes[(i * 7) % len(prefixes)]
-            s = suffixes[(i * 13) % len(suffixes)]
-            mid = "道" if i % 2 == 0 else "心"
-            idiom = f"{p}{mid}{s}成"
-            meaning = f"【智慧擴充題庫】象徵第 {i} 號之融會貫通與精妙奧義境界。"
-        data.append({"成語": idiom, "解釋": meaning})
-        
+    data = [{"成語": idiom, "解釋": meaning} for idiom, meaning in golden_idioms]
     return pd.DataFrame(data)
 
 df = load_golden_flagship_database()
 
-st.success(f"🔥 系統已成功載入 **{len(df):,} 筆** 頂級成語題庫（包含校長精選 200 句真題）！")
+st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆真實真題）")
+st.write("---")
+
+st.success(f"🔥 系統已精準載入校長親自建立的 **{len(df)} 筆** 真實成語與解釋！未來只要您隨時增加新的成語，這裡的總筆數就會同步增加，清清楚楚絕不重複！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
@@ -236,12 +221,14 @@ tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
 with tab1:
     st.subheader("📚 完整成語資料庫預覽（點擊表格任一列即可聆聽語音朗讀）")
     
-    page_size = 100
+    page_size = 50  # 每頁顯示 50 筆，更方便校長大人精細檢視與點選
     total_pages = (len(df) + page_size - 1) // page_size
+    if total_pages < 1:
+        total_pages = 1
     
     col_p1, col_p2, col_p3 = st.columns([2, 2, 3])
     with col_p1:
-        current_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁，每頁 100 筆)：", min_value=1, max_value=total_pages, value=1, step=1)
+        current_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁，每頁 {page_size} 筆)：", min_value=1, max_value=total_pages, value=1, step=1)
     
     with col_p2:
         st.write("") 
@@ -256,12 +243,11 @@ with tab1:
     start_idx = (current_page - 1) * page_size
     end_idx = min(start_idx + page_size, len(df))
     
-    st.write(f"目前顯示第 **{current_page}** 頁（第 {start_idx + 1} ~ {end_idx} 筆，總計 **{len(df):,} 筆**）：")
+    st.write(f"目前顯示第 **{current_page}** 頁（第 {start_idx + 1} ~ {end_idx} 筆，總計 **{len(df)} 筆**）：")
     
     page_df = df.iloc[start_idx:end_idx].copy()
     page_df.insert(0, "選擇", False)
     
-    # 用 CSS 讓表格勾選欄位精巧靠右或維持最右側，不佔據大片左側空白
     st.markdown("""
         <style>
             div[data-testid="stDataEditor"] {
