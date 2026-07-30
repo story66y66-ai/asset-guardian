@@ -268,7 +268,7 @@ with tab1:
                 "選取",
                 help="點擊選取該行以進行語音朗讀",
                 default=False,
-                width=5,  # 縮到最小寬度 5
+                width="small",  # 採用內建最精巧的 small 尺寸
             ),
             "成語": st.column_config.TextColumn(
                 "成語",
