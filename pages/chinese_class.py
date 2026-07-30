@@ -22,13 +22,13 @@ df = load_flagship_database()
 st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆全覆蓋真題）")
 st.write("---")
 
-st.success(f"🔥 系統已成功載入 **{len(df)} 筆** 完整不重複成語！")
+st.success(f"🔥 系統已成功從 GitHub 載入 **{len(df)} 筆** 完整成語！支援未來隨時擴充 `.csv`！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
 
 with tab1:
-    st.subheader(f"📚 完整成語資料庫預覽（共計 {len(df)} 筆）")
+    st.subheader(f"📚 完整成語資料庫預覽（動態對應共計 {len(df)} 筆）")
     
     page_size = 20
     total_pages = (len(df) + page_size - 1) // page_size
@@ -40,7 +40,7 @@ with tab1:
 
     col_p1, col_p2 = st.columns([2, 3])
     with col_p1:
-        new_page = st.number_input("跳至頁數：", min_value=1, max_value=total_pages, value=st.session_state.current_page, step=1)
+        new_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁)：", min_value=1, max_value=total_pages, value=st.session_state.current_page, step=1)
         if new_page != st.session_state.current_page:
             st.session_state.current_page = new_page
             st.rerun()
@@ -66,20 +66,184 @@ with tab1:
     
     page_data = df.iloc[start_idx:end_idx]
     
-    # 使用安全的原生 Streamlit 介面逐筆列出，完美支援語音朗讀與排版
+    # 動態產生網頁前端需要的 JavaScript 資料陣列
+    js_idioms_array = ""
+    for idx, row in page_data.iterrows():
+        idiom = row["成語"]
+        meaning = row["解釋"]
+        full_text = f"{idiom}，{meaning}"
+        js_idioms_array += f"{{ index: {idx}, idiom: '{idiom}', text: '{full_text}' }},\n"
+
+    rows_html = ""
     for idx, row in page_data.iterrows():
         idiom = row["成語"]
         meaning = row["解釋"]
         display_num = idx + 1
+        text_to_speak = f"{idiom}。{meaning}"
         
-        c1, c2, c3 = st.columns([1, 4, 7])
-        with c1:
-            st.markdown(f"**#{display_num}**")
-        with c2:
-            st.markdown(f"**{idiom}**")
-        with c3:
-            st.write(meaning)
-        st.divider()
+        rows_html += f"""
+        <tr style="border-bottom: 1px solid #ddd; height: 50px;" id="row_item_{idx}">
+            <td style="width: 10%; font-weight: bold;">#{display_num}</td>
+            <td style="width: 25%; font-weight: bold; color: #1f77b4;" id="idiom_cell_{idx}">{idiom}</td>
+            <td style="width: 45%;">{meaning}</td>
+            <td style="width: 20%;">
+                <button onclick="playSingle({idx}, '{idiom}', '{text_to_speak}', {len(df)})" 
+                        id="btn_{idx}" 
+                        style="background-color: #f0f2f6; border: 1px solid #d6d6d6; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                    🔊 朗讀
+                </button>
+            </td>
+        </tr>
+        """
+
+    # 結合控制台與表格，具備語音朗讀與循環功能
+    audio_control_html = f"""
+    <div style="margin-bottom: 15px; background-color: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #e0e0e0;">
+        <div style="font-weight: bold; margin-bottom: 8px;">🎧 語音朗讀控制台：</div>
+        <button onclick="startLoopPlay()" id="loop_btn" style="background-color: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 8px;">
+            🔁 本頁循環朗讀
+        </button>
+        <button onclick="stopAutoPlay()" style="background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+            ⏹ 停止朗讀
+        </button>
+        <span id="auto_status" style="margin-left: 15px; color: #555; font-size: 14px; font-weight: bold;">狀態：待命中</span>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 2px solid #ccc; text-align: left;">
+                <th style="padding-bottom: 8px;">序號</th>
+                <th style="padding-bottom: 8px;">成語</th>
+                <th style="padding-bottom: 8px;">解釋</th>
+                <th style="padding-bottom: 8px;">語音操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {rows_html}
+        </tbody>
+    </table>
+
+    <script>
+    const totalRowsCount = {len(df)};
+    const pageIdiomsData = [
+    {js_idioms_array}
+    ];
+
+    let autoPlaying = false;
+    let currentAutoIdx = 0;
+
+    function clearAllHighlights(totalRows) {{
+        for (let i = 0; i < totalRows; i++) {{
+            let btn = document.getElementById('btn_' + i);
+            if (btn) {{
+                btn.innerText = '🔊 朗讀';
+                btn.style.backgroundColor = '#f0f2f6';
+                btn.style.color = 'black';
+            }}
+        }}
+    }}
+
+    function playSingle(idx, idiom, textToSpeak, totalRows) {{
+        stopAutoPlay();
+        
+        let targetBtn = document.getElementById('btn_' + idx);
+        let targetRow = document.getElementById('row_item_' + idx);
+        
+        if (targetBtn) {{
+            targetBtn.innerText = '🔊 朗讀中...';
+            targetBtn.style.backgroundColor = '#ff4b4b';
+            targetBtn.style.color = 'white';
+        }}
+        if (targetRow) {{
+            targetRow.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
+        }}
+        
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = 'zh-TW';
+        utterance.rate = 0.9;
+        
+        utterance.onend = function() {{
+            if (targetBtn) {{
+                targetBtn.innerText = '🔊 朗讀';
+                targetBtn.style.backgroundColor = '#f0f2f6';
+                targetBtn.style.color = 'black';
+            }}
+        }};
+        
+        window.speechSynthesis.speak(utterance);
+    }}
+
+    function startLoopPlay() {{
+        if (pageIdiomsData.length === 0) return;
+        autoPlaying = true;
+        currentAutoIdx = 0;
+        document.getElementById('auto_status').innerText = '狀態：[本頁循環] 播放中...';
+        let btn = document.getElementById('loop_btn');
+        if(btn) btn.style.backgroundColor = '#6c757d';
+        playNextInQueue();
+    }}
+
+    function playNextInQueue() {{
+        if (!autoPlaying) return;
+
+        if (currentAutoIdx >= pageIdiomsData.length) {{
+            currentAutoIdx = 0; // 循環播放
+        }}
+
+        let item = pageIdiomsData[currentAutoIdx];
+        let idx = item.index;
+        let textToSpeak = item.text;
+
+        let targetBtn = document.getElementById('btn_' + idx);
+        let targetRow = document.getElementById('row_item_' + idx);
+
+        if (targetBtn) {{
+            targetBtn.innerText = '🔊 播放中';
+            targetBtn.style.backgroundColor = '#17a2b8';
+            targetBtn.style.color = 'white';
+        }}
+        
+        if (targetRow) {{
+            targetRow.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
+        }}
+
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = 'zh-TW';
+        utterance.rate = 0.9;
+
+        utterance.onend = function() {{
+            if (targetBtn) {{
+                targetBtn.innerText = '🔊 朗讀';
+                targetBtn.style.backgroundColor = '#f0f2f6';
+                targetBtn.style.color = 'black';
+            }}
+            currentAutoIdx++;
+            if (autoPlaying) {{
+                setTimeout(playNextInQueue, 800);
+            }}
+        }};
+
+        window.speechSynthesis.speak(utterance);
+    }}
+
+    function stopAutoPlay() {{
+        autoPlaying = false;
+        window.speechSynthesis.cancel();
+        
+        let loopBtn = document.getElementById('loop_btn');
+        if (loopBtn) loopBtn.style.backgroundColor = '#17a2b8';
+        
+        let statusElem = document.getElementById('auto_status');
+        if (statusElem) {{
+            statusElem.innerText = '狀態：已停止';
+        }}
+    }}
+    </script>
+    """
+
+    st.components.v1.html(audio_control_html, height=1100, scrolling=True)
 
 with tab2:
     st.subheader("🎯 挑戰您的無敵成語腦力")
