@@ -68,7 +68,7 @@ if not df.empty:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
-        key="vocab_click_table_v24"
+        key="vocab_click_table_v25"
     )
 
     if len(event.selection.rows) > 0:
@@ -98,15 +98,15 @@ if not df.empty:
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("➕ 把此字加入清單", key="add_to_list_v24"):
+        if st.button("➕ 把此字加入清單", key="add_to_list_v25"):
             if selected_word not in st.session_state.selected_vocab_list:
                 if len(st.session_state.selected_vocab_list) < 3:
                     st.session_state.selected_vocab_list.append(selected_word)
                 else:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
-        if st.button("🗑️ 清除目前的清單", key="clear_list_v24"):
-            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v24_") or k.startswith("memine_") or k.startswith("prac_v24_")]
+        if st.button("🗑️ 清除目前的清單", key="clear_list_v25"):
+            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v25_") or k.startswith("memine_") or k.startswith("prac_v25_")]
             for k in keys_to_delete:
                 del st.session_state[k]
             st.session_state.selected_vocab_list = []
@@ -132,13 +132,13 @@ if not df.empty:
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v24_{idx}_{w}")
+                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v25_{idx}_{w}")
                 with c2:
-                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v24_{idx}_{w}")
+                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v25_{idx}_{w}")
                 with c3:
-                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v24_{idx}_{w}")
+                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v25_{idx}_{w}")
                 
-                state_key = f"grammar_v24_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"grammar_v25_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     w_lower = w.lower()
@@ -273,7 +273,7 @@ if not df.empty:
                 st.markdown(f"**💡 道地文法示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v24_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v25_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
@@ -376,9 +376,19 @@ if not df.empty:
 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                prac_key = f"prac_v24_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
-                status_key = f"status_v24_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                prac_key = f"prac_v25_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                status_key = f"status_v25_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                clear_trigger_key = f"clear_trigger_{idx}_{w}"
                 
+                if clear_trigger_key not in st.session_state:
+                    st.session_state[clear_trigger_key] = False
+
+                # 如果有點擊清除按鈕，將輸入框的數值清空並重設狀態
+                if st.session_state[clear_trigger_key]:
+                    st.session_state[prac_key] = ""
+                    st.session_state[status_key] = None
+                    st.session_state[clear_trigger_key] = False
+
                 def check_user_practice():
                     user_val = st.session_state.get(prac_key, "").strip()
                     target_sentence = st.session_state.get(memine_input_key, "").strip()
@@ -386,7 +396,6 @@ if not df.empty:
                         target_sentence = demo_eng.strip()
                     
                     if user_val:
-                        # 嚴格區分大小寫比對：檢查使用者輸入是否與標準答案完全一致（包括大小寫）
                         if user_val == target_sentence:
                             st.session_state[status_key] = ("success", f"🎉 太棒了！句子完全正確！大小寫規範完美掌握！")
                         else:
@@ -401,6 +410,12 @@ if not df.empty:
                     placeholder="在此輸入句子後按 Enter..."
                 )
                 
+                col_btn1, col_btn2 = st.columns([1, 4])
+                with col_btn1:
+                    if st.button("🔄 清空重練", key=f"btn_clear_{idx}_{w}"):
+                        st.session_state[clear_trigger_key] = True
+                        st.rerun()
+
                 if status_key in st.session_state and st.session_state[status_key]:
                     st_type, st_msg = st.session_state[status_key]
                     if st_type == "success":
