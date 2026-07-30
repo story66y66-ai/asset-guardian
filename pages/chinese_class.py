@@ -22,7 +22,7 @@ df = load_flagship_database()
 st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆全覆蓋真題）")
 st.write("---")
 
-st.success(f"🔥 系統已成功載入 **{len(df)} 筆** 完整成語！支援未來隨時擴充 `.csv`！")
+st.success(f"🔥 系統已成功載入 **{len(df)} 筆** 完整成語！支援全書自動換頁與動態擴充 `.csv`！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
@@ -35,14 +35,24 @@ with tab1:
     if total_pages < 1:
         total_pages = 1
     
+    query_params = st.query_params
+    auto_mode_param = query_params.get("auto_mode", "false")
+    
     if "current_page" not in st.session_state:
-        st.session_state.current_page = 1
+        if "page" in query_params:
+            try:
+                st.session_state.current_page = int(query_params["page"])
+            except:
+                st.session_state.current_page = 1
+        else:
+            st.session_state.current_page = 1
 
     col_p1, col_p2 = st.columns([2, 3])
     with col_p1:
         new_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁)：", min_value=1, max_value=total_pages, value=st.session_state.current_page, step=1)
         if new_page != st.session_state.current_page:
             st.session_state.current_page = new_page
+            st.query_params.clear()
             st.rerun()
     
     with col_p2:
@@ -51,10 +61,12 @@ with tab1:
         with sub1:
             if st.button("⬅️ 上一頁") and st.session_state.current_page > 1:
                 st.session_state.current_page -= 1
+                st.query_params.clear()
                 st.rerun()
         with sub2:
             if st.button("下一頁 ➡️") and st.session_state.current_page < total_pages:
                 st.session_state.current_page += 1
+                st.query_params.clear()
                 st.rerun()
 
     current_page = st.session_state.current_page
@@ -97,9 +109,12 @@ with tab1:
 
     audio_control_html = f"""
     <div style="margin-bottom: 15px; background-color: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #e0e0e0;">
-        <div style="font-weight: bold; margin-bottom: 8px;">🎧 語音朗讀控制台：</div>
+        <div style="font-weight: bold; margin-bottom: 8px;">🎧 智能語音控制台：</div>
         <button onclick="startLoopPlay()" id="loop_btn" style="background-color: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 8px;">
             🔁 本頁循環朗讀
+        </button>
+        <button onclick="startAutoNextPagePlay()" id="autonext_btn" style="background-color: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 8px;">
+            📚 全書自動換頁朗讀
         </button>
         <button onclick="stopAutoPlay()" style="background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">
             ⏹ 停止朗讀
@@ -122,13 +137,24 @@ with tab1:
     </table>
 
     <script>
+    const totalPages = {total_pages};
+    const currentPageNum = {current_page};
+    const isAutoNextMode = "{auto_mode_param}" === "true";
     const totalRowsCount = {len(df)};
+    
     const pageIdiomsData = [
     {js_idioms_array}
     ];
 
     let autoPlaying = false;
+    let playMode = '';
     let currentAutoIdx = 0;
+
+    window.addEventListener('DOMContentLoaded', (event) => {{
+        if (isAutoNextMode) {{
+            startAutoNextPagePlay();
+        }}
+    }});
 
     function clearAllHighlights() {{
         for (let i = 0; i < pageIdiomsData.length; i++) {{
@@ -188,9 +214,21 @@ with tab1:
     function startLoopPlay() {{
         if (pageIdiomsData.length === 0) return;
         autoPlaying = true;
+        playMode = 'loop';
         currentAutoIdx = 0;
         document.getElementById('auto_status').innerText = '狀態：[本頁循環] 播放中...';
         let btn = document.getElementById('loop_btn');
+        if(btn) btn.style.backgroundColor = '#6c757d';
+        playNextInQueue();
+    }}
+
+    function startAutoNextPagePlay() {{
+        if (pageIdiomsData.length === 0) return;
+        autoPlaying = true;
+        playMode = 'autonext';
+        currentAutoIdx = 0;
+        document.getElementById('auto_status').innerText = '狀態：[全書換頁] 播放中...';
+        let btn = document.getElementById('autonext_btn');
         if(btn) btn.style.backgroundColor = '#6c757d';
         playNextInQueue();
     }}
@@ -199,7 +237,22 @@ with tab1:
         if (!autoPlaying) return;
 
         if (currentAutoIdx >= pageIdiomsData.length) {{
-            currentAutoIdx = 0; // 循環播放
+            if (playMode === 'loop') {{
+                currentAutoIdx = 0;
+            }} else if (playMode === 'autonext') {{
+                if (currentPageNum < totalPages) {{
+                    document.getElementById('auto_status').innerText = '狀態：本頁讀完，自動無縫跳至第 ' + (currentPageNum + 1) + ' 頁...';
+                    setTimeout(function() {{
+                        const nextUrl = window.location.pathname + '?page=' + (currentPageNum + 1) + '&auto_mode=true';
+                        window.parent.location.href = nextUrl;
+                    }, 800);
+                    return;
+                }} else {{
+                    stopAutoPlay();
+                    document.getElementById('auto_status').innerText = '狀態：全書所有成語已全部播畢！';
+                    return;
+                }}
+            }}
         }}
 
         let item = pageIdiomsData[currentAutoIdx];
@@ -251,11 +304,19 @@ with tab1:
 
     function stopAutoPlay() {{
         autoPlaying = false;
+        playMode = '';
         window.speechSynthesis.cancel();
         clearAllHighlights();
         
+        if (window.parent.location.search.includes('auto_mode=true')) {{
+            const cleanUrl = window.location.pathname;
+            window.parent.history.replaceState({{}}, document.title, cleanUrl);
+        }}
+        
         let loopBtn = document.getElementById('loop_btn');
+        let autonextBtn = document.getElementById('autonext_btn');
         if (loopBtn) loopBtn.style.backgroundColor = '#17a2b8';
+        if (autonextBtn) autonextBtn.style.backgroundColor = '#28a745';
         
         let statusElem = document.getElementById('auto_status');
         if (statusElem) {{
