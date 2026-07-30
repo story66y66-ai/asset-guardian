@@ -86,21 +86,28 @@ with tab1:
         display_num = idx + 1
         text_to_speak = f"{idiom}。{meaning}"
         
-        rows_html += f"""
-        <tr style="border-bottom: 1px solid #ddd; height: 50px;" id="row_item_{idx}">
-            <td style="width: 10%; font-weight: bold;">#{display_num}</td>
-            <td style="width: 20%;" id="idiom_cell_{idx}">{idiom}</td>
-            <td style="width: 50%;">{meaning}</td>
-            <td style="width: 20%;">
-                <button onclick="playSingle({idx}, '{idiom}', '{text_to_speak}', {len(df)})" 
-                        id="btn_{idx}" 
-                        style="background-color: #f0f2f6; border: 1px solid #d6d6d6; padding: 5px 12px; border-radius: 4px; cursor: pointer;">
-                    🔊 朗讀
-                </button>
-            </td>
-        </tr>
-        """
+        rows_html += (
+            f'<tr style="border-bottom: 1px solid #ddd; height: 50px;" id="row_item_{idx}">'
+            f'<td style="width: 10%; font-weight: bold;">#{display_num}</td>'
+            f'<td style="width: 20%;" id="idiom_cell_{idx}">{idiom}</td>'
+            f'<td style="width: 50%;">{meaning}</td>'
+            f'<td style="width: 20%;">'
+            f'<button onclick="playSingle({idx}, \'{idiom}\', \'{text_to_speak}\', {len(df)})" '
+            f'id="btn_{idx}" '
+            f'style="background-color: #f0f2f6; border: 1px solid #d6d6d6; padding: 5px 12px; border-radius: 4px; cursor: pointer;">'
+            f'🔊 朗讀'
+            f'</button>'
+            f'</td>'
+            f'</tr>'
+        )
     
+    js_idioms_array = ""
+    for idx, row in page_data.iterrows():
+        idiom = row["成語"]
+        meaning = row["解釋"]
+        full_text = f"{idiom}，{meaning}"
+        js_idioms_array += f"{{ index: {idx}, idiom: '{idiom}', text: '{full_text}' }},\n"
+
     full_table_html = f"""
     <div style="margin-bottom: 15px; background-color: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #e0e0e0;">
         <div style="font-weight: bold; margin-bottom: 8px;">🎧 吃飯免手動控制台：</div>
@@ -136,17 +143,10 @@ with tab1:
     const totalPages = {total_pages};
     const currentPageNum = {current_page};
     const isAutoNextMode = "{auto_mode_param}" === "true";
+    const totalRowsCount = {len(df)};
     
     const pageIdiomsData = [
-    """
-    
-    for idx, row in page_data.iterrows():
-        idiom = row["成語"]
-        meaning = row["解釋"]
-        full_text = f"{idiom}，{meaning}"
-        full_table_html += f"{{ index: {idx}, idiom: '{idiom}', text: '{full_text}' }},\n"
-
-    full_table_html += f"""
+    {js_idioms_array}
     ];
 
     let autoPlaying = false;
@@ -260,7 +260,7 @@ with tab1:
         let idiom = item.idiom;
         let textToSpeak = item.text;
 
-        clearAllHighlights({len(df)});
+        clearAllHighlights(totalRowsCount);
 
         let targetCell = document.getElementById('idiom_cell_' + idx);
         let targetBtn = document.getElementById('btn_' + idx);
@@ -303,7 +303,7 @@ with tab1:
         autoPlaying = false;
         playMode = '';
         window.speechSynthesis.cancel();
-        clearAllHighlights({len(df)});
+        clearAllHighlights(totalRowsCount);
         
         if (window.parent.location.search.includes('auto_mode=true')) {{
             const cleanUrl = window.location.pathname;
@@ -344,7 +344,7 @@ with tab2:
     if "初級" in difficulty:
         st.info(f"【初級提示】這是一句成語，第一個字是：【**{idiom_text[0]}**】")
     elif "中級" in difficulty:
-        st.info(f"【中級提示】這是一句經典成語，字數為 {len(idiom_text)} 個字，請根據解釋填入！")
+        st.info(f"【中級提示】這是一經典成語，字數為 {len(idiom_text)} 個字，請根據解釋填入！")
     else:
         st.info(f"【高級挑戰】完全盲猜！請輸入對應的完整成語！")
         
