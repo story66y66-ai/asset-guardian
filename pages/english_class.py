@@ -68,7 +68,7 @@ if not df.empty:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
-        key="vocab_click_table_v17"
+        key="vocab_click_table_v18"
     )
 
     if len(event.selection.rows) > 0:
@@ -98,15 +98,15 @@ if not df.empty:
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("➕ 把此字加入清單", key="add_to_list_v17"):
+        if st.button("➕ 把此字加入清單", key="add_to_list_v18"):
             if selected_word not in st.session_state.selected_vocab_list:
                 if len(st.session_state.selected_vocab_list) < 3:
                     st.session_state.selected_vocab_list.append(selected_word)
                 else:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
-        if st.button("🗑️ 清除目前的清單", key="clear_list_v17"):
-            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v17_") or k.startswith("memine_") or k.startswith("prac_v17_")]
+        if st.button("🗑️ 清除目前的清單", key="clear_list_v18"):
+            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v18_") or k.startswith("memine_") or k.startswith("prac_v18_")]
             for k in keys_to_delete:
                 del st.session_state[k]
             st.session_state.selected_vocab_list = []
@@ -132,13 +132,13 @@ if not df.empty:
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v17_{idx}_{w}")
+                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v18_{idx}_{w}")
                 with c2:
-                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v17_{idx}_{w}")
+                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v18_{idx}_{w}")
                 with c3:
-                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v17_{idx}_{w}")
+                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v18_{idx}_{w}")
                 
-                state_key = f"grammar_v17_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"grammar_v18_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     w_lower = w.lower()
@@ -273,7 +273,7 @@ if not df.empty:
                 st.markdown(f"**💡 道地文法示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v17_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v18_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
@@ -290,40 +290,52 @@ if not df.empty:
                     highlighted_memine = re.sub(r'\b' + re.escape(str(w)) + r'\b', f"<span class='red-word'>{w}</span>", memine_sentence, flags=re.IGNORECASE)
                     st.markdown(f"**💡 Memine 示範句：** {highlighted_memine}", unsafe_allow_html=True)
                     
-                    # 調整為三個精準速度選擇
-                    speed_choice = st.selectbox(
-                        "🐢 選擇 Memine 示範句發音速度：",
-                        ["1. 正常 (1.0x)", "2. 0.5倍速", "3. 0.2倍速"],
-                        key=f"speed_memine_{idx}_{w}"
-                    )
+                    st.markdown("🐢 **選擇 Memine 示範句發音速度：**")
+                    b_col1, b_col2, b_col3 = st.columns(3)
                     
-                    # 對應的播放速率 (playbackRate)
-                    rate_map = {
-                        "1. 正常 (1.0x)": 1.0,
-                        "2. 0.5倍速": 0.5,
-                        "3. 0.2倍速": 0.2
-                    }
-                    selected_rate = rate_map[speed_choice]
+                    # 產生語音位元組
+                    tts_m = gTTS(text=memine_sentence, lang='en')
+                    fp_m = io.BytesIO()
+                    tts_m.write_to_fp(fp_m)
+                    audio_bytes = fp_m.getvalue()
+                    b64_audio = base64.b64encode(audio_bytes).decode()
                     
-                    if st.button(f"🔊 播放 Memine 示範句發音 ({speed_choice})", key=f"audio_memine_{idx}_{w}"):
-                        # 產生語音
-                        tts_m = gTTS(text=memine_sentence, lang='en')
-                        fp_m = io.BytesIO()
-                        tts_m.write_to_fp(fp_m)
-                        audio_bytes = fp_m.getvalue()
-                        b64_audio = base64.b64encode(audio_bytes).decode()
-                        
-                        # 使用 HTML5 audio 搭配 JavaScript 來精準控制播放速度 (支援 0.5x 與 0.2x 極慢速)
-                        audio_html = f"""
-                            <audio id="player_{idx}_{w}" controls autoplay>
-                                <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
-                            </audio>
-                            <script>
-                                var audioEl = document.getElementById("player_{idx}_{w}");
-                                audioEl.playbackRate = {selected_rate};
-                            </script>
-                        """
-                        st.components.v1.html(audio_html, height=60)
+                    with b_col1:
+                        if st.button("🔊 正常 (1.0x)", key=f"spd_1_{idx}_{w}"):
+                            audio_html = f"""
+                                <audio id="player_{idx}_{w}" controls autoplay>
+                                    <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
+                                </audio>
+                                <script>
+                                    var audioEl = document.getElementById("player_{idx}_{w}");
+                                    audioEl.playbackRate = 1.0;
+                                </script>
+                            """
+                            st.components.v1.html(audio_html, height=60)
+                    with b_col2:
+                        if st.button("🐢 0.5倍速", key=f"spd_05_{idx}_{w}"):
+                            audio_html = f"""
+                                <audio id="player_{idx}_{w}" controls autoplay>
+                                    <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
+                                </audio>
+                                <script>
+                                    var audioEl = document.getElementById("player_{idx}_{w}");
+                                    audioEl.playbackRate = 0.5;
+                                </script>
+                            """
+                            st.components.v1.html(audio_html, height=60)
+                    with b_col3:
+                        if st.button("🐌 0.2倍速", key=f"spd_02_{idx}_{w}"):
+                            audio_html = f"""
+                                <audio id="player_{idx}_{w}" controls autoplay>
+                                    <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
+                                </audio>
+                                <script>
+                                    var audioEl = document.getElementById("player_{idx}_{w}");
+                                    audioEl.playbackRate = 0.2;
+                                </script>
+                            """
+                            st.components.v1.html(audio_html, height=60)
 
                     memine_trans_key = f"memine_trans_input_{idx}_{w}"
                     memine_translation = st.text_input(f"📝 請輸入或貼上 Memine 示範句的中文翻譯：", key=memine_trans_key, placeholder="在此輸入中文翻譯...")
@@ -337,9 +349,9 @@ if not df.empty:
                             st.audio(fp_t, autoplay=True)
 
                 st.markdown("<br>", unsafe_allow_html=True)
-                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v17_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
+                user_practice = st.text_area(f"📝 請輸入您用 [{w}] 練習造的句子：", key=f"prac_v18_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}", height=90)
                 
-                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v17_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"✅ 檢查 [{w}] 的造句", key=f"check_v18_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     pattern = r'\b' + re.escape(str(w)) + r'\b'
                     if re.search(pattern, user_practice, flags=re.IGNORECASE):
                         st.success(f"🎉 太棒了！[{w}] 使用正確！您寫的句子結構很棒喔！")
