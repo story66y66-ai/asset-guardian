@@ -234,18 +234,18 @@ st.write("---")
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
 
 with tab1:
-    st.subheader("📚 完整成語資料庫預覽（點擊前方方框可聆聽語音朗讀）")
+    st.subheader("📚 完整成語資料庫預覽（點擊表格任一列即可聆聽語音朗讀）")
     st.write(f"目前資料庫總筆數：**{len(df):,} 筆**（前 200 筆為校長精選真題）")
     
     display_df = df.head(100).copy()
-    display_df.insert(0, "發音", False)
+    display_df.insert(0, "選擇", False)
     
     edited_df = st.data_editor(
         display_df,
         column_config={
-            "發音": st.column_config.CheckboxColumn(
-                "🔊 點擊發音",
-                help="點擊方框勾選，即可朗讀該成語！",
+            "選擇": st.column_config.CheckboxColumn(
+                "選取",
+                help="點擊選取該行以進行語音朗讀",
                 default=False,
                 width="small",
             ),
@@ -263,7 +263,7 @@ with tab1:
         use_container_width=True
     )
     
-    selected_rows = edited_df[edited_df["發音"] == True]
+    selected_rows = edited_df[edited_df["選擇"] == True]
     if not selected_rows.empty:
         spoken_idiom = selected_rows.iloc[0]["成語"]
         spoken_meaning = selected_rows.iloc[0]["解釋"]
@@ -278,7 +278,7 @@ with tab1:
         </script>
         """
         st.components.v1.html(speech_html, height=0)
-        st.info(f"🔊 正在朗讀成語：**{spoken_idiom}**")
+        st.info(f"🔊 正在朗讀成語：**{spoken_idiom}**（{spoken_meaning}）")
 
     st.caption("（上方顯示前 100 筆預覽，完整 10,000 筆在背景隨時支援隨機抽題！）")
 
