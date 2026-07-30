@@ -209,19 +209,16 @@ def load_golden_flagship_database():
 
 df = load_golden_flagship_database()
 
-if "active_speak_idx" not in st.session_state:
-    st.session_state.active_speak_idx = None
-
 st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆真實真題）")
 st.write("---")
 
-st.success(f"🔥 系統已載入 **{len(df)} 筆** 真實成語！點擊「朗讀」後，標記與語音完美同步輸出！")
+st.success(f"🔥 系統已載入 **{len(df)} 筆** 真實成語！點擊「朗讀」即時點亮標記與語音！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
 
 with tab1:
-    st.subheader("📚 完整成語資料庫預覽（完美精準標記與語音）")
+    st.subheader("📚 完整成語資料庫預覽（完美零延遲同步）")
     
     page_size = 20
     total_pages = (len(df) + page_size - 1) // page_size
@@ -261,58 +258,97 @@ with tab1:
     st.write("---")
     
     page_data = df.iloc[start_idx:end_idx]
+    
+    # 建立一個純粹由 JavaScript 驅動的表格列渲染，徹底避開 Streamlit 重新整理延遲
+    rows_html = ""
     for idx, row in page_data.iterrows():
         idiom = row["成語"]
         meaning = row["解釋"]
         display_num = idx + 1
+        text_to_speak = f"{idiom}。{meaning}"
         
-        is_highlighted = (st.session_state.active_speak_idx == idx)
+        rows_html += f"""
+        <tr style="border-bottom: 1px solid #ddd; height: 50px;">
+            <td style="width: 10%; font-weight: bold;">#{display_num}</td>
+            <td style="width: 20%;" id="idiom_cell_{idx}">{idiom}</td>
+            <td style="width: 50%;">{meaning}</td>
+            <td style="width: 20%;">
+                <button onclick="playSpeech({idx}, '{idiom}', '{text_to_speak}', {len(df)})" 
+                        id="btn_{idx}" 
+                        style="background-color: #f0f2f6; border: 1px solid #d6d6d6; padding: 5px 12px; border-radius: 4px; cursor: pointer;">
+                    🔊 朗讀
+                </button>
+            </td>
+        </tr>
+        """
+    
+    full_table_html = f"""
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 2px solid #ccc; text-align: left;">
+                <th style="padding-bottom: 8px;">序號</th>
+                <th style="padding-bottom: 8px;">成語</th>
+                <th style="padding-bottom: 8px;">解釋</th>
+                <th style="padding-bottom: 8px;">語音朗讀</th>
+            </tr>
+        </thead>
+        <tbody>
+            {rows_html}
+        </tbody>
+    </table>
+    
+    <script>
+    function playSpeech(idx, idiom, textToSpeak, totalRows) {{
+        // 1. 重設所有成語欄位與按鈕狀態
+        for (let i = 0; i < totalRows; i++) {{
+            let cell = document.getElementById('idiom_cell_' + i);
+            let btn = document.getElementById('btn_' + i);
+            // 找出原始成語文字 (透過對應的 dataframe 內容或直接還原)
+            // 這裡我們直接利用迴圈把所有標記清除，只留下純文字
+            if (cell) {{
+                // 從目前格子的文字中萃取純成語（移除裝飾符號）
+                let cleanText = cell.innerText.replace('🎵', '').replace('⭐', '').trim();
+                cell.innerHTML = cleanText;
+            }}
+            if (btn) {{
+                btn.innerText = '🔊 朗讀';
+                btn.style.backgroundColor = '#f0f2f6';
+            }}
+        }}
         
-        c1, c2, c3, c4 = st.columns([1, 2, 5, 2])
-        with c1:
-            st.markdown(f"**#{display_num}**")
-        with c2:
-            # 加上專屬 DOM ID，讓前端 JavaScript 可以直接瞬間更新該行的文字標記
-            if is_highlighted:
-                st.markdown(f'<div id="idiom_cell_{idx}">🎵 <b>{idiom}</b> ⭐</div>', unsafe_allow_html=True)
-            else:
-                st.markdown(f'<div id="idiom_cell_{idx}">{idiom}</div>', unsafe_allow_html=True)
-        with c3:
-            st.markdown(f"{meaning}")
-        with c4:
-            btn_label = "🔊 朗讀中..." if is_highlighted else "🔊 朗讀"
-            if st.button(btn_label, key=f"speak_btn_{idx}"):
-                st.session_state.active_speak_idx = idx
-                text_to_speak = f"{idiom}。{meaning}"
-                
-                # 使用 JavaScript 直接操作 DOM，點擊瞬間更新畫面文字並同時播放語音，完全解決畫面延遲！
-                speech_html = f"""
-                <script>
-                    // 1. 瞬間更新畫面上所有成語的標記（移除舊的，加上新的）
-                    for (let i = 0; i < {len(df)}; i++) {{
-                        let el = document.getElementById('idiom_cell_' + i);
-                        if (el) {{
-                            if (i === {idx}) {{
-                                el.innerHTML = '🎵 <b>{idiom}</b> ⭐';
-                            }} else {{
-                                // 還原其他行的文字 (這裡抓取原本的成語清單文字)
-                                // 簡單起見，重新整理頁面以保持狀態最穩健
-                            }}
-                        }}
-                    }}
-                    
-                    // 2. 播放語音
-                    const utterance = new SpeechSynthesisUtterance("{text_to_speak}");
-                    utterance.lang = 'zh-TW';
-                    utterance.rate = 0.9;
-                    window.speechSynthesis.speak(utterance);
-                </script>
-                """
-                st.components.v1.html(speech_html, height=0)
-                st.toast(f"正在朗讀 #{display_num}：{idiom}", icon="🔊")
-                st.rerun()
-
-        st.write("")
+        // 2. 點亮當前點擊的成語與按鈕
+        let targetCell = document.getElementById('idiom_cell_' + idx);
+        let targetBtn = document.getElementById('btn_' + idx);
+        
+        if (targetCell) {{
+            targetCell.innerHTML = '🎵 <b>' + idiom + '</b> ⭐';
+        }}
+        if (targetBtn) {{
+            targetBtn.innerText = '🔊 朗讀中...';
+            targetBtn.style.backgroundColor = '#ff4b4b';
+            targetBtn.style.color = 'white';
+        }}
+        
+        // 3. 播放瀏覽器語音
+        window.speechSynthesis.cancel(); // 停止先前的聲音
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = 'zh-TW';
+        utterance.rate = 0.9;
+        
+        utterance.onend = function() {{
+            if (targetBtn) {{
+                targetBtn.innerText = '🔊 朗讀';
+                targetBtn.style.backgroundColor = '#f0f2f6';
+                targetBtn.style.color = 'black';
+            }}
+        }};
+        
+        window.speechSynthesis.speak(utterance);
+    }}
+    </script>
+    """
+    
+    st.components.v1.html(full_table_html, height=1100, scrolling=True)
 
 with tab2:
     st.subheader("🎯 挑戰您的無敵成語腦力")
