@@ -36,7 +36,6 @@ with tab1:
     if total_pages < 1:
         total_pages = 1
     
-    # 檢查網址列是否有自動播放狀態與頁碼
     query_params = st.query_params
     auto_mode_param = query_params.get("auto_mode", "false")
     
@@ -54,7 +53,6 @@ with tab1:
         new_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁)：", min_value=1, max_value=total_pages, value=st.session_state.current_page, step=1)
         if new_page != st.session_state.current_page:
             st.session_state.current_page = new_page
-            # 如果手動切換頁面，清除自動播放網址狀態
             st.query_params.clear()
             st.rerun()
     
@@ -155,7 +153,6 @@ with tab1:
     let playMode = ''; 
     let currentAutoIdx = 0;
 
-    // 如果網址帶有自動換頁標記，頁面一載入就自動啟動全書朗讀！
     window.addEventListener('DOMContentLoaded', (event) => {{
         if (isAutoNextMode) {{
             startAutoNextPagePlay();
@@ -238,7 +235,6 @@ with tab1:
     function playNextInQueue() {{
         if (!autoPlaying) return;
 
-        // 如果本頁讀完了
         if (currentAutoIdx >= pageIdiomsData.length) {{
             if (playMode === 'loop') {{
                 currentAutoIdx = 0;
@@ -246,7 +242,6 @@ with tab1:
                 if (currentPageNum < totalPages) {{
                     document.getElementById('auto_status').innerText = '狀態：本頁讀完，無縫跳至第 ' + (currentPageNum + 1) + ' 頁...';
                     
-                    // 利用修改網址列參數並重新整理頁面，完美安全地切換下一頁並繼續朗讀
                     setTimeout(function() {{
                         const nextUrl = window.location.pathname + '?page=' + (currentPageNum + 1) + '&auto_mode=true';
                         window.parent.location.href = nextUrl;
@@ -308,9 +303,8 @@ with tab1:
         autoPlaying = false;
         playMode = '';
         window.speechSynthesis.cancel();
-        clearAllHighlights({len(df));
+        clearAllHighlights({len(df)});
         
-        // 同時清除網址上的自動播放參數
         if (window.parent.location.search.includes('auto_mode=true')) {{
             const cleanUrl = window.location.pathname;
             window.parent.history.replaceState({{}}, document.title, cleanUrl);
