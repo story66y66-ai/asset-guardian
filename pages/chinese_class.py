@@ -215,13 +215,13 @@ if "active_speak_idx" not in st.session_state:
 st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆真實真題）")
 st.write("---")
 
-st.success(f"🔥 系統已載入 **{len(df)} 筆** 真實成語！點擊朗讀後，該行會直接完整覆蓋底色，字體清晰、聲音流暢播放不中斷！")
+st.success(f"🔥 系統已載入 **{len(df)} 筆** 真實成語！點擊「朗讀」後，該行成語前方會出現 **🎵 正在朗讀** 標記，清爽乾淨、絕不跑版！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
 
 with tab1:
-    st.subheader("📚 完整成語資料庫預覽（完美行內高亮與流暢語音）")
+    st.subheader("📚 完整成語資料庫預覽（清爽辨識、流暢朗讀）")
     
     page_size = 20
     total_pages = (len(df) + page_size - 1) // page_size
@@ -268,20 +268,15 @@ with tab1:
         
         is_highlighted = (st.session_state.active_speak_idx == idx)
         
-        # 使用完美的包覆區塊，將當前行完整覆蓋柔和背景與左側邊框，且絕對不會跑到位子上方
-        if is_highlighted:
-            st.markdown(
-                f"""
-                <div style="background-color: #e6fcf5; padding: 10px 12px; border-radius: 6px; border-left: 5px solid #0ca678; margin-bottom: 8px;">
-                """,
-                unsafe_allow_html=True
-            )
-            
         c1, c2, c3, c4 = st.columns([1, 2, 5, 2])
         with c1:
             st.markdown(f"**#{display_num}**")
         with c2:
-            st.markdown(f"**{idiom}**")
+            # 如果被選中朗讀，成語前方加上特別符號與醒目提示，絕不亂跑
+            if is_highlighted:
+                st.markdown(f"🎵 **{idiom}** ⭐")
+            else:
+                st.markdown(f"{idiom}")
         with c3:
             st.markdown(f"{meaning}")
         with c4:
@@ -300,9 +295,6 @@ with tab1:
                 st.components.v1.html(speech_html, height=0)
                 st.toast(f"正在朗讀 #{display_num}：{idiom}", icon="🔊")
                 
-        if is_highlighted:
-            st.markdown("</div>", unsafe_allow_html=True)
-            
         st.write("")
 
 with tab2:
