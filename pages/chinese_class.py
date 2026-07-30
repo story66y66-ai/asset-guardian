@@ -36,13 +36,27 @@ with tab1:
     if total_pages < 1:
         total_pages = 1
     
-    # 建立 Session State 來記錄當前頁數，以便自動換頁時直接控制
+    # 檢查網址列是否有自動播放狀態與頁碼
+    query_params = st.query_params
+    auto_mode_param = query_params.get("auto_mode", "false")
+    
     if "current_page" not in st.session_state:
-        st.session_state.current_page = 1
+        if "page" in query_params:
+            try:
+                st.session_state.current_page = int(query_params["page"])
+            except:
+                st.session_state.current_page = 1
+        else:
+            st.session_state.current_page = 1
 
     col_p1, col_p2, col_p3 = st.columns([2, 2, 3])
     with col_p1:
-        st.session_state.current_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁)：", min_value=1, max_value=total_pages, value=st.session_state.current_page, step=1)
+        new_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁)：", min_value=1, max_value=total_pages, value=st.session_state.current_page, step=1)
+        if new_page != st.session_state.current_page:
+            st.session_state.current_page = new_page
+            # 如果手動切換頁面，清除自動播放網址狀態
+            st.query_params.clear()
+            st.rerun()
     
     with col_p2:
         st.write("") 
@@ -50,10 +64,12 @@ with tab1:
         with sub_col1:
             if st.button("⬅️ 上一頁") and st.session_state.current_page > 1:
                 st.session_state.current_page -= 1
+                st.query_params.clear()
                 st.rerun()
         with sub_col2:
             if st.button("下一頁 ➡️") and st.session_state.current_page < total_pages:
                 st.session_state.current_page += 1
+                st.query_params.clear()
                 st.rerun()
 
     current_page = st.session_state.current_page
@@ -121,6 +137,7 @@ with tab1:
     const currentEndIndex = {end_idx};
     const totalPages = {total_pages};
     const currentPageNum = {current_page};
+    const isAutoNextMode = "{auto_mode_param}" === "true";
     
     const pageIdiomsData = [
     """
@@ -135,8 +152,15 @@ with tab1:
     ];
 
     let autoPlaying = false;
-    let playMode = ''; // 'loop' 或 'autonext'
+    let playMode = ''; 
     let currentAutoIdx = 0;
+
+    // 如果網址帶有自動換頁標記，頁面一載入就自動啟動全書朗讀！
+    window.addEventListener('DOMContentLoaded', (event) => {{
+        if (isAutoNextMode) {{
+            startAutoNextPagePlay();
+        }}
+    }});
 
     function clearAllHighlights(totalRows) {{
         for (let i = 0; i < totalRows; i++) {{
@@ -206,7 +230,8 @@ with tab1:
         playMode = 'autonext';
         currentAutoIdx = 0;
         document.getElementById('auto_status').innerText = '狀態：[全書換頁] 播放中...';
-        document.getElementById('autonext_btn').style.backgroundColor = '#6c757d';
+        let btn = document.getElementById('autonext_btn');
+        if (btn) btn.style.backgroundColor = '#6c757d';
         playNextInQueue();
     }}
 
@@ -216,23 +241,16 @@ with tab1:
         // 如果本頁讀完了
         if (currentAutoIdx >= pageIdiomsData.length) {{
             if (playMode === 'loop') {{
-                // 循環模式：重頭再來
                 currentAutoIdx = 0;
             }} else if (playMode === 'autonext') {{
-                // 自動換頁模式：檢查是否還有下一頁
                 if (currentPageNum < totalPages) {{
-                    document.getElementById('auto_status').innerText = '狀態：本頁讀完，自動跳至下一頁...';
-                    // 利用 Streamlit 的數字輸入框與網頁跳轉模擬換頁
+                    document.getElementById('auto_status').innerText = '狀態：本頁讀完，無縫跳至第 ' + (currentPageNum + 1) + ' 頁...';
+                    
+                    // 利用修改網址列參數並重新整理頁面，完美安全地切換下一頁並繼續朗讀
                     setTimeout(function() {{
-                        const numberInputs = window.parent.document.querySelectorAll('input[type="number"]');
-                        if (numberInputs.length > 0) {{
-                            let inputElem = numberInputs[0];
-                            let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-                            nativeInputValueSetter.call(inputElem, currentPageNum + 1);
-                            inputElem.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                            inputElem.dispatchEvent(new Event('change', {{ bubbles: true }}));
-                        }}
-                    }}, 1000);
+                        const nextUrl = window.location.pathname + '?page=' + (currentPageNum + 1) + '&auto_mode=true';
+                        window.parent.location.href = nextUrl;
+                    }, 800);
                     return;
                 }} else {{
                     stopAutoPlay();
@@ -290,7 +308,13 @@ with tab1:
         autoPlaying = false;
         playMode = '';
         window.speechSynthesis.cancel();
-        clearAllHighlights({len(df)});
+        clearAllHighlights({len(df));
+        
+        // 同時清除網址上的自動播放參數
+        if (window.parent.location.search.includes('auto_mode=true')) {{
+            const cleanUrl = window.location.pathname;
+            window.parent.history.replaceState({{}}, document.title, cleanUrl);
+        }}
         
         let loopBtn = document.getElementById('loop_btn');
         let autonextBtn = document.getElementById('autonext_btn');
