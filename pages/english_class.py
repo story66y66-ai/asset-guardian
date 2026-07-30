@@ -68,7 +68,7 @@ if not df.empty:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
-        key="vocab_click_table_v22"
+        key="vocab_click_table_v23"
     )
 
     if len(event.selection.rows) > 0:
@@ -98,15 +98,15 @@ if not df.empty:
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("➕ 把此字加入清單", key="add_to_list_v22"):
+        if st.button("➕ 把此字加入清單", key="add_to_list_v23"):
             if selected_word not in st.session_state.selected_vocab_list:
                 if len(st.session_state.selected_vocab_list) < 3:
                     st.session_state.selected_vocab_list.append(selected_word)
                 else:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
-        if st.button("🗑️ 清除目前的清單", key="clear_list_v22"):
-            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v22_") or k.startswith("memine_") or k.startswith("prac_v22_")]
+        if st.button("🗑️ 清除目前的清單", key="clear_list_v23"):
+            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v23_") or k.startswith("memine_") or k.startswith("prac_v23_")]
             for k in keys_to_delete:
                 del st.session_state[k]
             st.session_state.selected_vocab_list = []
@@ -132,13 +132,13 @@ if not df.empty:
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v22_{idx}_{w}")
+                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v23_{idx}_{w}")
                 with c2:
-                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v22_{idx}_{w}")
+                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v23_{idx}_{w}")
                 with c3:
-                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v22_{idx}_{w}")
+                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v23_{idx}_{w}")
                 
-                state_key = f"grammar_v22_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"grammar_v23_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     w_lower = w.lower()
@@ -273,7 +273,7 @@ if not df.empty:
                 st.markdown(f"**💡 道地文法示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v22_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v23_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
@@ -376,15 +376,18 @@ if not df.empty:
 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                prac_key = f"prac_v22_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
-                status_key = f"status_v22_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                prac_key = f"prac_v23_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                status_key = f"status_v23_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 def check_user_practice():
                     user_val = st.session_state.get(prac_key, "").strip()
-                    target_sentence = demo_eng.strip()
+                    # 以澄玄在 Memine 貼上的句子作為標準答案（如果沒貼，則預設用 demo_eng）
+                    target_sentence = st.session_state.get(memine_input_key, "").strip()
+                    if not target_sentence:
+                        target_sentence = demo_eng.strip()
                     
                     if user_val:
-                        # 嚴格比對：檢查使用者輸入是否與 Memine 示範句完全一致（不分大小寫與前後空白）
+                        # 嚴格比對：檢查使用者輸入是否與標準答案完全一致（不分大小寫與前後空白）
                         if user_val.lower() == target_sentence.lower():
                             st.session_state[status_key] = ("success", f"🎉 太棒了！句子完全正確！")
                         else:
