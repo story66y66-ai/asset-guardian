@@ -212,15 +212,15 @@ df = load_golden_flagship_database()
 st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆真實真題）")
 st.write("---")
 
-st.success(f"🔥 系統已載入 **{len(df)} 筆** 真實成語！下方每句成語旁邊都有專屬的 **🔊 朗讀按鈕**，點了直接發音，不用再打勾取消囉！")
+st.success(f"🔥 系統已載入 **{len(df)} 筆** 真實成語！下方已恢復為帶有**編號（序號）**的精緻表格，並且每行都有專屬的 **🔊 朗讀按鈕**，點擊即可發音！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
 
 with tab1:
-    st.subheader("📚 完整成語資料庫預覽")
+    st.subheader("📚 完整成語資料庫預覽（含序號與朗讀按鈕）")
     
-    page_size = 20  # 每頁 20 筆，按鈕操作更加俐落好點
+    page_size = 20  # 每頁 20 筆
     total_pages = (len(df) + page_size - 1) // page_size
     if total_pages < 1:
         total_pages = 1
@@ -245,19 +245,35 @@ with tab1:
     st.write(f"目前顯示第 **{current_page}** 頁（第 {start_idx + 1} ~ {end_idx} 筆，總計 **{len(df)} 筆**）：")
     st.write("---")
     
-    # 迴圈印出每一筆成語與專屬朗讀按鈕
+    # 表格標題列
+    h1, h2, h3, h4 = st.columns([1, 2, 5, 2])
+    with h1:
+        st.markdown("**序號**")
+    with h2:
+        st.markdown("**成語**")
+    with h3:
+        st.markdown("**解釋**")
+    with h4:
+        st.markdown("**語音朗讀**")
+    
+    st.write("---")
+    
+    # 迴圈印出每一筆帶序號的成語與專屬朗讀按鈕
     page_data = df.iloc[start_idx:end_idx]
     for idx, row in page_data.iterrows():
         idiom = row["成語"]
         meaning = row["解釋"]
+        display_num = idx + 1  # 顯示真實序號
         
-        c1, c2, c3 = st.columns([1.5, 3.5, 1])
+        c1, c2, c3, c4 = st.columns([1, 2, 5, 2])
         with c1:
-            st.markdown(f"**{idiom}**")
+            st.markdown(f"**#{display_num}**")
         with c2:
-            st.markdown(f"{meaning}")
+            st.markdown(f"**{idiom}**")
         with c3:
-            if st.button("🔊 朗讀", key=f"speak_{idx}"):
+            st.markdown(f"{meaning}")
+        with c4:
+            if st.button("🔊 朗讀", key=f"speak_btn_{idx}"):
                 text_to_speak = f"{idiom}。{meaning}"
                 speech_html = f"""
                 <script>
@@ -268,7 +284,7 @@ with tab1:
                 </script>
                 """
                 st.components.v1.html(speech_html, height=0)
-                st.toast(f"正在朗讀：{idiom}", icon="🔊")
+                st.toast(f"正在朗讀 #{display_num}：{idiom}", icon="🔊")
         st.write("")
 
 with tab2:
