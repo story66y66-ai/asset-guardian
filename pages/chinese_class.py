@@ -27,7 +27,7 @@ df = load_flagship_database()
 st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆全覆蓋真題）")
 st.write("---")
 
-st.success(f"🔥 系統已成功從 GitHub 載入 **{len(df)} 筆** 完整不重複成語！點擊「朗讀」即時點亮標記與語音！")
+st.success(f"🔥 系統已成功從 GitHub 載入 **{len(df)} 筆** 完整不重複成語！支援「獨立點選」與「全自動連續朗讀（吃飯解放雙手）」！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
@@ -60,18 +60,7 @@ with tab1:
     st.write(f"目前顯示第 **{current_page}** 頁（第 {start_idx + 1} ~ {end_idx} 筆，總計 **{len(df)} 筆**）：")
     st.write("---")
     
-    h1, h2, h3, h4 = st.columns([1, 2, 5, 2])
-    with h1:
-        st.markdown("**序號**")
-    with h2:
-        st.markdown("**成語**")
-    with h3:
-        st.markdown("**解釋**")
-    with h4:
-        st.markdown("**語音朗讀**")
-    
-    st.write("---")
-    
+    # 準備給前端 JavaScript 用的資料清單 (將當前頁面的成語包裝成 JS 陣列)
     page_data = df.iloc[start_idx:end_idx]
     
     rows_html = ""
@@ -87,7 +76,7 @@ with tab1:
             <td style="width: 20%;" id="idiom_cell_{idx}">{idiom}</td>
             <td style="width: 50%;">{meaning}</td>
             <td style="width: 20%;">
-                <button onclick="playSpeech({idx}, '{idiom}', '{text_to_speak}', {len(df)})" 
+                <button onclick="playSingle({idx}, '{idiom}', '{text_to_speak}', {len(df)})" 
                         id="btn_{idx}" 
                         style="background-color: #f0f2f6; border: 1px solid #d6d6d6; padding: 5px 12px; border-radius: 4px; cursor: pointer;">
                     🔊 朗讀
@@ -97,6 +86,17 @@ with tab1:
         """
     
     full_table_html = f"""
+    <div style="margin-bottom: 15px; background-color: #f9f9f9; padding: 10px; border-radius: 6px; border: 1px solid #e0e0e0;">
+        <span style="font-weight: bold; margin-right: 15px;">🎧 吃飯免手動控制台：</span>
+        <button onclick="startAutoPlay()" id="auto_play_btn" style="background-color: #28a745; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 10px;">
+            ▶ 開始本頁自動連續朗讀
+        </button>
+        <button onclick="stopAutoPlay()" style="background-color: #dc3545; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+            ⏹ 停止朗讀
+        </button>
+        <span id="auto_status" style="margin-left: 15px; color: #555; font-size: 14px;">狀態：待命中</span>
+    </div>
+
     <table style="width: 100%; border-collapse: collapse;">
         <thead>
             <tr style="border-bottom: 2px solid #ccc; text-align: left;">
@@ -112,7 +112,25 @@ with tab1:
     </table>
     
     <script>
-    function playSpeech(idx, idiom, textToSpeak, totalRows) {{
+    // 將當前頁面的資料打包成 JavaScript 陣列供自動連續播放使用
+    const currentStartIndex = {start_idx};
+    const currentEndIndex = {end_idx};
+    const pageIdiomsData = [
+    """
+    
+    for idx, row in page_data.iterrows():
+        idiom = row["成語"]
+        meaning = row["解釋"]
+        full_text = f"{idiom}，{meaning}"
+        full_table_html += f"{{ index: {idx}, idiom: '{idiom}', text: '{full_text}' }},\n"
+
+    full_table_html += f"""
+    ];
+
+    let autoPlaying = false;
+    let currentAutoIdx = 0;
+
+    function clearAllHighlights(totalRows) {{
         for (let i = 0; i < totalRows; i++) {{
             let cell = document.getElementById('idiom_cell_' + i);
             let btn = document.getElementById('btn_' + i);
@@ -123,8 +141,14 @@ with tab1:
             if (btn) {{
                 btn.innerText = '🔊 朗讀';
                 btn.style.backgroundColor = '#f0f2f6';
+                btn.style.color = 'black';
             }}
         }}
+    }}
+
+    function playSingle(idx, idiom, textToSpeak, totalRows) {{
+        stopAutoPlay();
+        clearAllHighlights(totalRows);
         
         let targetCell = document.getElementById('idiom_cell_' + idx);
         let targetBtn = document.getElementById('btn_' + idx);
@@ -153,10 +177,81 @@ with tab1:
         
         window.speechSynthesis.speak(utterance);
     }}
+
+    function startAutoPlay() {{
+        if (pageIdiomsData.length === 0) return;
+        autoPlaying = true;
+        currentAutoIdx = 0;
+        document.getElementById('auto_status').innerText = '狀態：自動連續播放中...';
+        document.getElementById('auto_play_btn').style.backgroundColor = '#6c757d';
+        playNextInQueue();
+    }}
+
+    function playNextInQueue() {{
+        if (!autoPlaying || currentAutoIdx >= pageIdiomsData.length) {{
+            stopAutoPlay();
+            document.getElementById('auto_status').innerText = '狀態：本頁播放完畢！';
+            return;
+        }}
+
+        let item = pageIdiomsData[currentAutoIdx];
+        let idx = item.index;
+        let idiom = item.idiom;
+        let textToSpeak = item.text;
+
+        // 清除其他高亮
+        clearAllHighlights({len(df)});
+
+        let targetCell = document.getElementById('idiom_cell_' + idx);
+        let targetBtn = document.getElementById('btn_' + idx);
+
+        if (targetCell) {{
+            targetCell.innerHTML = '🎵 <b>' + idiom + '</b> ⭐';
+        }}
+        if (targetBtn) {{
+            targetBtn.innerText = '🔊 播放中';
+            targetBtn.style.backgroundColor = '#28a745';
+            targetBtn.style.color = 'white';
+        }}
+
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = 'zh-TW';
+        utterance.rate = 0.9;
+
+        utterance.onend = function() {{
+            if (targetBtn) {{
+                targetBtn.innerText = '🔊 朗讀';
+                targetBtn.style.backgroundColor = '#f0f2f6';
+                targetBtn.style.color = 'black';
+            }}
+            currentAutoIdx++;
+            // 延遲 0.8 秒無縫接軌下一句
+            if (autoPlaying) {{
+                setTimeout(playNextInQueue, 800);
+            }}
+        }};
+
+        window.speechSynthesis.speak(utterance);
+    }}
+
+    function stopAutoPlay() {{
+        autoPlaying = false;
+        window.speechSynthesis.cancel();
+        clearAllHighlights({len(df)});
+        let autoBtn = document.getElementById('auto_play_btn');
+        if (autoBtn) {{
+            autoBtn.style.backgroundColor = '#28a745';
+        }}
+        let statusElem = document.getElementById('auto_status');
+        if (statusElem) {{
+            statusElem.innerText = '狀態：已停止';
+        }}
+    }}
     </script>
     """
     
-    st.components.v1.html(full_table_html, height=1100, scrolling=True)
+    st.components.v1.html(full_table_html, height=1150, scrolling=True)
 
 with tab2:
     st.subheader("🎯 挑戰您的無敵成語腦力（來自 CSV 題庫）")
