@@ -22,7 +22,7 @@ df = load_flagship_database()
 st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆全覆蓋真題）")
 st.write("---")
 
-st.success(f"🔥 系統已成功從 GitHub 載入 **{len(df)} 筆** 完整成語！支援未來隨時擴充 `.csv`！")
+st.success(f"🔥 系統已成功載入 **{len(df)} 筆** 完整成語！支援未來隨時擴充 `.csv`！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
@@ -66,7 +66,6 @@ with tab1:
     
     page_data = df.iloc[start_idx:end_idx]
     
-    # 動態產生網頁前端需要的 JavaScript 資料陣列
     js_idioms_array = ""
     for idx, row in page_data.iterrows():
         idiom = row["成語"]
@@ -84,7 +83,7 @@ with tab1:
         rows_html += f"""
         <tr style="border-bottom: 1px solid #ddd; height: 50px;" id="row_item_{idx}">
             <td style="width: 10%; font-weight: bold;">#{display_num}</td>
-            <td style="width: 25%; font-weight: bold; color: #1f77b4;" id="idiom_cell_{idx}">{idiom}</td>
+            <td style="width: 25%; font-weight: bold;" id="idiom_cell_{idx}">{idiom}</td>
             <td style="width: 45%;">{meaning}</td>
             <td style="width: 20%;">
                 <button onclick="playSingle({idx}, '{idiom}', '{text_to_speak}', {len(df)})" 
@@ -96,7 +95,6 @@ with tab1:
         </tr>
         """
 
-    # 結合控制台與表格，具備語音朗讀與循環功能
     audio_control_html = f"""
     <div style="margin-bottom: 15px; background-color: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #e0e0e0;">
         <div style="font-weight: bold; margin-bottom: 8px;">🎧 語音朗讀控制台：</div>
@@ -132,9 +130,14 @@ with tab1:
     let autoPlaying = false;
     let currentAutoIdx = 0;
 
-    function clearAllHighlights(totalRows) {{
-        for (let i = 0; i < totalRows; i++) {{
-            let btn = document.getElementById('btn_' + i);
+    function clearAllHighlights() {{
+        for (let i = 0; i < pageIdiomsData.length; i++) {{
+            let item = pageIdiomsData[i];
+            let cell = document.getElementById('idiom_cell_' + item.index);
+            let btn = document.getElementById('btn_' + item.index);
+            if (cell) {{
+                cell.innerHTML = item.idiom;
+            }}
             if (btn) {{
                 btn.innerText = '🔊 朗讀';
                 btn.style.backgroundColor = '#f0f2f6';
@@ -145,10 +148,15 @@ with tab1:
 
     function playSingle(idx, idiom, textToSpeak, totalRows) {{
         stopAutoPlay();
+        clearAllHighlights();
         
+        let targetCell = document.getElementById('idiom_cell_' + idx);
         let targetBtn = document.getElementById('btn_' + idx);
         let targetRow = document.getElementById('row_item_' + idx);
         
+        if (targetCell) {{
+            targetCell.innerHTML = '🎵 <b>' + idiom + '</b> ⭐';
+        }}
         if (targetBtn) {{
             targetBtn.innerText = '🔊 朗讀中...';
             targetBtn.style.backgroundColor = '#ff4b4b';
@@ -164,6 +172,9 @@ with tab1:
         utterance.rate = 0.9;
         
         utterance.onend = function() {{
+            if (targetCell) {{
+                targetCell.innerHTML = idiom;
+            }}
             if (targetBtn) {{
                 targetBtn.innerText = '🔊 朗讀';
                 targetBtn.style.backgroundColor = '#f0f2f6';
@@ -193,11 +204,18 @@ with tab1:
 
         let item = pageIdiomsData[currentAutoIdx];
         let idx = item.index;
+        let idiom = item.idiom;
         let textToSpeak = item.text;
 
+        clearAllHighlights();
+
+        let targetCell = document.getElementById('idiom_cell_' + idx);
         let targetBtn = document.getElementById('btn_' + idx);
         let targetRow = document.getElementById('row_item_' + idx);
 
+        if (targetCell) {{
+            targetCell.innerHTML = '🎵 <b>' + idiom + '</b> ⭐';
+        }}
         if (targetBtn) {{
             targetBtn.innerText = '🔊 播放中';
             targetBtn.style.backgroundColor = '#17a2b8';
@@ -214,6 +232,9 @@ with tab1:
         utterance.rate = 0.9;
 
         utterance.onend = function() {{
+            if (targetCell) {{
+                targetCell.innerHTML = idiom;
+            }}
             if (targetBtn) {{
                 targetBtn.innerText = '🔊 朗讀';
                 targetBtn.style.backgroundColor = '#f0f2f6';
@@ -231,6 +252,7 @@ with tab1:
     function stopAutoPlay() {{
         autoPlaying = false;
         window.speechSynthesis.cancel();
+        clearAllHighlights();
         
         let loopBtn = document.getElementById('loop_btn');
         if (loopBtn) loopBtn.style.backgroundColor = '#17a2b8';
