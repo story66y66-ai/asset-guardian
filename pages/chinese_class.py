@@ -23,7 +23,7 @@ df = load_flagship_database()
 st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆全覆蓋真題）")
 st.write("---")
 
-st.success(f"🔥 系統已成功從 GitHub 載入 **{len(df)} 筆** 完整不重複成語！支援「本頁無限循環」與「全書自動換頁朗讀」！")
+st.success(f"🔥 系統已成功從 GitHub 載入 **{len(df)} 筆** 完整不重複成語！支援本頁循環與全書換頁朗讀！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
@@ -80,34 +80,30 @@ with tab1:
     page_data = df.iloc[start_idx:end_idx]
     
     rows_html = ""
+    js_idioms_array = ""
     for idx, row in page_data.iterrows():
         idiom = row["成語"]
         meaning = row["解釋"]
         display_num = idx + 1
         text_to_speak = f"{idiom}。{meaning}"
         
-        rows_html += (
-            f'<tr style="border-bottom: 1px solid #ddd; height: 50px;" id="row_item_{idx}">'
-            f'<td style="width: 10%; font-weight: bold;">#{display_num}</td>'
-            f'<td style="width: 20%;" id="idiom_cell_{idx}">{idiom}</td>'
-            f'<td style="width: 50%;">{meaning}</td>'
-            f'<td style="width: 20%;">'
-            f'<button onclick="playSingle({idx}, \'{idiom}\', \'{text_to_speak}\', {len(df)})" '
-            f'id="btn_{idx}" '
-            f'style="background-color: #f0f2f6; border: 1px solid #d6d6d6; padding: 5px 12px; border-radius: 4px; cursor: pointer;">'
-            f'🔊 朗讀'
-            f'</button>'
-            f'</td>'
-            f'</tr>'
-        )
-    
-    js_idioms_array = ""
-    for idx, row in page_data.iterrows():
-        idiom = row["成語"]
-        meaning = row["解釋"]
-        full_text = f"{idiom}，{meaning}"
-        js_idioms_array += f"{{ index: {idx}, idiom: '{idiom}', text: '{full_text}' }},\n"
+        rows_html += f"""
+        <tr style="border-bottom: 1px solid #ddd; height: 50px;" id="row_item_{idx}">
+            <td style="width: 10%; font-weight: bold;">#{display_num}</td>
+            <td style="width: 20%;" id="idiom_cell_{idx}">{idiom}</td>
+            <td style="width: 50%;">{meaning}</td>
+            <td style="width: 20%;">
+                <button onclick="playSingle({idx}, '{idiom}', '{text_to_speak}', {len(df)})" 
+                        id="btn_{idx}" 
+                        style="background-color: #f0f2f6; border: 1px solid #d6d6d6; padding: 5px 12px; border-radius: 4px; cursor: pointer;">
+                    🔊 朗讀
+                </button>
+            </td>
+        </tr>
+        """
+        js_idioms_array += f"{{ index: {idx}, idiom: '{idiom}', text: '{idiom}，{meaning}' }},\n"
 
+    # 分離成乾淨的 HTML 與 JS 結構，避免 Python 解析衝突
     full_table_html = f"""
     <div style="margin-bottom: 15px; background-color: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #e0e0e0;">
         <div style="font-weight: bold; margin-bottom: 8px;">🎧 吃飯免手動控制台：</div>
@@ -138,8 +134,6 @@ with tab1:
     </table>
     
     <script>
-    const currentStartIndex = {start_idx};
-    const currentEndIndex = {end_idx};
     const totalPages = {total_pages};
     const currentPageNum = {current_page};
     const isAutoNextMode = "{auto_mode_param}" === "true";
@@ -153,11 +147,11 @@ with tab1:
     let playMode = ''; 
     let currentAutoIdx = 0;
 
-    window.addEventListener('DOMContentLoaded', (event) => {{
-        if (isAutoNextMode) {{
-            startAutoNextPagePlay();
-        }}
-    }});
+    if (isAutoNextMode) {{
+        window.addEventListener('load', function() {{
+            setTimeout(startAutoNextPagePlay, 500);
+        }});
+    }}
 
     function clearAllHighlights(totalRows) {{
         for (let i = 0; i < totalRows; i++) {{
@@ -217,7 +211,8 @@ with tab1:
         playMode = 'loop';
         currentAutoIdx = 0;
         document.getElementById('auto_status').innerText = '狀態：[本頁循環] 播放中...';
-        document.getElementById('loop_btn').style.backgroundColor = '#6c757d';
+        let btn = document.getElementById('loop_btn');
+        if(btn) btn.style.backgroundColor = '#6c757d';
         playNextInQueue();
     }}
 
@@ -241,7 +236,6 @@ with tab1:
             }} else if (playMode === 'autonext') {{
                 if (currentPageNum < totalPages) {{
                     document.getElementById('auto_status').innerText = '狀態：本頁讀完，無縫跳至第 ' + (currentPageNum + 1) + ' 頁...';
-                    
                     setTimeout(function() {{
                         const nextUrl = window.location.pathname + '?page=' + (currentPageNum + 1) + '&auto_mode=true';
                         window.parent.location.href = nextUrl;
@@ -344,7 +338,7 @@ with tab2:
     if "初級" in difficulty:
         st.info(f"【初級提示】這是一句成語，第一個字是：【**{idiom_text[0]}**】")
     elif "中級" in difficulty:
-        st.info(f"【中級提示】這是一經典成語，字數為 {len(idiom_text)} 個字，請根據解釋填入！")
+        st.info(f"【中級提示】這是一句經典成語，字數為 {len(idiom_text)} 個字，請根據解釋填入！")
     else:
         st.info(f"【高級挑戰】完全盲猜！請輸入對應的完整成語！")
         
