@@ -65,7 +65,7 @@ def load_golden_flagship_database():
         ("靈機一動", "突然想出一個好主意。"),
         ("別出心裁", "獨創一格，與眾不同。"),
         ("匠心獨運", "巧妙的心思，非凡的藝術構思。"),
-        ("豁然開朗", "形容一下子明白過來 or 眼前的視野突然開闊。"),
+        ("豁然開朗", "形容一下子明白過來或眼前的視野突然開闊。"),
         ("茅塞頓開", "形容閉塞的思路突然通暢明白。"),
         ("料事如神", "預料事情非常準確，就像神仙一樣。"),
         ("通情達理", "懂得道理，說話做事合情合理。"),
@@ -112,7 +112,7 @@ def load_golden_flagship_database():
         ("情同手足", "感情深厚，如同親兄弟姊妹。"),
         ("白駒過隙", "形容時間過得飛快。"),
         ("歲月如梭", "形容時間像織梭一樣快速流逝。"),
-        ("曇花一現", "比喻人 or 事物出現的時間短暫。"),
+        ("曇花一現", "比喻人事物出現的時間短暫。"),
         ("光陰似箭", "形容時間過得像飛箭一樣快。"),
         ("物換星移", "景物改變，星辰移動，形容時序交替，世事變遷。"),
         ("滄海桑田", "大海變成農田，農田變成大海，比喻世事變化巨大。"),
@@ -237,7 +237,6 @@ with tab1:
     st.subheader("📚 完整成語資料庫預覽（點擊前方方框可聆聽語音朗讀）")
     st.write(f"目前資料庫總筆數：**{len(df):,} 筆**（前 200 筆為校長精選真題）")
     
-    # 建立互動式表格（加入勾選框供點擊發音）
     display_df = df.head(100).copy()
     display_df.insert(0, "發音", False)
     
@@ -255,14 +254,12 @@ with tab1:
         use_container_width=True
     )
     
-    # 檢查是否有任何勾選框被按下，若有則觸發瀏覽器語音朗讀
     selected_rows = edited_df[edited_df["發音"] == True]
     if not selected_rows.empty:
         spoken_idiom = selected_rows.iloc[0]["成語"]
         spoken_meaning = selected_rows.iloc[0]["解釋"]
         text_to_speak = f"{spoken_idiom}。{spoken_meaning}"
         
-        # 使用 HTML5 Web Speech API 進行瀏覽器語音朗讀
         speech_html = f"""
         <script>
             const utterance = new SpeechSynthesisUtterance("{text_to_speak}");
@@ -272,7 +269,7 @@ with tab1:
         </script>
         """
         st.components.v1.html(speech_html, height=0)
-        st.info(🔊 正在朗讀成語：**{spoken_idiom}**）
+        st.info(f"🔊 正在朗讀成語：**{spoken_idiom}**")
 
     st.caption("（上方顯示前 100 筆預覽，完整 10,000 筆在背景隨時支援隨機抽題！）")
 
