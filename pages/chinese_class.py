@@ -6,19 +6,15 @@ st.set_page_config(page_title="中文學院 - 澄玄400句成語旗艦挑戰賽"
 
 @st.cache_data
 def load_flagship_database():
-    # 直接從 GitHub 讀取我們剛剛上傳並整理好的 idioms.csv 檔
     csv_url = "https://raw.githubusercontent.com/story66y66-ai/asset-guardian/main/idioms.csv"
     try:
         df = pd.read_csv(csv_url)
     except Exception as e:
-        # 預防萬一讀取失敗時的備案
         df = pd.read_csv("idioms.csv")
     
-    # 確保欄位名稱正確對應
     if "idiom" in df.columns and "meaning" in df.columns:
         df = df.rename(columns={"idiom": "成語", "meaning": "解釋"})
     
-    # 嚴格過濾確保不重複
     df = df.drop_duplicates(subset=["成語"]).reset_index(drop=True)
     return df
 
@@ -27,7 +23,7 @@ df = load_flagship_database()
 st.title(f"📖 中文學院（校長大人專屬成語庫：目前共計 {len(df)} 筆全覆蓋真題）")
 st.write("---")
 
-st.success(f"🔥 系統已成功從 GitHub 載入 **{len(df)} 筆** 完整不重複成語！支援「獨立點選」與「全自動連續朗讀（吃飯解放雙手）」！")
+st.success(f"🔥 系統已成功從 GitHub 載入 **{len(df)} 筆** 完整不重複成語！支援「自動連續朗讀 + 畫面同步跟隨」！")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📚 完整題庫總覽", "🎮 成語填空挑戰賽"])
@@ -60,7 +56,6 @@ with tab1:
     st.write(f"目前顯示第 **{current_page}** 頁（第 {start_idx + 1} ~ {end_idx} 筆，總計 **{len(df)} 筆**）：")
     st.write("---")
     
-    # 準備給前端 JavaScript 用的資料清單 (將當前頁面的成語包裝成 JS 陣列)
     page_data = df.iloc[start_idx:end_idx]
     
     rows_html = ""
@@ -71,7 +66,7 @@ with tab1:
         text_to_speak = f"{idiom}。{meaning}"
         
         rows_html += f"""
-        <tr style="border-bottom: 1px solid #ddd; height: 50px;">
+        <tr style="border-bottom: 1px solid #ddd; height: 50px;" id="row_item_{idx}">
             <td style="width: 10%; font-weight: bold;">#{display_num}</td>
             <td style="width: 20%;" id="idiom_cell_{idx}">{idiom}</td>
             <td style="width: 50%;">{meaning}</td>
@@ -112,7 +107,6 @@ with tab1:
     </table>
     
     <script>
-    // 將當前頁面的資料打包成 JavaScript 陣列供自動連續播放使用
     const currentStartIndex = {start_idx};
     const currentEndIndex = {end_idx};
     const pageIdiomsData = [
@@ -152,6 +146,7 @@ with tab1:
         
         let targetCell = document.getElementById('idiom_cell_' + idx);
         let targetBtn = document.getElementById('btn_' + idx);
+        let targetRow = document.getElementById('row_item_' + idx);
         
         if (targetCell) {{
             targetCell.innerHTML = '🎵 <b>' + idiom + '</b> ⭐';
@@ -160,6 +155,9 @@ with tab1:
             targetBtn.innerText = '🔊 朗讀中...';
             targetBtn.style.backgroundColor = '#ff4b4b';
             targetBtn.style.color = 'white';
+        }}
+        if (targetRow) {{
+            targetRow.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
         }}
         
         window.speechSynthesis.cancel();
@@ -199,11 +197,11 @@ with tab1:
         let idiom = item.idiom;
         let textToSpeak = item.text;
 
-        // 清除其他高亮
         clearAllHighlights({len(df)});
 
         let targetCell = document.getElementById('idiom_cell_' + idx);
         let targetBtn = document.getElementById('btn_' + idx);
+        let targetRow = document.getElementById('row_item_' + idx);
 
         if (targetCell) {{
             targetCell.innerHTML = '🎵 <b>' + idiom + '</b> ⭐';
@@ -212,6 +210,11 @@ with tab1:
             targetBtn.innerText = '🔊 播放中';
             targetBtn.style.backgroundColor = '#28a745';
             targetBtn.style.color = 'white';
+        }}
+        
+        // 自動捲動視窗將當前朗讀行置中，吃飯時不用動手也能一眼看到！
+        if (targetRow) {{
+            targetRow.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
         }}
 
         window.speechSynthesis.cancel();
@@ -226,7 +229,6 @@ with tab1:
                 targetBtn.style.color = 'black';
             }}
             currentAutoIdx++;
-            // 延遲 0.8 秒無縫接軌下一句
             if (autoPlaying) {{
                 setTimeout(playNextInQueue, 800);
             }}
