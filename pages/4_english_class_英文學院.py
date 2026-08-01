@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import glob
@@ -6,6 +7,7 @@ from gtts import gTTS
 import io
 import re
 import base64
+import urllib.parse
 
 st.markdown("""
     <style>
@@ -17,7 +19,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("📖 澄玄大學 - 語言學院 & 道地口語文法造句工坊")
+st.title("📖 澄玄大學 - 語言學院 & 道地口語文法造句工坊（任意門升級版）")
 
 @st.cache_data
 def load_and_merge_data():
@@ -120,7 +122,7 @@ if not df.empty:
 
     if st.session_state.selected_vocab_list:
         st.divider()
-        st.subheader("✍️ 獨立單字多變造句工坊（嚴格文法與道地口語翻譯引擎）")
+        st.subheader("✍️ 獨立單字多變造句工坊（內建穩固引擎與 Google 任意門）")
 
         for idx, w in enumerate(st.session_state.selected_vocab_list):
             target_row = df[df['word'] == w]
@@ -273,11 +275,19 @@ if not df.empty:
                 st.markdown(f"**💡 道地文法示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v25_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
-                    tts = gTTS(text=demo_eng, lang='en')
-                    fp = io.BytesIO()
-                    tts.write_to_fp(fp)
-                    st.audio(fp, autoplay=True)
+                col_audio, col_portal = st.columns([1, 1])
+                with col_audio:
+                    if st.button(f"🔊 聽 [{w}] 示範句英文發音", key=f"audio_v25_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                        tts = gTTS(text=demo_eng, lang='en')
+                        fp = io.BytesIO()
+                        tts.write_to_fp(fp)
+                        st.audio(fp, autoplay=True)
+                
+                with col_portal:
+                    # 🌐 Google 翻譯任意門連結
+                    query_str = urllib.parse.quote(demo_eng)
+                    google_trans_url = f"https://translate.google.com/?sl=en&tl=zh-TW&text={query_str}&op=translate"
+                    st.markdown(f'<a href="{google_trans_url}" target="_blank"><button style="font-size:18px; padding:6px 14px; background-color:#4285F4; color:white; border:none; border-radius:4px; cursor:pointer;">🌐 前往 Google 翻譯任意門</button></a>', unsafe_allow_html=True)
 
                 st.divider()
                 st.markdown("---")
@@ -383,7 +393,6 @@ if not df.empty:
                 if clear_trigger_key not in st.session_state:
                     st.session_state[clear_trigger_key] = False
 
-                # 如果有點擊清除按鈕，將輸入框的數值清空並重設狀態
                 if st.session_state[clear_trigger_key]:
                     st.session_state[prac_key] = ""
                     st.session_state[status_key] = None
