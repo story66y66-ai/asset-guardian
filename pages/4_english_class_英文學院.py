@@ -69,7 +69,7 @@ if not df.empty:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
-        key="vocab_click_table_v34"
+        key="vocab_click_table_v35"
     )
 
     if len(event.selection.rows) > 0:
@@ -99,14 +99,14 @@ if not df.empty:
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("➕ 把此字加入清單", key="add_to_list_v34"):
+        if st.button("➕ 把此字加入清單", key="add_to_list_v35"):
             if selected_word not in st.session_state.selected_vocab_list:
                 if len(st.session_state.selected_vocab_list) < 3:
                     st.session_state.selected_vocab_list.append(selected_word)
                 else:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
-        if st.button("🗑️ 清除目前的清單", key="clear_list_v34"):
+        if st.button("🗑️ 清除目前的清單", key="clear_list_v35"):
             st.session_state.selected_vocab_list = []
             st.success("已清除目前選擇的單字清單！")
 
@@ -130,13 +130,13 @@ if not df.empty:
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v34_{idx}_{w}")
+                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v35_{idx}_{w}")
                 with c2:
-                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v34_{idx}_{w}")
+                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v35_{idx}_{w}")
                 with c3:
-                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v34_{idx}_{w}")
+                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v35_{idx}_{w}")
                 
-                state_key = f"grammar_v34_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"grammar_v35_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     w_lower = w.lower()
@@ -271,7 +271,7 @@ if not df.empty:
                 st.markdown(f"**💡 內建文法示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v34_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v35_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
@@ -280,7 +280,6 @@ if not df.empty:
                 st.divider()
                 st.markdown(f"**🌐 Google 翻譯任意門（輸入中文 ➔ 取得英文口語例句）**")
                 
-                # 專屬於中文輸入的獨立 State
                 user_chinese_key = f"isolated_zh_input_{idx}_{w}"
                 clear_flag_key = f"isolated_zh_flag_{idx}_{w}"
 
@@ -312,9 +311,9 @@ if not df.empty:
                 st.markdown(f'<a href="{google_trans_zh_url}" target="_blank"><button style="font-size:18px; padding:6px 14px; background-color:#34A853; color:white; border:none; border-radius:4px; cursor:pointer; width:100%;">🌐 啟動中文轉英文任意門</button></a>', unsafe_allow_html=True)
 
                 st.markdown("---")
-                st.markdown(f"**🌟 Memine 道地文法示範（與您的單字連動）**")
+                # 已更新標題
+                st.markdown(f"**🌟 Google 道地文法示範（與您的單字連動）**")
                 
-                # 專屬於 Memine 英文與中文翻譯的獨立 State（完全與上方中文輸入脫鉤）
                 memine_input_key = f"isolated_memine_eng_{idx}_{w}"
                 trans_input_key = f"isolated_memine_chi_{idx}_{w}"
 
@@ -336,7 +335,7 @@ if not df.empty:
                         st.session_state[trans_input_key] = match_dot.group(2).strip()
 
                 memine_sentence = st.text_input(
-                    f"請貼上經由任意門翻譯或 Memine 幫您用 [{w}] 造的英文句子：",
+                    f"請貼上經由任意門翻譯或 Google 幫您用 [{w}] 造的英文句子：",
                     key=memine_input_key,
                     on_change=process_pasted_sentence,
                     placeholder="在此貼上英文句子..."
@@ -408,7 +407,6 @@ if not df.empty:
 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                # 專屬於造句練習的獨立 State
                 prac_key = f"isolated_prac_input_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 status_key = f"isolated_prac_status_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 prac_clear_flag = f"isolated_prac_flag_{idx}_{w}"
