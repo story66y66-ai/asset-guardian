@@ -69,7 +69,7 @@ if not df.empty:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
-        key="vocab_click_table_v29"
+        key="vocab_click_table_v30"
     )
 
     if len(event.selection.rows) > 0:
@@ -99,19 +99,16 @@ if not df.empty:
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("➕ 把此字加入清單", key="add_to_list_v29"):
+        if st.button("➕ 把此字加入清單", key="add_to_list_v30"):
             if selected_word not in st.session_state.selected_vocab_list:
                 if len(st.session_state.selected_vocab_list) < 3:
                     st.session_state.selected_vocab_list.append(selected_word)
                 else:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
-        if st.button("🗑️ 清除目前的清單", key="clear_list_v29"):
-            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v29_") or k.startswith("memine_") or k.startswith("prac_v29_") or k.startswith("user_chinese_") or k.startswith("clear_zh_trigger_")]
-            for k in keys_to_delete:
-                del st.session_state[k]
+        if st.button("🗑️ 清除目前的清單", key="clear_list_v30"):
             st.session_state.selected_vocab_list = []
-            st.success("已清除清單與本機快取！")
+            st.success("已清除目前選擇的單字清單！")
 
     st.markdown(f"**📌 目前已選擇的單字（{len(st.session_state.selected_vocab_list)}/3）：**")
     if st.session_state.selected_vocab_list:
@@ -133,13 +130,13 @@ if not df.empty:
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v29_{idx}_{w}")
+                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v30_{idx}_{w}")
                 with c2:
-                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v29_{idx}_{w}")
+                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v30_{idx}_{w}")
                 with c3:
-                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v29_{idx}_{w}")
+                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v30_{idx}_{w}")
                 
-                state_key = f"grammar_v29_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"grammar_v30_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     w_lower = w.lower()
@@ -274,7 +271,7 @@ if not df.empty:
                 st.markdown(f"**💡 內建文法示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v29_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v30_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
@@ -302,7 +299,6 @@ if not df.empty:
                     placeholder="請在此輸入中文句子..."
                 )
 
-                # 左右並排按鈕：一邊是任意門，一邊是獨立的清除中文鍵
                 portal_col, clear_col = st.columns([2, 2])
                 with portal_col:
                     query_str_zh = urllib.parse.quote(user_chinese_input)
@@ -410,8 +406,8 @@ if not df.empty:
 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                prac_key = f"prac_v29_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
-                status_key = f"status_v29_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                prac_key = f"prac_v30_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                status_key = f"status_v30_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 clear_prac_trigger_key = f"clear_prac_trigger_{idx}_{w}"
                 
                 if clear_prac_trigger_key not in st.session_state:
