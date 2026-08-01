@@ -69,7 +69,7 @@ if not df.empty:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
-        key="vocab_click_table_v27"
+        key="vocab_click_table_v28"
     )
 
     if len(event.selection.rows) > 0:
@@ -99,15 +99,15 @@ if not df.empty:
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("➕ 把此字加入清單", key="add_to_list_v27"):
+        if st.button("➕ 把此字加入清單", key="add_to_list_v28"):
             if selected_word not in st.session_state.selected_vocab_list:
                 if len(st.session_state.selected_vocab_list) < 3:
                     st.session_state.selected_vocab_list.append(selected_word)
                 else:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
-        if st.button("🗑️ 清除目前的清單", key="clear_list_v27"):
-            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v27_") or k.startswith("memine_") or k.startswith("prac_v27_") or k.startswith("user_chinese_")]
+        if st.button("🗑️ 清除目前的清單", key="clear_list_v28"):
+            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v28_") or k.startswith("memine_") or k.startswith("prac_v28_") or k.startswith("user_chinese_") or k.startswith("clear_zh_trigger_")]
             for k in keys_to_delete:
                 del st.session_state[k]
             st.session_state.selected_vocab_list = []
@@ -133,13 +133,13 @@ if not df.empty:
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v27_{idx}_{w}")
+                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v28_{idx}_{w}")
                 with c2:
-                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v27_{idx}_{w}")
+                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v28_{idx}_{w}")
                 with c3:
-                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v27_{idx}_{w}")
+                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v28_{idx}_{w}")
                 
-                state_key = f"grammar_v27_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"grammar_v28_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     w_lower = w.lower()
@@ -274,7 +274,7 @@ if not df.empty:
                 st.markdown(f"**💡 內建文法示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v27_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v28_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
@@ -284,6 +284,15 @@ if not df.empty:
                 st.markdown(f"**🌐 Google 翻譯任意門（輸入中文 ➔ 取得英文口語例句）**")
                 
                 user_chinese_key = f"user_chinese_{idx}_{w}"
+                clear_zh_trigger_key = f"clear_zh_trigger_{idx}_{w}"
+
+                if clear_zh_trigger_key not in st.session_state:
+                    st.session_state[clear_zh_trigger_key] = False
+
+                if st.session_state[clear_zh_trigger_key]:
+                    st.session_state[user_chinese_key] = ""
+                    st.session_state[clear_zh_trigger_key] = False
+
                 if user_chinese_key not in st.session_state:
                     st.session_state[user_chinese_key] = ""
 
@@ -302,7 +311,7 @@ if not df.empty:
                 
                 with clear_col:
                     if st.button("🧹 清除中文", key=f"clear_zh_btn_{idx}_{w}"):
-                        st.session_state[user_chinese_key] = ""
+                        st.session_state[clear_zh_trigger_key] = True
                         st.rerun()
 
                 st.markdown("---")
@@ -401,8 +410,8 @@ if not df.empty:
 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                prac_key = f"prac_v27_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
-                status_key = f"status_v27_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                prac_key = f"prac_v28_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                status_key = f"status_v28_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 clear_trigger_key = f"clear_trigger_{idx}_{w}"
                 
                 if clear_trigger_key not in st.session_state:
