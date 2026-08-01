@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import glob
 import os
-from gTTS import gTTS
+from gtts import gTTS
 import io
 import re
 import base64
@@ -58,244 +58,33 @@ if 'selected_word' not in st.session_state:
 if 'selected_vocab_list' not in st.session_state:
     st.session_state.selected_vocab_list = []
 
-st.subheader(f"📋 單字總表（校長大人專屬單字庫：目前共計 {len(df)} 筆）")
-st.write("---")
+st.subheader("📋 單字總表（點擊表格列聽發音，並挑選單字）：")
 
 if not df.empty:
-    # 仿造中文學院的分頁機制與循環朗讀控制台
-    page_size = 20
-    total_pages = (len(df) + page_size - 1) // page_size
-    if total_pages < 1:
-        total_pages = 1
+    display_df = df[['word', 'trans', 'kk', 'level']]
     
-    if "eng_current_page" not in st.session_state:
-        st.session_state.eng_current_page = 1
+    event = st.dataframe(
+        display_df,
+        use_container_width=True,
+        hide_index=True,
+        on_select="rerun",
+        selection_mode="single-row",
+        key="vocab_click_table_v38"
+    )
 
-    col_p1, col_p2 = st.columns([2, 3])
-    with col_p1:
-        new_page = st.number_input(f"跳至頁數 (共 {total_pages} 頁)：", min_value=1, max_value=total_pages, value=st.session_state.eng_current_page, step=1, key="eng_page_input")
-        if new_page != st.session_state.eng_current_page:
-            st.session_state.eng_current_page = new_page
-            st.rerun()
-    
-    with col_p2:
-        st.write("")
-        sub1, sub2 = st.columns(2)
-        with sub1:
-            if st.button("⬅️ 上一頁", key="eng_prev_page") and st.session_state.eng_current_page > 1:
-                st.session_state.eng_current_page -= 1
-                st.rerun()
-        with sub2:
-            if st.button("下一頁 ➡️", key="eng_next_page") and st.session_state.eng_current_page < total_pages:
-                st.session_state.eng_current_page += 1
-                st.rerun()
-
-    current_page = st.session_state.eng_current_page
-    start_idx = (current_page - 1) * page_size
-    end_idx = min(start_idx + page_size, len(df))
-    
-    st.write(f"目前顯示第 **{current_page}** 頁（第 {start_idx + 1} ~ {end_idx} 筆）：")
-    st.write("---")
-    
-    page_data = df.iloc[start_idx:end_idx]
-    
-    js_idioms_array = ""
-    for idx, row in page_data.iterrows():
-        word = row["word"]
-        trans = row["trans"] if pd.notna(row["trans"]) else ""
-        kk = row["kk"] if pd.notna(row["kk"]) else ""
-        level = row["level"] if pd.notna(row["level"]) else 1
-        full_text = f"{word}，{trans}"
-        js_idioms_array += f"{{ index: {idx}, word: '{word}', text: '{full_text}' }},\n"
-
-    rows_html = ""
-    for idx, row in page_data.iterrows():
-        word = row["word"]
-        trans = row["trans"] if pd.notna(row["trans"]) else ""
-        kk = row["kk"] if pd.notna(row["kk"]) else ""
-        level = row["level"] if pd.notna(row["level"]) else 1
-        display_num = idx + 1
-        text_to_speak = f"{word}。"
-        
-        rows_html += f"""
-        <tr style="border-bottom: 1px solid #ddd; height: 50px;" id="eng_row_item_{idx}">
-            <td style="width: 10%; font-weight: bold;">#{display_num}</td>
-            <td style="width: 25%; font-weight: bold;" id="eng_word_cell_{idx}">
-                <a href="#" onclick="selectAndPlayWord('{word}', {idx}); return false;" style="text-decoration: none; color: #ff4b4b;">{word}</a>
-            </td>
-            <td style="width: 25%;">{trans}</td>
-            <td style="width: 20%;">{kk}</td>
-            <td style="width: 20%;">
-                <button onclick="engPlaySingle({idx}, '{word}', '{text_to_speak}')" 
-                        id="eng_btn_{idx}" 
-                        style="background-color: #f0f2f6; border: 1px solid #d6d6d6; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                    🔊 朗讀
-                </button>
-            </td>
-        </tr>
-        """
-
-    audio_control_html = f"""
-    <div style="margin-bottom: 15px; background-color: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #e0e0e0;">
-        <div style="font-weight: bold; margin-bottom: 8px;">🎧 英文語音朗讀控制台：</div>
-        <button onclick="engStartLoopPlay()" id="eng_loop_btn" style="background-color: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 8px;">
-            🔁 本頁循環朗讀
-        </button>
-        <button onclick="engStopAutoPlay()" style="background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">
-            ⏹ 停止朗讀
-        </button>
-        <span id="eng_auto_status" style="margin-left: 15px; color: #555; font-size: 14px; font-weight: bold;">狀態：待命中</span>
-    </div>
-
-    <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-            <tr style="border-bottom: 2px solid #ccc; text-align: left;">
-                <th style="padding-bottom: 8px;">序號</th>
-                <th style="padding-bottom: 8px;">單字 (可點擊)</th>
-                <th style="padding-bottom: 8px;">中文翻譯</th>
-                <th style="padding-bottom: 8px;">KK音標</th>
-                <th style="padding-bottom: 8px;">語音操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            {rows_html}
-        </tbody>
-    </table>
-
-    <script>
-    const engPageIdiomsData = [
-    {js_idioms_array}
-    ];
-
-    let engAutoPlaying = false;
-    let engCurrentAutoIdx = 0;
-
-    function engClearAllHighlights() {{
-        for (let i = 0; i < engPageIdiomsData.length; i++) {{
-            let item = engPageIdiomsData[i];
-            let btn = document.getElementById('eng_btn_' + item.index);
-            if (btn) {{
-                btn.innerText = '🔊 朗讀';
-                btn.style.backgroundColor = '#f0f2f6';
-                btn.style.color = 'black';
-            }}
-        }}
-    }}
-
-    function engPlaySingle(idx, word, textToSpeak) {{
-        engStopAutoPlay();
-        engClearAllHighlights();
-        
-        let targetBtn = document.getElementById('eng_btn_' + idx);
-        let targetRow = document.getElementById('eng_row_item_' + idx);
-        
-        if (targetBtn) {{
-            targetBtn.innerText = '🔊 朗讀中...';
-            targetBtn.style.backgroundColor = '#ff4b4b';
-            targetBtn.style.color = 'white';
-        }}
-        if (targetRow) {{
-            targetRow.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
-        }}
-        
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.9;
-        
-        utterance.onend = function() {{
-            if (targetBtn) {{
-                targetBtn.innerText = '🔊 朗讀';
-                targetBtn.style.backgroundColor = '#f0f2f6';
-                targetBtn.style.color = 'black';
-            }}
-        }};
-        
-        window.speechSynthesis.speak(utterance);
-    }}
-
-    function engStartLoopPlay() {{
-        if (engPageIdiomsData.length === 0) return;
-        engAutoPlaying = true;
-        engCurrentAutoIdx = 0;
-        document.getElementById('eng_auto_status').innerText = '狀態：[本頁循環] 播放中...';
-        let btn = document.getElementById('eng_loop_btn');
-        if(btn) btn.style.backgroundColor = '#6c757d';
-        engPlayNextInQueue();
-    }}
-
-    function engPlayNextInQueue() {{
-        if (!engAutoPlaying) return;
-
-        if (engCurrentAutoIdx >= engPageIdiomsData.length) {{
-            engCurrentAutoIdx = 0;
-        }}
-
-        let item = engPageIdiomsData[engCurrentAutoIdx];
-        let idx = item.index;
-        let word = item.word;
-        let textToSpeak = item.text;
-
-        engClearAllHighlights();
-
-        let targetBtn = document.getElementById('eng_btn_' + idx);
-        let targetRow = document.getElementById('eng_row_item_' + idx);
-
-        if (targetBtn) {{
-            targetBtn.innerText = '🎵 朗讀中...';
-            targetBtn.style.backgroundColor = '#ff4b4b';
-            targetBtn.style.color = 'white';
-        }}
-        if (targetRow) {{
-            targetRow.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
-        }}
-
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.9;
-
-        utterance.onend = function() {{
-            if (targetBtn) {{
-                targetBtn.innerText = '🔊 朗讀';
-                targetBtn.style.backgroundColor = '#f0f2f6';
-                targetBtn.style.color = 'black';
-            }}
-            if (engAutoPlaying) {{
-                engCurrentAutoIdx++;
-                setTimeout(engPlayNextInQueue, 800);
-            }}
-        }};
-
-        window.speechSynthesis.speak(utterance);
-    }}
-
-    function engStopAutoPlay() {{
-        engAutoPlaying = false;
-        window.speechSynthesis.cancel();
-        engClearAllHighlights();
-        let statusEl = document.getElementById('eng_auto_status');
-        if(statusEl) statusEl.innerText = '狀態：已停止';
-        let btn = document.getElementById('eng_loop_btn');
-        if(btn) btn.style.backgroundColor = '#17a2b8';
-    }}
-
-    function selectAndPlayWord(word, idx) {{
-        // 透過隱藏表單或觸發 Streamlit 狀態來更新選取單字（此處保留原本點擊總表的相容性）
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(word);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.9;
-        window.speechSynthesis.speak(utterance);
-    }}
-    </script>
-    """
-
-    st.components.v1.html(audio_control_html, height=450, scrolling=True)
+    if len(event.selection.rows) > 0:
+        selected_index = event.selection.rows[0]
+        clicked_word = df.iloc[selected_index]['word']
+        if st.session_state.selected_word != clicked_word:
+            st.session_state.selected_word = clicked_word
+            
+            tts = gTTS(text=str(clicked_word), lang='en')
+            fp = io.BytesIO()
+            tts.write_to_fp(fp)
+            st.audio(fp, autoplay=True)
 
     st.divider()
 
-    # 完整保留您原本愛的單字選取、造句清單與中英任意門造句工坊
     word_list = df['word'].tolist()
     if st.session_state.selected_word not in word_list:
         st.session_state.selected_word = word_list[0]
@@ -517,6 +306,7 @@ if not df.empty:
                         st.session_state[clear_flag_key] = True
                         st.rerun()
 
+                # 藍色質感按鈕超連結
                 current_text = st.session_state.get(user_chinese_key, "").strip()
                 if current_text:
                     encoded_text = urllib.parse.quote(current_text)
