@@ -26,7 +26,7 @@ def load_recipes():
     except Exception:
         return pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement"])
 
-# 智慧排版：材料（穩健的關鍵字清單模式，已擴充蘭州拉麵專用配方）
+# 智慧排版：材料（穩健的關鍵字清單模式，已加入蘭州拉麵專用配方）
 def smart_format_ingredients(text):
     if not pd.notna(text) or not str(text).strip():
         return ""
@@ -37,7 +37,7 @@ def smart_format_ingredients(text):
         "配方一", "配方二", "材料準備", "材料與比例", "裝飾物",
         "中筋麵粉", "高筋麵粉", "低筋麵粉", "清水", "全脂鮮乳", "鮮乳", "牛奶",
         "雞蛋", "速發酵母", "砂糖", "植物油", "無鹽奶油",
-        "細鹽巴", "速拉麵劑澄清液"
+        "細鹽巴", "速溶拉麵劑澄清液"
     ]
     for kw in keywords:
         t = t.replace(kw, f"\n• {kw}")
