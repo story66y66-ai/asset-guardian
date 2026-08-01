@@ -69,7 +69,7 @@ if not df.empty:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
-        key="vocab_click_table_v26"
+        key="vocab_click_table_v27"
     )
 
     if len(event.selection.rows) > 0:
@@ -99,15 +99,15 @@ if not df.empty:
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("➕ 把此字加入清單", key="add_to_list_v26"):
+        if st.button("➕ 把此字加入清單", key="add_to_list_v27"):
             if selected_word not in st.session_state.selected_vocab_list:
                 if len(st.session_state.selected_vocab_list) < 3:
                     st.session_state.selected_vocab_list.append(selected_word)
                 else:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
-        if st.button("🗑️ 清除目前的清單", key="clear_list_v26"):
-            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v26_") or k.startswith("memine_") or k.startswith("prac_v26_")]
+        if st.button("🗑️ 清除目前的清單", key="clear_list_v27"):
+            keys_to_delete = [k for k in st.session_state.keys() if k.startswith("grammar_v27_") or k.startswith("memine_") or k.startswith("prac_v27_") or k.startswith("user_chinese_")]
             for k in keys_to_delete:
                 del st.session_state[k]
             st.session_state.selected_vocab_list = []
@@ -133,13 +133,13 @@ if not df.empty:
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v26_{idx}_{w}")
+                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v27_{idx}_{w}")
                 with c2:
-                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v26_{idx}_{w}")
+                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v27_{idx}_{w}")
                 with c3:
-                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v26_{idx}_{w}")
+                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v27_{idx}_{w}")
                 
-                state_key = f"grammar_v26_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"grammar_v27_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     w_lower = w.lower()
@@ -274,7 +274,7 @@ if not df.empty:
                 st.markdown(f"**💡 內建文法示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v26_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v27_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
@@ -283,10 +283,9 @@ if not df.empty:
                 st.divider()
                 st.markdown(f"**🌐 Google 翻譯任意門（輸入中文 ➔ 取得英文口語例句）**")
                 
-                # 讓使用者輸入想要翻譯的中文句子
                 user_chinese_key = f"user_chinese_{idx}_{w}"
                 if user_chinese_key not in st.session_state:
-                    st.session_state[user_chinese_key] = f"我想在這裡使用 {w}..."
+                    st.session_state[user_chinese_key] = ""
 
                 user_chinese_input = st.text_input(
                     f"請輸入您想表達的中文（記得包含單字 [{w}] 喔）：",
@@ -294,11 +293,17 @@ if not df.empty:
                     placeholder="請在此輸入中文句子..."
                 )
 
-                # 產生通往 Google 翻譯的連結 (sl=zh-TW&tl=en)
-                query_str_zh = urllib.parse.quote(user_chinese_input)
-                google_trans_zh_url = f"https://translate.google.com/?sl=zh-TW&tl=en&text={query_str_zh}&op=translate"
+                # 左右並排按鈕：一邊是任意門，一邊是清除中文
+                portal_col, clear_col = st.columns([2, 2])
+                with portal_col:
+                    query_str_zh = urllib.parse.quote(user_chinese_input)
+                    google_trans_zh_url = f"https://translate.google.com/?sl=zh-TW&tl=en&text={query_str_zh}&op=translate"
+                    st.markdown(f'<a href="{google_trans_zh_url}" target="_blank"><button style="font-size:18px; padding:6px 14px; background-color:#34A853; color:white; border:none; border-radius:4px; cursor:pointer; width:100%;">🌐 啟動中文轉英文任意門</button></a>', unsafe_allow_html=True)
                 
-                st.markdown(f'<a href="{google_trans_zh_url}" target="_blank"><button style="font-size:18px; padding:6px 14px; background-color:#34A853; color:white; border:none; border-radius:4px; cursor:pointer;">🌐 啟動中文轉英文任意門</button></a>', unsafe_allow_html=True)
+                with clear_col:
+                    if st.button("🧹 清除中文", key=f"clear_zh_btn_{idx}_{w}"):
+                        st.session_state[user_chinese_key] = ""
+                        st.rerun()
 
                 st.markdown("---")
                 st.markdown(f"**🌟 Memine 道地文法示範（與您的單字連動）**")
@@ -396,8 +401,8 @@ if not df.empty:
 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                prac_key = f"prac_v26_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
-                status_key = f"status_v26_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                prac_key = f"prac_v27_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                status_key = f"status_v27_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 clear_trigger_key = f"clear_trigger_{idx}_{w}"
                 
                 if clear_trigger_key not in st.session_state:
