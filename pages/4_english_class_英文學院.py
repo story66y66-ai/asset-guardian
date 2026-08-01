@@ -69,7 +69,7 @@ if not df.empty:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
-        key="vocab_click_table_v31"
+        key="vocab_click_table_v32"
     )
 
     if len(event.selection.rows) > 0:
@@ -99,14 +99,14 @@ if not df.empty:
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("➕ 把此字加入清單", key="add_to_list_v31"):
+        if st.button("➕ 把此字加入清單", key="add_to_list_v32"):
             if selected_word not in st.session_state.selected_vocab_list:
                 if len(st.session_state.selected_vocab_list) < 3:
                     st.session_state.selected_vocab_list.append(selected_word)
                 else:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
-        if st.button("🗑️ 清除目前的清單", key="clear_list_v31"):
+        if st.button("🗑️ 清除目前的清單", key="clear_list_v32"):
             st.session_state.selected_vocab_list = []
             st.success("已清除目前選擇的單字清單！")
 
@@ -130,13 +130,13 @@ if not df.empty:
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v31_{idx}_{w}")
+                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v32_{idx}_{w}")
                 with c2:
-                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v31_{idx}_{w}")
+                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v32_{idx}_{w}")
                 with c3:
-                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v31_{idx}_{w}")
+                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v32_{idx}_{w}")
                 
-                state_key = f"grammar_v31_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"grammar_v32_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     w_lower = w.lower()
@@ -271,7 +271,7 @@ if not df.empty:
                 st.markdown(f"**💡 內建文法示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v31_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v32_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
@@ -281,11 +281,18 @@ if not df.empty:
                 st.markdown(f"**🌐 Google 翻譯任意門（輸入中文 ➔ 取得英文口語例句）**")
                 
                 user_chinese_key = f"user_chinese_{idx}_{w}"
+                clear_flag_key = f"clear_flag_{idx}_{w}"
+
+                if clear_flag_key not in st.session_state:
+                    st.session_state[clear_flag_key] = False
+
+                if st.session_state[clear_flag_key]:
+                    st.session_state[user_chinese_key] = ""
+                    st.session_state[clear_flag_key] = False
 
                 if user_chinese_key not in st.session_state:
                     st.session_state[user_chinese_key] = ""
 
-                # 獨立的輸入框與清除按鈕排版
                 col_in, col_cl = st.columns([4, 1])
                 with col_in:
                     user_chinese_input = st.text_input(
@@ -295,11 +302,11 @@ if not df.empty:
                     )
                 with col_cl:
                     st.markdown("<br>", unsafe_allow_html=True)
-                    if st.button("🧹 清除", key=f"pure_clear_zh_{idx}_{w}"):
-                        st.session_state[user_chinese_key] = ""
+                    if st.button("🧹 清除", key=f"btn_clean_zh_{idx}_{w}"):
+                        st.session_state[clear_flag_key] = True
                         st.rerun()
 
-                query_str_zh = urllib.parse.quote(st.session_state[user_chinese_key])
+                query_str_zh = urllib.parse.quote(st.session_state.get(user_chinese_key, ""))
                 google_trans_zh_url = f"https://translate.google.com/?sl=zh-TW&tl=en&text={query_str_zh}&op=translate"
                 st.markdown(f'<a href="{google_trans_zh_url}" target="_blank"><button style="font-size:18px; padding:6px 14px; background-color:#34A853; color:white; border:none; border-radius:4px; cursor:pointer; width:100%;">🌐 啟動中文轉英文任意門</button></a>', unsafe_allow_html=True)
 
@@ -399,8 +406,17 @@ if not df.empty:
 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                prac_key = f"prac_v31_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
-                status_key = f"status_v31_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                prac_key = f"prac_v32_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                status_key = f"status_v32_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                prac_clear_flag = f"prac_clear_flag_{idx}_{w}"
+
+                if prac_clear_flag not in st.session_state:
+                    st.session_state[prac_clear_flag] = False
+
+                if st.session_state[prac_clear_flag]:
+                    st.session_state[prac_key] = ""
+                    st.session_state[status_key] = None
+                    st.session_state[prac_clear_flag] = False
                 
                 if prac_key not in st.session_state:
                     st.session_state[prac_key] = ""
@@ -429,8 +445,7 @@ if not df.empty:
                 col_btn1, col_btn2 = st.columns([1, 4])
                 with col_btn1:
                     if st.button("🔄 清空重練", key=f"btn_clear_{idx}_{w}"):
-                        st.session_state[prac_key] = ""
-                        st.session_state[status_key] = None
+                        st.session_state[prac_clear_flag] = True
                         st.rerun()
 
                 if status_key in st.session_state and st.session_state[status_key]:
