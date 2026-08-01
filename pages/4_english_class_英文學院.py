@@ -69,7 +69,7 @@ if not df.empty:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
-        key="vocab_click_table_v35"
+        key="vocab_click_table_v36"
     )
 
     if len(event.selection.rows) > 0:
@@ -99,14 +99,14 @@ if not df.empty:
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("➕ 把此字加入清單", key="add_to_list_v35"):
+        if st.button("➕ 把此字加入清單", key="add_to_list_v36"):
             if selected_word not in st.session_state.selected_vocab_list:
                 if len(st.session_state.selected_vocab_list) < 3:
                     st.session_state.selected_vocab_list.append(selected_word)
                 else:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
-        if st.button("🗑️ 清除目前的清單", key="clear_list_v35"):
+        if st.button("🗑️ 清除目前的清單", key="clear_list_v36"):
             st.session_state.selected_vocab_list = []
             st.success("已清除目前選擇的單字清單！")
 
@@ -130,13 +130,13 @@ if not df.empty:
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v35_{idx}_{w}")
+                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v36_{idx}_{w}")
                 with c2:
-                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v35_{idx}_{w}")
+                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v36_{idx}_{w}")
                 with c3:
-                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v35_{idx}_{w}")
+                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v36_{idx}_{w}")
                 
-                state_key = f"grammar_v35_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"grammar_v36_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     w_lower = w.lower()
@@ -271,7 +271,7 @@ if not df.empty:
                 st.markdown(f"**💡 內建文法示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v35_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v36_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
@@ -306,12 +306,24 @@ if not df.empty:
                         st.session_state[clear_flag_key] = True
                         st.rerun()
 
-                query_str_zh = urllib.parse.quote(st.session_state.get(user_chinese_key, ""))
-                google_trans_zh_url = f"https://translate.google.com/?sl=zh-TW&tl=en&text={query_str_zh}&op=translate"
-                st.markdown(f'<a href="{google_trans_zh_url}" target="_blank"><button style="font-size:18px; padding:6px 14px; background-color:#34A853; color:white; border:none; border-radius:4px; cursor:pointer; width:100%;">🌐 啟動中文轉英文任意門</button></a>', unsafe_allow_html=True)
+                # 改用點擊按鈕透過 JavaScript 觸發開新視窗，確保每次抓到的都是最新輸入的字！
+                if st.button("🌐 啟動中文轉英文任意門", key=f"btn_portal_{idx}_{w}"):
+                    current_text = st.session_state.get(user_chinese_key, "").strip()
+                    if not current_text:
+                        st.warning("請先在上方輸入想翻譯的中文句子喔！")
+                    else:
+                        encoded_text = urllib.parse.quote(current_text)
+                        target_url = f"https://translate.google.com/?sl=zh-TW&tl=en&text={encoded_text}&op=translate"
+                        
+                        js_code = f"""
+                            <script>
+                                window.open("{target_url}", "_blank");
+                            </script>
+                        """
+                        st.components.v1.html(js_code, height=0)
+                        st.success("已為您開啟 Google 翻譯分頁！")
 
                 st.markdown("---")
-                # 已更新標題
                 st.markdown(f"**🌟 Google 道地文法示範（與您的單字連動）**")
                 
                 memine_input_key = f"isolated_memine_eng_{idx}_{w}"
