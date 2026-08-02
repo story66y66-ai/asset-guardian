@@ -11,6 +11,15 @@ st.markdown("""
     [data-testid="stSidebar"] { font-size: 28px !important; }
     [data-testid="stSidebar"] div, [data-testid="stSidebar"] a { font-size: 28px !important; }
     .red-word { color: #ff2b2b !important; font-weight: bold !important; }
+    
+    /* 放大 YouTube 網址輸入框的文字與高度 */
+    .stTextInput input { 
+        font-size: 22px !important; 
+        color: #000000 !important; 
+        font-weight: bold !important; 
+        height: 50px !important;
+    }
+    
     .stTextArea textarea { 
         font-size: 22px !important; 
         color: #000000 !important; 
@@ -66,19 +75,30 @@ with col_btn1:
     yt_url = "https://www.youtube.com/@%E8%8B%B1%E8%AA%9E%E5%A4%A9%E5%A4%A9%E5%AD%B8/shorts?view=0&sort=p&flow=grid"
     st.markdown(f'<a href="{yt_url}" target="_blank" class="yt-button">🔥 英語天天學熱門 Shorts 任意門</a>', unsafe_allow_html=True)
 with col_btn2:
-    # 連結至 NotebookLM 頁面
     notebook_url = "https://notebooklm.google.com/"
     st.markdown(f'<a href="{notebook_url}" target="_blank" class="notebook-button">✨ 澄玄的隨身英文秘書任意門</a>', unsafe_allow_html=True)
 
 st.write("")
 
-# YouTube 影片/Shorts 網址貼入與嵌入區
+# YouTube 影片/Shorts 網址貼入、一鍵複製與嵌入區
 st.subheader("📺 YouTube 影片/Shorts 網址貼入與嵌入區：")
 if "yt_input_url" not in st.session_state:
     st.session_state.yt_input_url = ""
 
 user_yt_link = st.text_input("請在此貼上您喜歡的 YouTube 或 Shorts 網址：", value=st.session_state.yt_input_url)
 st.session_state.yt_input_url = user_yt_link
+
+# 增加一鍵複製網址按鈕與提示
+col_copy1, col_copy2 = st.columns([1, 4])
+with col_copy1:
+    copy_btn = st.button("📋 複製網址")
+with col_copy2:
+    if copy_btn:
+        if user_yt_link.strip():
+            st.code(user_yt_link, language="text")
+            st.success("網址已顯示在上方，可以直接反白複製或點擊右上方複製圖示！")
+        else:
+            st.warning("目前網址框是空的，請先輸入網址。")
 
 if user_yt_link.strip():
     try:
