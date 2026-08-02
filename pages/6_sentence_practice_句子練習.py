@@ -41,11 +41,43 @@ st.markdown("""
 
 st.title("📖 澄玄大學 - 自訂文字與歌詞語音朗讀工坊")
 
-# 將 YouTube 任意門放在最上方並改為綠色
+# 1. 最上方的綠色任意門按鈕
 yt_url = "https://www.youtube.com/@%E8%8B%B1%E8%AA%9E%E5%A4%A9%E5%A4%A9%E5%AD%B8/shorts?view=0&sort=p&flow=grid"
 st.markdown(f'<a href="{yt_url}" target="_blank" class="yt-button">🔥 英語天天學熱門 Shorts 任意門</a>', unsafe_allow_html=True)
 
 st.write("")
+
+# 2. 新增：讓澄玄貼入 YouTube 網址的專屬輸入框與影片嵌入區
+st.subheader("📺 YouTube 影片/Shorts 網址貼入與嵌入區：")
+if "yt_input_url" not in st.session_state:
+    st.session_state.yt_input_url = ""
+
+user_yt_link = st.text_input("請在此貼上您喜歡的 YouTube 或 Shorts 網址：", value=st.session_state.yt_input_url)
+st.session_state.yt_input_url = user_yt_link
+
+if user_yt_link.strip():
+    try:
+        # 處理一般 YouTube 網址與 Shorts 網址轉換成嵌入格式 (embed)
+        embed_url = user_yt_link.strip()
+        if "shorts/" in embed_url:
+            video_id = embed_url.split("shorts/")[-1].split("?")[0]
+            embed_url = f"https://www.youtube.com/embed/{video_id}"
+        elif "watch?v=" in embed_url:
+            video_id = embed_url.split("watch?v=")[-1].split("&")[0]
+            embed_url = f"https://www.youtube.com/embed/{video_id}"
+        elif "youtu.be/" in embed_url:
+            video_id = embed_url.split("youtu.be/")[-1].split("?")[0]
+            embed_url = f"https://www.youtube.com/embed/{video_id}"
+            
+        st.markdown(f"""
+            <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                <iframe width="350" height="600" src="{embed_url}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        """, unsafe_allow_html=True)
+    except Exception as e:
+        st.error(f"影片載入發生錯誤，請確認網址是否正確：{e}")
+
+st.divider()
 
 # 讀取單字資料庫以對應 KK 音標與翻譯
 @st.cache_data
