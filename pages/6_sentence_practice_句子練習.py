@@ -19,10 +19,33 @@ st.markdown("""
         resize: vertical !important; 
     }
     div.stButton > button { font-size: 20px !important; padding: 10px 20px !important; }
+    .yt-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #FF0000;
+        color: white !important;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 20px;
+        border: none;
+    }
+    .yt-button:hover {
+        background-color: #CC0000;
+        color: white !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("📖 澄玄大學 - 自訂文字與歌詞語音朗讀工坊")
+
+# 將 YouTube 任意門放在最上方
+yt_url = "https://www.youtube.com/@%E8%8B%B1%E8%AA%9E%E5%A4%A9%E5%A4%A9%E5%AD%B8/shorts?view=0&sort=p&flow=grid"
+st.markdown(f'<a href="{yt_url}" target="_blank" class="yt-button">🔥 英語天天學熱門 Shorts 任意門</a>', unsafe_allow_html=True)
+
+st.write("") # 增加一點間距
 
 # 讀取單字資料庫以對應 KK 音標與翻譯
 @st.cache_data
