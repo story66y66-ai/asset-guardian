@@ -179,12 +179,13 @@ if clear_btn:
     st.session_state.my_text_input = ""
     st.rerun()
 
+# 這裡加上了 loop=True，讓整段發音可以自動循環播放
 if play_btn and user_input_text.strip():
     try:
         tts = gTTS(text=user_input_text, lang='en')
         fp = io.BytesIO()
         tts.write_to_fp(fp)
-        st.audio(fp, autoplay=True)
+        st.audio(fp, autoplay=True, loop=True)
     except Exception as e:
         st.error(f"語音生成發生錯誤：{e}")
 
