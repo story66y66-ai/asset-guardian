@@ -31,9 +31,28 @@ st.markdown("""
         font-weight: bold;
         font-size: 20px;
         border: none;
+        width: 100%;
     }
     .yt-button:hover {
         background-color: #218838;
+        color: white !important;
+    }
+    .notebook-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #4285F4;
+        color: white !important;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 20px;
+        border: none;
+        width: 100%;
+    }
+    .notebook-button:hover {
+        background-color: #3367D6;
         color: white !important;
     }
     </style>
@@ -41,13 +60,19 @@ st.markdown("""
 
 st.title("📖 澄玄大學 - 自訂文字與歌詞語音朗讀工坊")
 
-# 1. 最上方的綠色任意門按鈕
-yt_url = "https://www.youtube.com/@%E8%8B%B1%E8%AA%9E%E5%A4%A9%E5%A4%A9%E5%AD%B8/shorts?view=0&sort=p&flow=grid"
-st.markdown(f'<a href="{yt_url}" target="_blank" class="yt-button">🔥 英語天天學熱門 Shorts 任意門</a>', unsafe_allow_html=True)
+# 最上方的兩個專屬任意門按鈕
+col_btn1, col_btn2 = st.columns([1, 1])
+with col_btn1:
+    yt_url = "https://www.youtube.com/@%E8%8B%B1%E8%AA%9E%E5%A4%A9%E5%A4%A9%E5%AD%B8/shorts?view=0&sort=p&flow=grid"
+    st.markdown(f'<a href="{yt_url}" target="_blank" class="yt-button">🔥 英語天天學熱門 Shorts 任意門</a>', unsafe_allow_html=True)
+with col_btn2:
+    # 連結至 NotebookLM 頁面
+    notebook_url = "https://notebooklm.google.com/"
+    st.markdown(f'<a href="{notebook_url}" target="_blank" class="notebook-button">✨ 澄玄的隨身英文秘書任意門</a>', unsafe_allow_html=True)
 
 st.write("")
 
-# 2. 新增：讓澄玄貼入 YouTube 網址的專屬輸入框與影片嵌入區
+# YouTube 影片/Shorts 網址貼入與嵌入區
 st.subheader("📺 YouTube 影片/Shorts 網址貼入與嵌入區：")
 if "yt_input_url" not in st.session_state:
     st.session_state.yt_input_url = ""
@@ -57,7 +82,6 @@ st.session_state.yt_input_url = user_yt_link
 
 if user_yt_link.strip():
     try:
-        # 處理一般 YouTube 網址與 Shorts 網址轉換成嵌入格式 (embed)
         embed_url = user_yt_link.strip()
         if "shorts/" in embed_url:
             video_id = embed_url.split("shorts/")[-1].split("?")[0]
