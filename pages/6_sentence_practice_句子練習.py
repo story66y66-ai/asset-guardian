@@ -27,7 +27,7 @@ st.markdown("""
         font-size: 22px !important; 
         color: #000000 !important; 
         font-weight: bold !important; 
-        height: 380px !important;
+        height: 600px !important;
         resize: vertical !important; 
     }
     div.stButton > button { font-size: 20px !important; padding: 10px 20px !important; }
@@ -117,11 +117,12 @@ if not df.empty and "word" in df.columns:
         kk_str = str(row['kk']) if 'kk' in df.columns and pd.notna(row['kk']) else ""
         word_dict[w_str] = {"trans": trans_str, "kk": kk_str}
 
-# 左右雙欄排版（左側放影片，右側放歌詞文字框與朗讀，讓頂部整齊對齊）
+# 左右雙欄排版：左側放影片（最上方對齊），右側放歌詞文字框
 left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
 with left_col:
-    st.subheader("📺 YouTube 網址與嵌入區：")
+    st.subheader("📺 YouTube 影片播放區：")
+    
     if "yt_input_url" not in st.session_state:
         st.session_state.yt_input_url = ""
 
@@ -152,8 +153,8 @@ with left_col:
                 embed_url = f"https://www.youtube.com/embed/{video_id}"
                 
             st.markdown(f"""
-                <div style="display: flex; justify-content: center; margin-top: 15px; margin-bottom: 20px;">
-                    <iframe width="350" height="600" src="{embed_url}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                <div style="display: flex; justify-content: center; margin-top: 10px; margin-bottom: 20px;">
+                    <iframe width="350" height="580" src="{embed_url}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                 </div>
             """, unsafe_allow_html=True)
         except Exception as e:
@@ -174,7 +175,7 @@ with right_col:
 
     col1, col2 = st.columns([1, 1])
     with col1:
-        play_btn = st.button("🔊 播放整段發音")
+        play_btn = st.button("🔊 播放整段發音 (循環)")
     with col2:
         clear_btn = st.button("🗑️ 清空文字框")
 
