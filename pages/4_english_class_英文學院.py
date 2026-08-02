@@ -5,21 +5,103 @@ import os
 from gtts import gTTS
 import io
 import re
-import base64
 import urllib.parse
+
+# 設定頁面為寬螢幕模式
+st.set_page_config(layout="wide")
 
 st.markdown("""
     <style>
     [data-testid="stSidebar"] { font-size: 28px !important; }
     [data-testid="stSidebar"] div, [data-testid="stSidebar"] a { font-size: 28px !important; }
     .red-word { color: #ff2b2b !important; font-weight: bold !important; }
-    .stTextInput input { font-size: 28px !important; color: #000000 !important; font-weight: bold !important; }
-    div.stButton > button { font-size: 22px !important; padding: 10px 20px !important; }
+    
+    /* 放大 YouTube 網址輸入框的文字與高度 */
+    .stTextInput input { 
+        font-size: 22px !important; 
+        color: #000000 !important; 
+        font-weight: bold !important; 
+        height: 50px !important;
+    }
+    
+    .stTextArea textarea { 
+        font-size: 22px !important; 
+        color: #000000 !important; 
+        font-weight: bold !important; 
+        height: 580px !important;
+        resize: vertical !important; 
+    }
+    div.stButton > button { font-size: 20px !important; padding: 10px 20px !important; }
+    .yt-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #28a745;
+        color: white !important;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 20px;
+        border: none;
+        width: 100%;
+    }
+    .yt-button:hover {
+        background-color: #218838;
+        color: white !important;
+    }
+    .notebook-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #4285F4;
+        color: white !important;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 20px;
+        border: none;
+        width: 100%;
+    }
+    .notebook-button:hover {
+        background-color: #3367D6;
+        color: white !important;
+    }
+    .translate-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #1a73e8;
+        color: white !important;
+        padding: 6px 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 16px;
+        border: none;
+    }
+    .translate-button:hover {
+        background-color: #1557b0;
+        color: white !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("📖 澄玄大學 - 語言學院 & 中英任意門造句工坊")
+st.title("📖 澄玄大學 - 自訂文字與歌詞語音朗讀工坊")
 
+# 最上方的兩個專屬任意門按鈕
+col_btn1, col_btn2 = st.columns([1, 1])
+with col_btn1:
+    yt_url = "https://www.youtube.com/@%E8%8B%B1%E8%AA%9E%E5%A4%A9%E5%A4%A9%E5%AD%B8/shorts?view=0&sort=p&flow=grid"
+    st.markdown(f'<a href="{yt_url}" target="_blank" class="yt-button">🔥 英語天天學熱門 Shorts 任意門</a>', unsafe_allow_html=True)
+with col_btn2:
+    notebook_url = "https://notebooklm.google.com/"
+    st.markdown(f'<a href="{notebook_url}" target="_blank" class="notebook-button">✨ 澄玄的隨身英文秘書任意門</a>', unsafe_allow_html=True)
+
+st.write("")
+
+# 讀取單字資料庫以對應 KK 音標與翻譯
 @st.cache_data
 def load_and_merge_data():
     all_files = glob.glob("words_level*.csv")
@@ -31,7 +113,6 @@ def load_and_merge_data():
                 df_list.append(temp_df)
             except Exception:
                 pass
-                
     if df_list:
         combined_df = pd.concat(df_list, ignore_index=True)
     else:
@@ -39,434 +120,145 @@ def load_and_merge_data():
             combined_df = pd.read_csv("words.csv")
         except Exception:
             combined_df = pd.DataFrame(columns=["word", "trans", "kk", "level"])
-
     if "word" in combined_df.columns:
         combined_df = combined_df.drop_duplicates(subset=["word"])
-    
-    if "level" in combined_df.columns:
-        combined_df["level"] = pd.to_numeric(combined_df["level"], errors="coerce")
-        combined_df = combined_df.sort_values(by="level", ascending=True)
-        
-    combined_df = combined_df.reset_index(drop=True)
     return combined_df
 
 df = load_and_merge_data()
 
-if 'selected_word' not in st.session_state:
-    st.session_state.selected_word = df['word'].iloc[0] if not df.empty else ""
+# 建立字典加速查詢 (word -> {trans, kk})
+word_dict = {}
+if not df.empty and "word" in df.columns:
+    for _, row in df.iterrows():
+        w_str = str(row['word']).strip().lower()
+        trans_str = str(row['trans']) if 'trans' in df.columns and pd.notna(row['trans']) else ""
+        kk_str = str(row['kk']) if 'kk' in df.columns and pd.notna(row['kk']) else ""
+        word_dict[w_str] = {"trans": trans_str, "kk": kk_str}
 
-if 'selected_vocab_list' not in st.session_state:
-    st.session_state.selected_vocab_list = []
+# 左右雙欄排版：左側直接放影片，右側放歌詞文字框
+left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
-st.subheader("📋 單字總表（點擊表格列聽發音，並挑選單字）：")
+with left_col:
+    if "yt_input_url" not in st.session_state:
+        st.session_state.yt_input_url = ""
 
-if not df.empty:
-    display_df = df[['word', 'trans', 'kk', 'level']]
-    
-    event = st.dataframe(
-        display_df,
-        use_container_width=True,
-        hide_index=True,
-        on_select="rerun",
-        selection_mode="single-row",
-        key="vocab_click_table_v38"
+    # 1. 顯示影片區
+    user_yt_link = st.session_state.yt_input_url
+    if user_yt_link.strip():
+        try:
+            embed_url = user_yt_link.strip()
+            if "shorts/" in embed_url:
+                video_id = embed_url.split("shorts/")[-1].split("?")[0]
+                embed_url = f"https://www.youtube.com/embed/{video_id}"
+            elif "watch?v=" in embed_url:
+                video_id = embed_url.split("watch?v=")[-1].split("&")[0]
+                embed_url = f"https://www.youtube.com/embed/{video_id}"
+            elif "youtu.be/" in embed_url:
+                video_id = embed_url.split("youtu.be/")[-1].split("?")[0]
+                embed_url = f"https://www.youtube.com/embed/{video_id}"
+                
+            st.markdown(f"""
+                <div style="display: flex; justify-content: center; margin-bottom: 15px;">
+                    <iframe width="350" height="580" src="{embed_url}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            """, unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"影片載入發生錯誤：{e}")
+    else:
+        st.markdown("""
+            <div style="display: flex; align-items: center; justify-content: center; height: 580px; border: 2px dashed #444; border-radius: 10px; color: #888; font-size: 20px; margin-bottom: 15px;">
+                📺 請在下方輸入網址以顯示影片
+            </div>
+        """, unsafe_allow_html=True)
+
+    # 2. 網址輸入與複製區
+    new_yt_link = st.text_input("請在此貼上 YouTube 或 Shorts 網址：", value=st.session_state.yt_input_url)
+    if new_yt_link != st.session_state.yt_input_url:
+        st.session_state.yt_input_url = new_yt_link
+        st.rerun()
+
+    col_copy1, col_copy2 = st.columns([1, 3])
+    with col_copy1:
+        copy_btn = st.button("📋 複製網址")
+    with col_copy2:
+        if copy_btn:
+            if user_yt_link.strip():
+                st.code(user_yt_link, language="text")
+            else:
+                st.warning("目前網址框是空的！")
+
+with right_col:
+    if "my_text_input" not in st.session_state:
+        st.session_state.my_text_input = "I can do all things through Christ who strengthens me."
+
+    # 先取得當前文字框內容並編碼，用來即時帶入 Google 翻譯按鈕
+    encoded_text = urllib.parse.quote(st.session_state.my_text_input)
+    translate_url = f"https://translate.google.com/?hl=zh-TW&sl=en&tl=zh-TW&text={encoded_text}&op=translate"
+
+    # 標題與帶有文字的 Google 翻譯任意門按鈕並排
+    title_col, btn_col = st.columns([3, 1.4], vertical_alignment="center")
+    with title_col:
+        st.subheader("✍️ 歌詞文字框與朗讀練習：")
+    with btn_col:
+        st.markdown(f'<a href="{translate_url}" target="_blank" class="translate-button">🌐 Google 翻譯</a>', unsafe_allow_html=True)
+
+    user_input_text = st.text_area(
+        "輸入文字或歌詞：",
+        value=st.session_state.my_text_input
     )
 
-    if len(event.selection.rows) > 0:
-        selected_index = event.selection.rows[0]
-        clicked_word = df.iloc[selected_index]['word']
-        if st.session_state.selected_word != clicked_word:
-            st.session_state.selected_word = clicked_word
-            
-            tts = gTTS(text=str(clicked_word), lang='en')
+    st.session_state.my_text_input = user_input_text
+
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        play_btn = st.button("🔊 播放整段發音 (循環)")
+    with col2:
+        clear_btn = st.button("🗑️ 清空文字框")
+
+    if clear_btn:
+        st.session_state.my_text_input = ""
+        st.rerun()
+
+    # 循環播放
+    if play_btn and user_input_text.strip():
+        try:
+            tts = gTTS(text=user_input_text, lang='en')
             fp = io.BytesIO()
             tts.write_to_fp(fp)
-            st.audio(fp, autoplay=True)
+            st.audio(fp, autoplay=True, loop=True)
+        except Exception as e:
+            st.error(f"語音生成發生錯誤：{e}")
 
-    st.divider()
+st.divider()
 
-    word_list = df['word'].tolist()
-    if st.session_state.selected_word not in word_list:
-        st.session_state.selected_word = word_list[0]
-
-    st.subheader("🎯 挑選造句單字區：")
-    selected_word = st.selectbox(
-        "目前選取的單字：",
-        word_list,
-        index=word_list.index(st.session_state.selected_word),
-        key="selected_word"
-    )
-
-    col1, col2 = st.columns([1, 3])
-    with col1:
-        if st.button("➕ 把此字加入清單", key="add_to_list_v38"):
-            if selected_word not in st.session_state.selected_vocab_list:
-                if len(st.session_state.selected_vocab_list) < 3:
-                    st.session_state.selected_vocab_list.append(selected_word)
-                else:
-                    st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
-    with col2:
-        if st.button("🗑️ 清除目前的清單", key="clear_list_v38"):
-            st.session_state.selected_vocab_list = []
-            st.success("已清除目前選擇的單字清單！")
-
-    st.markdown(f"**📌 目前已選擇的單字（{len(st.session_state.selected_vocab_list)}/3）：**")
-    if st.session_state.selected_vocab_list:
-        st.write("、".join([f"**{w}**" for w in st.session_state.selected_vocab_list]))
-    else:
-        st.info("目前還沒有加入單字，請從上方點選喜歡的字後加入。")
-
-    if st.session_state.selected_vocab_list:
-        st.divider()
-        st.subheader("✍️ 中英任意門造句工坊（自行輸入中文 ➔ 輕鬆翻譯）")
-
-        for idx, w in enumerate(st.session_state.selected_vocab_list):
-            target_row = df[df['word'] == w]
-            trans_w = target_row['trans'].values[0] if not target_row.empty else ""
-            w_level = int(target_row['level'].values[0]) if (not target_row.empty and 'level' in target_row.columns and pd.notna(target_row['level'].values[0])) else 1
+# 下方的單字解析區
+if user_input_text.strip():
+    st.subheader("🔍 歌詞單字解析、KK音標與個別發音：")
+    
+    words_in_text = re.findall(r'\b[A-Za-z]+\b', user_input_text)
+    unique_words = sorted(list(set(words_in_text)), key=lambda x: words_in_text.index(x))
+    
+    if unique_words:
+        st.markdown(f"**偵測到以下英文單字（共 {len(unique_words)} 個）：**")
+        
+        for i, w in enumerate(unique_words):
+            w_lower = w.lower()
+            info = word_dict.get(w_lower, {"trans": "", "kk": ""})
+            kk_display = f"/{info['kk']}/" if info['kk'] else "(暫無KK音標)"
+            trans_display = f"【{info['trans']}】" if info['trans'] else ""
             
-            with st.container(border=True):
-                st.markdown(f"### 🔹 單字 {idx+1}：`{w}` （{trans_w} | 難度Level {w_level}）")
-                
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v38_{idx}_{w}")
-                with c2:
-                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v38_{idx}_{w}")
-                with c3:
-                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v38_{idx}_{w}")
-                
-                state_key = f"grammar_v38_{w}_{level_choice}_{type_choice}_{scene_choice}"
-                
-                if state_key not in st.session_state:
-                    w_lower = w.lower()
-                    
-                    if w_lower in ["always", "never", "often", "sometimes", "usually"]:
-                        if type_choice == "否定句":
-                            e_text = f"I {w} forget to bring my keys when leaving."
-                            c_text = f"我出門時{trans_w}不會忘記帶鑰匙。" if w_lower=="never" else f"我出門時{trans_w}會忘記帶鑰匙。"
-                        elif type_choice == "疑問句":
-                            e_text = f"Do you {w} check your emails in the morning?"
-                            c_text = f"你早上{trans_w}會檢查電子郵件嗎？"
-                        else:
-                            e_text = f"We {w} try our best to finish work on time."
-                            c_text = f"我們{trans_w}都盡全力準時完成工作。"
-                            
-                    elif w_lower in ["a", "an", "the"]:
-                        if type_choice == "否定句":
-                            e_text = f"This is not just {w} ordinary mistake."
-                            c_text = f"這不只是個普通的錯誤。"
-                        elif type_choice == "疑問句":
-                            e_text = f"Is this {w} best option we have right now?"
-                            c_text = f"這是我們目前最好的選擇嗎？"
-                        else:
-                            e_text = f"She wants to find {w} better solution for this."
-                            c_text = f"她想為這件事找出一個更好的解決辦法。"
-                            
-                    else:
-                        if scene_choice == "旅遊社交":
-                            if level_choice == "初階":
-                                if type_choice == "否定句":
-                                    e_text = f"We did not visit {w} during our trip."
-                                    c_text = f"我們在旅途中沒有參觀 {trans_w}。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Did you see {w} in this area?"
-                                    c_text = f"你在這附近有看到 {trans_w} 嗎？"
-                                else:
-                                    e_text = f"We plan to explore {w} tomorrow morning."
-                                    c_text = f"我們計畫明天早上探索 {trans_w}。"
-                            elif level_choice == "中階":
-                                if type_choice == "否定句":
-                                    e_text = f"Many tourists do not expect to experience {w} so early."
-                                    c_text = f"許多遊客沒想到這麼早就體驗到 {trans_w}。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Have you ever encountered {w} while traveling abroad?"
-                                    c_text = f"你出國旅遊時曾遇過 {trans_w} 嗎？"
-                                else:
-                                    e_text = f"Travelers are always excited to discover {w} in new places."
-                                    c_text = f"旅客在新的地方發現 {trans_w}總是感到興奮。"
-                            else:
-                                if type_choice == "否定句":
-                                    e_text = f"No travel guide could fully describe the true splendor of {w}."
-                                    c_text = f"沒有任何旅遊指南能完全描述 {trans_w} 的真實壯麗。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Could any visitor truly appreciate {w} without a local guide?"
-                                    c_text = f"沒有當地導覽，任何訪客真的能欣賞 {trans_w} 嗎？"
-                                else:
-                                    e_text = f"Immersing oneself in local traditions reveals the deep soul of {w}."
-                                    c_text = f"沉浸在當地傳統中能揭示 {trans_w} 的深層靈魂。"
-                                    
-                        elif scene_choice == "職場商務":
-                            if level_choice == "初階":
-                                if type_choice == "否定句":
-                                    e_text = f"Please do not ignore {w} in your daily report."
-                                    c_text = f"請不要在日常報告中忽略 {trans_w}。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Did you check {w} before the meeting started?"
-                                    c_text = f"會議開始前你有檢查 {trans_w} 嗎？"
-                                else:
-                                    e_text = f"We need to prepare {w} for the upcoming project."
-                                    c_text = f"我們需要為接下來的專案準備 {trans_w}。"
-                            elif level_choice == "中階":
-                                if type_choice == "否定句":
-                                    e_text = f"The management team did not approve {w} this month."
-                                    c_text = f"管理團隊這個月沒有批准 {trans_w}。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Will the director discuss {w} in the executive meeting?"
-                                    c_text = f"主管會在執行會議中討論 {trans_w} 嗎？"
-                                else:
-                                    e_text = f"The department carefully evaluated {w} during the review."
-                                    c_text = f"部門在審查期間仔細評估了 {trans_w}。"
-                            else:
-                                if type_choice == "否定句":
-                                    e_text = f"No strategic decisions regarding {w} were finalized yesterday."
-                                    c_text = f"昨天沒有敲定任何關於 {trans_w} 的策略決策。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Were all compliance requirements concerning {w} fully met?"
-                                    c_text = f"所有關於 {trans_w} 的合規要求都完全達到了嗎？"
-                                else:
-                                    e_text = f"Comprehensive market analysis concerning {w} was submitted to executives."
-                                    c_text = f"關於 {trans_w} 的全面市場分析已提交給高階主管。"
-                                    
-                        else:  # 日常生活
-                            if level_choice == "初階":
-                                if type_choice == "否定句":
-                                    e_text = f"I do not need {w} right now."
-                                    c_text = f"我現在不需要 {trans_w}。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Do you like {w} for your daily routine?"
-                                    c_text = f"你日常生活中喜歡 {trans_w} 嗎？"
-                                else:
-                                    e_text = f"I use {w} almost every single day."
-                                    c_text = f"我幾乎每天都會用到 {trans_w}。"
-                            elif level_choice == "中階":
-                                if type_choice == "否定句":
-                                    e_text = f"She usually does not think about {w} in the morning."
-                                    c_text = f"她通常在早上不會想到 {trans_w}。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Do you often talk about {w} with your family?"
-                                    c_text = f"你經常和家人談論 {trans_w} 嗎？"
-                                else:
-                                    e_text = f"People tend to appreciate {w} during quiet moments."
-                                    c_text = f"人們往往在安靜的時刻體會到 {trans_w}。"
-                            else:
-                                if type_choice == "否定句":
-                                    e_text = f"Few individuals can truly master {w} without persistent effort."
-                                    c_text = f"沒有持續的努力，很少有人能真正掌握 {trans_w}。"
-                                elif type_choice == "疑問句":
-                                    e_text = f"Do subtle shifts in daily habits truly reflect {w}?"
-                                    c_text = f"日常習慣的微妙轉變真的反映了 {trans_w} 嗎？"
-                                else:
-                                    e_text = f"A profound understanding of {w} brings lasting inner peace."
-                                    c_text = f"對 {trans_w} 的深刻理解會帶來持久的內心平靜。"
-
-                    st.session_state[state_key] = {"eng": e_text, "chi": c_text}
-
-                current_data = st.session_state[state_key]
-                demo_eng = current_data["eng"]
-                demo_chi = current_data["chi"]
-                
-                highlighted_demo = re.sub(r'\b' + re.escape(str(w)) + r'\b', f"<span class='red-word'>{w}</span>", demo_eng, flags=re.IGNORECASE)
-                
-                st.markdown(f"**💡 內建文法示範：** {highlighted_demo}", unsafe_allow_html=True)
-                st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
-                
-                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v38_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
-                    tts = gTTS(text=demo_eng, lang='en')
-                    fp = io.BytesIO()
-                    tts.write_to_fp(fp)
-                    st.audio(fp, autoplay=True)
-
-                st.divider()
-                st.markdown(f"**🌐 Google 翻譯任意門（輸入中文 ➔ 取得英文口語例句）**")
-                
-                user_chinese_key = f"isolated_zh_input_{idx}_{w}"
-                clear_flag_key = f"isolated_zh_flag_{idx}_{w}"
-
-                if clear_flag_key not in st.session_state:
-                    st.session_state[clear_flag_key] = False
-
-                if st.session_state[clear_flag_key]:
-                    st.session_state[user_chinese_key] = ""
-                    st.session_state[clear_flag_key] = False
-
-                if user_chinese_key not in st.session_state:
-                    st.session_state[user_chinese_key] = ""
-
-                col_in, col_cl = st.columns([4, 1])
-                with col_in:
-                    user_chinese_input = st.text_input(
-                        f"請輸入您想表達的中文（記得包含單字 [{w}] 喔）：",
-                        key=user_chinese_key,
-                        placeholder="請在此輸入中文句子..."
-                    )
-                with col_cl:
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    if st.button("🧹 清除", key=f"btn_clean_zh_isolated_{idx}_{w}"):
-                        st.session_state[clear_flag_key] = True
-                        st.rerun()
-
-                # 藍色質感按鈕超連結
-                current_text = st.session_state.get(user_chinese_key, "").strip()
-                if current_text:
-                    encoded_text = urllib.parse.quote(current_text)
-                    target_url = f"https://translate.google.com/?sl=zh-TW&tl=en&text={encoded_text}&op=translate"
-                    st.markdown(
-                        f'<a href="{target_url}" target="_blank" style="text-decoration: none;">'
-                        f'<div style="background-color: #2b6cb0; color: white; padding: 10px 20px; border-radius: 5px; text-align: center; font-weight: bold; font-size: 18px;">'
-                        f'🚀 點擊直接開啟 Google 翻譯任意門</div></a>',
-                        unsafe_allow_html=True
-                    )
-                else:
-                    st.markdown(
-                        f'<div style="background-color: #555555; color: #cccccc; padding: 10px 20px; border-radius: 5px; text-align: center; font-weight: bold; font-size: 18px; cursor: not-allowed;">'
-                        f'🚀 請先在上方輸入中文，即可開啟任意門</div>',
-                        unsafe_allow_html=True
-                    )
-
-                st.markdown("---")
-                st.markdown(f"**🌟 Google 道地文法示範（與您的單字連動）**")
-                
-                memine_input_key = f"isolated_memine_eng_{idx}_{w}"
-                trans_input_key = f"isolated_memine_chi_{idx}_{w}"
-
-                if memine_input_key not in st.session_state:
-                    st.session_state[memine_input_key] = ""
-                if trans_input_key not in st.session_state:
-                    st.session_state[trans_input_key] = ""
-
-                def process_pasted_sentence():
-                    raw_val = st.session_state.get(memine_input_key, "")
-                    match_paren = re.search(r'^(.*?)\s*[\(\（](.*?)[\)\）]\s*$', raw_val)
-                    if match_paren:
-                        st.session_state[memine_input_key] = match_paren.group(1).strip()
-                        st.session_state[trans_input_key] = match_paren.group(2).strip()
-                        return
-                    match_dot = re.search(r'^([A-Za-z0-9\s,\.\?!\'\"-]+[.?!])\s+([\u4e00-\u9fa5].*)$', raw_val)
-                    if match_dot:
-                        st.session_state[memine_input_key] = match_dot.group(1).strip()
-                        st.session_state[trans_input_key] = match_dot.group(2).strip()
-
-                memine_sentence = st.text_input(
-                    f"請貼上經由任意門翻譯或 Google 幫您用 [{w}] 造的英文句子：",
-                    key=memine_input_key,
-                    on_change=process_pasted_sentence,
-                    placeholder="在此貼上英文句子..."
-                )
-                
-                if memine_sentence:
-                    highlighted_memine = re.sub(r'\b' + re.escape(str(w)) + r'\b', f"<span class='red-word'>{w}</span>", memine_sentence, flags=re.IGNORECASE)
-                    st.markdown(f"**💡 自訂/任意門示範句：** {highlighted_memine}", unsafe_allow_html=True)
-                    
-                    st.markdown("🐢 **選擇句子發音速度：**")
-                    b_col1, b_col2, b_col3 = st.columns(3)
-                    
-                    tts_m = gTTS(text=memine_sentence, lang='en')
-                    fp_m = io.BytesIO()
-                    tts_m.write_to_fp(fp_m)
-                    audio_bytes = fp_m.getvalue()
-                    b64_audio = base64.b64encode(audio_bytes).decode()
-                    
-                    with b_col1:
-                        if st.button("🔊 正常 (1.0x)", key=f"spd_1_{idx}_{w}"):
-                            audio_html = f"""
-                                <audio id="player_{idx}_{w}" controls autoplay>
-                                    <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
-                                </audio>
-                                <script>
-                                    var audioEl = document.getElementById("player_{idx}_{w}");
-                                    audioEl.playbackRate = 1.0;
-                                </script>
-                            """
-                            st.components.v1.html(audio_html, height=60)
-                    with b_col2:
-                        if st.button("🐢 0.5倍速", key=f"spd_05_{idx}_{w}"):
-                            audio_html = f"""
-                                <audio id="player_{idx}_{w}" controls autoplay>
-                                    <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
-                                </audio>
-                                <script>
-                                    var audioEl = document.getElementById("player_{idx}_{w}");
-                                    audioEl.playbackRate = 0.5;
-                                </script>
-                            """
-                            st.components.v1.html(audio_html, height=60)
-                    with b_col3:
-                        if st.button("🐌 0.2倍速", key=f"spd_02_{idx}_{w}"):
-                            audio_html = f"""
-                                <audio id="player_{idx}_{w}" controls autoplay>
-                                    <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
-                                </audio>
-                                <script>
-                                    var audioEl = document.getElementById("player_{idx}_{w}");
-                                    audioEl.playbackRate = 0.2;
-                                </script>
-                            """
-                            st.components.v1.html(audio_html, height=60)
-
-                    memine_translation = st.text_input(
-                        f"📝 中文翻譯：",
-                        key=trans_input_key,
-                        placeholder="在此輸入或對照中文翻譯..."
-                    )
-                    
-                    if memine_translation:
-                        st.markdown(f"*(中文翻譯：{memine_translation})*", unsafe_allow_html=True)
-                        if st.button(f"🔊 聽中文翻譯語音", key=f"audio_memine_trans_{idx}_{w}"):
-                            tts_t = gTTS(text=memine_translation, lang='zh-tw')
-                            fp_t = io.BytesIO()
-                            tts_t.write_to_fp(fp_t)
-                            st.audio(fp_t, autoplay=True)
-
-                st.markdown("<br>", unsafe_allow_html=True)
-                
-                prac_key = f"isolated_prac_input_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
-                status_key = f"isolated_prac_status_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"
-                prac_clear_flag = f"isolated_prac_flag_{idx}_{w}"
-
-                if prac_clear_flag not in st.session_state:
-                    st.session_state[prac_clear_flag] = False
-
-                if st.session_state[prac_clear_flag]:
-                    st.session_state[prac_key] = ""
-                    st.session_state[status_key] = None
-                    st.session_state[prac_clear_flag] = False
-                
-                if prac_key not in st.session_state:
-                    st.session_state[prac_key] = ""
-
-                def check_user_practice():
-                    user_val = st.session_state.get(prac_key, "").strip()
-                    target_sentence = st.session_state.get(memine_input_key, "").strip()
-                    if not target_sentence:
-                        target_sentence = demo_eng.strip()
-                    
-                    if user_val:
-                        if user_val == target_sentence:
-                            st.session_state[status_key] = ("success", f"🎉 太棒了！句子完全正確！大小寫規範完美掌握！")
-                        else:
-                            st.session_state[status_key] = ("error", f"❌ 檢查結果：句子中有拼字錯誤或大小寫與示範句不符喔！(正確示範: {target_sentence})")
-                    else:
-                        st.session_state[status_key] = None
-
-                user_practice = st.text_input(
-                    f"📝 請輸入您用 [{w}] 練習造的句子（嚴格檢查大小寫，輸入完按 Enter）：",
-                    key=prac_key,
-                    on_change=check_user_practice,
-                    placeholder="在此輸入句子後按 Enter..."
-                )
-                
-                col_btn1, col_btn2 = st.columns([1, 4])
-                with col_btn1:
-                    if st.button("🔄 清空重練", key=f"btn_clear_prac_{idx}_{w}"):
-                        st.session_state[prac_clear_flag] = True
-                        st.rerun()
-
-                if status_key in st.session_state and st.session_state[status_key]:
-                    st_type, st_msg = st.session_state[status_key]
-                    if st_type == "success":
-                        st.success(st_msg)
-                    elif st_type == "error":
-                        st.error(st_msg)
+            cols = st.columns([3, 1, 2])
+            with cols[0]:
+                st.markdown(f"🔹 **{w}** &nbsp; ` {kk_display} ` &nbsp; <span style='color:gray;'>{trans_display}</span>", unsafe_allow_html=True)
+            with cols[1]:
+                if st.button(f"🔊 聽發音", key=f"word_audio_{i}_{w}"):
+                    w_tts = gTTS(text=w, lang='en')
+                    w_fp = io.BytesIO()
+                    w_tts.write_to_fp(w_fp)
+                    st.audio(w_fp, autoplay=True)
+            with cols[2]:
+                st.write("")
+    else:
+        st.info("請輸入包含英文的歌詞以便拆解單字。")
 else:
-    st.warning("目前沒有找到任何單字資料，請確認是否有上傳 level 檔案！")
+    st.warning("目前文字框是空的，請輸入或貼上想練習的整首歌詞！")
