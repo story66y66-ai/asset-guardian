@@ -27,7 +27,7 @@ st.markdown("""
         font-size: 22px !important; 
         color: #000000 !important; 
         font-weight: bold !important; 
-        height: 600px !important;
+        height: 580px !important;
         resize: vertical !important; 
     }
     div.stButton > button { font-size: 20px !important; padding: 10px 20px !important; }
@@ -117,28 +117,15 @@ if not df.empty and "word" in df.columns:
         kk_str = str(row['kk']) if 'kk' in df.columns and pd.notna(row['kk']) else ""
         word_dict[w_str] = {"trans": trans_str, "kk": kk_str}
 
-# 左右雙欄排版：左側放影片（最上方對齊），右側放歌詞文字框
+# 左右雙欄排版：左側直接放影片（對齊右側大文字框），網址輸入移至下方
 left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
 with left_col:
-    st.subheader("📺 YouTube 影片播放區：")
-    
     if "yt_input_url" not in st.session_state:
         st.session_state.yt_input_url = ""
 
-    user_yt_link = st.text_input("請在此貼上 YouTube 或 Shorts 網址：", value=st.session_state.yt_input_url)
-    st.session_state.yt_input_url = user_yt_link
-
-    col_copy1, col_copy2 = st.columns([1, 3])
-    with col_copy1:
-        copy_btn = st.button("📋 複製網址")
-    with col_copy2:
-        if copy_btn:
-            if user_yt_link.strip():
-                st.code(user_yt_link, language="text")
-            else:
-                st.warning("目前網址框是空的！")
-
+    # 1. 先顯示影片區，讓影片頂部與右側大文字框對齊
+    user_yt_link = st.session_state.yt_input_url
     if user_yt_link.strip():
         try:
             embed_url = user_yt_link.strip()
@@ -153,12 +140,35 @@ with left_col:
                 embed_url = f"https://www.youtube.com/embed/{video_id}"
                 
             st.markdown(f"""
-                <div style="display: flex; justify-content: center; margin-top: 10px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: center; margin-bottom: 15px;">
                     <iframe width="350" height="580" src="{embed_url}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                 </div>
             """, unsafe_allow_html=True)
         except Exception as e:
             st.error(f"影片載入發生錯誤：{e}")
+    else:
+        # 當還沒輸入網址時的佔位提示框，高度與右側相呼應
+        st.markdown("""
+            <div style="display: flex; align-items: center; justify-content: center; height: 580px; border: 2px dashed #444; border-radius: 10px; color: #888; font-size: 20px; margin-bottom: 15px;">
+                📺 請在下方輸入網址以顯示影片
+            </div>
+        """, unsafe_allow_html=True)
+
+    # 2. 網址輸入與複製區放到影片下方
+    new_yt_link = st.text_input("請在此貼上 YouTube 或 Shorts 網址：", value=st.session_state.yt_input_url)
+    if new_yt_link != st.session_state.yt_input_url:
+        st.session_state.yt_input_url = new_yt_link
+        st.rerun()
+
+    col_copy1, col_copy2 = st.columns([1, 3])
+    with col_copy1:
+        copy_btn = st.button("📋 複製網址")
+    with col_copy2:
+        if copy_btn:
+            if user_yt_link.strip():
+                st.code(user_yt_link, language="text")
+            else:
+                st.warning("目前網址框是空的！")
 
 with right_col:
     st.subheader("✍️ 歌詞文字框與朗讀練習：")
