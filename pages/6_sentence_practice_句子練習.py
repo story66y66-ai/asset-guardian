@@ -6,7 +6,7 @@ from gtts import gTTS
 import io
 import re
 
-# 設定頁面為寬螢幕模式，讓左右並排更有空間
+# 設定頁面為寬螢幕模式
 st.set_page_config(layout="wide")
 
 st.markdown("""
@@ -27,7 +27,7 @@ st.markdown("""
         font-size: 22px !important; 
         color: #000000 !important; 
         font-weight: bold !important; 
-        height: 350px !important;
+        height: 380px !important;
         resize: vertical !important; 
     }
     div.stButton > button { font-size: 20px !important; padding: 10px 20px !important; }
@@ -51,7 +51,7 @@ st.markdown("""
     }
     .notebook-button {
         display: inline-flex;
-        align-items: and;
+        align-items: center;
         justify-content: center;
         background-color: #4285F4;
         color: white !important;
@@ -117,11 +117,11 @@ if not df.empty and "word" in df.columns:
         kk_str = str(row['kk']) if 'kk' in df.columns and pd.notna(row['kk']) else ""
         word_dict[w_str] = {"trans": trans_str, "kk": kk_str}
 
-# 左右雙欄大排版：左側放影片與網址，右側放文字輸入框與單字解析
-left_col, right_col = st.columns([1, 1.2])
+# 左右雙欄排版（左側放影片，右側放歌詞文字框與朗讀，讓頂部整齊對齊）
+left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
 with left_col:
-    st.subheader("📺 YouTube 影片/Shorts 網址與嵌入區：")
+    st.subheader("📺 YouTube 網址與嵌入區：")
     if "yt_input_url" not in st.session_state:
         st.session_state.yt_input_url = ""
 
@@ -194,7 +194,7 @@ with right_col:
 
 st.divider()
 
-# 下方的單字解析區（維持全寬，方便對照看）
+# 下方的單字解析區
 if user_input_text.strip():
     st.subheader("🔍 歌詞單字解析、KK音標與個別發音：")
     
