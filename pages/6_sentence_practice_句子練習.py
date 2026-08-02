@@ -6,6 +6,9 @@ from gtts import gTTS
 import io
 import re
 
+# 設定頁面為寬螢幕模式，讓左右並排更有空間
+st.set_page_config(layout="wide")
+
 st.markdown("""
     <style>
     [data-testid="stSidebar"] { font-size: 28px !important; }
@@ -24,7 +27,7 @@ st.markdown("""
         font-size: 22px !important; 
         color: #000000 !important; 
         font-weight: bold !important; 
-        height: 300px !important;
+        height: 350px !important;
         resize: vertical !important; 
     }
     div.stButton > button { font-size: 20px !important; padding: 10px 20px !important; }
@@ -48,7 +51,7 @@ st.markdown("""
     }
     .notebook-button {
         display: inline-flex;
-        align-items: center;
+        align-items: and;
         justify-content: center;
         background-color: #4285F4;
         color: white !important;
@@ -79,49 +82,6 @@ with col_btn2:
     st.markdown(f'<a href="{notebook_url}" target="_blank" class="notebook-button">✨ 澄玄的隨身英文秘書任意門</a>', unsafe_allow_html=True)
 
 st.write("")
-
-# YouTube 影片/Shorts 網址貼入、一鍵複製與嵌入區
-st.subheader("📺 YouTube 影片/Shorts 網址貼入與嵌入區：")
-if "yt_input_url" not in st.session_state:
-    st.session_state.yt_input_url = ""
-
-user_yt_link = st.text_input("請在此貼上您喜歡的 YouTube 或 Shorts 網址：", value=st.session_state.yt_input_url)
-st.session_state.yt_input_url = user_yt_link
-
-# 增加一鍵複製網址按鈕與提示
-col_copy1, col_copy2 = st.columns([1, 4])
-with col_copy1:
-    copy_btn = st.button("📋 複製網址")
-with col_copy2:
-    if copy_btn:
-        if user_yt_link.strip():
-            st.code(user_yt_link, language="text")
-            st.success("網址已顯示在上方，可以直接反白複製或點擊右上方複製圖示！")
-        else:
-            st.warning("目前網址框是空的，請先輸入網址。")
-
-if user_yt_link.strip():
-    try:
-        embed_url = user_yt_link.strip()
-        if "shorts/" in embed_url:
-            video_id = embed_url.split("shorts/")[-1].split("?")[0]
-            embed_url = f"https://www.youtube.com/embed/{video_id}"
-        elif "watch?v=" in embed_url:
-            video_id = embed_url.split("watch?v=")[-1].split("&")[0]
-            embed_url = f"https://www.youtube.com/embed/{video_id}"
-        elif "youtu.be/" in embed_url:
-            video_id = embed_url.split("youtu.be/")[-1].split("?")[0]
-            embed_url = f"https://www.youtube.com/embed/{video_id}"
-            
-        st.markdown(f"""
-            <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-                <iframe width="350" height="600" src="{embed_url}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            </div>
-        """, unsafe_allow_html=True)
-    except Exception as e:
-        st.error(f"影片載入發生錯誤，請確認網址是否正確：{e}")
-
-st.divider()
 
 # 讀取單字資料庫以對應 KK 音標與翻譯
 @st.cache_data
@@ -157,44 +117,87 @@ if not df.empty and "word" in df.columns:
         kk_str = str(row['kk']) if 'kk' in df.columns and pd.notna(row['kk']) else ""
         word_dict[w_str] = {"trans": trans_str, "kk": kk_str}
 
-st.subheader("✍️ 請在下方文字框輸入或貼上整首歌詞（可自由拉曳放大）：")
+# 左右雙欄大排版：左側放影片與網址，右側放文字輸入框與單字解析
+left_col, right_col = st.columns([1, 1.2])
 
-if "my_text_input" not in st.session_state:
-    st.session_state.my_text_input = "I can do all things through Christ who strengthens me."
+with left_col:
+    st.subheader("📺 YouTube 影片/Shorts 網址與嵌入區：")
+    if "yt_input_url" not in st.session_state:
+        st.session_state.yt_input_url = ""
 
-user_input_text = st.text_area(
-    "輸入文字或歌詞：",
-    value=st.session_state.my_text_input
-)
+    user_yt_link = st.text_input("請在此貼上 YouTube 或 Shorts 網址：", value=st.session_state.yt_input_url)
+    st.session_state.yt_input_url = user_yt_link
 
-st.session_state.my_text_input = user_input_text
+    col_copy1, col_copy2 = st.columns([1, 3])
+    with col_copy1:
+        copy_btn = st.button("📋 複製網址")
+    with col_copy2:
+        if copy_btn:
+            if user_yt_link.strip():
+                st.code(user_yt_link, language="text")
+            else:
+                st.warning("目前網址框是空的！")
 
-col1, col2 = st.columns([1, 4])
-with col1:
-    play_btn = st.button("🔊 播放整段發音")
-with col2:
-    clear_btn = st.button("🗑️ 清空文字框")
+    if user_yt_link.strip():
+        try:
+            embed_url = user_yt_link.strip()
+            if "shorts/" in embed_url:
+                video_id = embed_url.split("shorts/")[-1].split("?")[0]
+                embed_url = f"https://www.youtube.com/embed/{video_id}"
+            elif "watch?v=" in embed_url:
+                video_id = embed_url.split("watch?v=")[-1].split("&")[0]
+                embed_url = f"https://www.youtube.com/embed/{video_id}"
+            elif "youtu.be/" in embed_url:
+                video_id = embed_url.split("youtu.be/")[-1].split("?")[0]
+                embed_url = f"https://www.youtube.com/embed/{video_id}"
+                
+            st.markdown(f"""
+                <div style="display: flex; justify-content: center; margin-top: 15px; margin-bottom: 20px;">
+                    <iframe width="350" height="600" src="{embed_url}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            """, unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"影片載入發生錯誤：{e}")
 
-if clear_btn:
-    st.session_state.my_text_input = ""
-    st.rerun()
+with right_col:
+    st.subheader("✍️ 歌詞文字框與朗讀練習：")
 
-# 這裡加上了 loop=True，讓整段發音可以自動循環播放
-if play_btn and user_input_text.strip():
-    try:
-        tts = gTTS(text=user_input_text, lang='en')
-        fp = io.BytesIO()
-        tts.write_to_fp(fp)
-        st.audio(fp, autoplay=True, loop=True)
-    except Exception as e:
-        st.error(f"語音生成發生錯誤：{e}")
+    if "my_text_input" not in st.session_state:
+        st.session_state.my_text_input = "I can do all things through Christ who strengthens me."
+
+    user_input_text = st.text_area(
+        "輸入文字或歌詞：",
+        value=st.session_state.my_text_input
+    )
+
+    st.session_state.my_text_input = user_input_text
+
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        play_btn = st.button("🔊 播放整段發音")
+    with col2:
+        clear_btn = st.button("🗑️ 清空文字框")
+
+    if clear_btn:
+        st.session_state.my_text_input = ""
+        st.rerun()
+
+    # 循環播放
+    if play_btn and user_input_text.strip():
+        try:
+            tts = gTTS(text=user_input_text, lang='en')
+            fp = io.BytesIO()
+            tts.write_to_fp(fp)
+            st.audio(fp, autoplay=True, loop=True)
+        except Exception as e:
+            st.error(f"語音生成發生錯誤：{e}")
 
 st.divider()
 
+# 下方的單字解析區（維持全寬，方便對照看）
 if user_input_text.strip():
     st.subheader("🔍 歌詞單字解析、KK音標與個別發音：")
     
-    # 抓出不重複的單字（保留原本順序）
     words_in_text = re.findall(r'\b[A-Za-z]+\b', user_input_text)
     unique_words = sorted(list(set(words_in_text)), key=lambda x: words_in_text.index(x))
     
