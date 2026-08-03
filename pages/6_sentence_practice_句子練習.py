@@ -24,6 +24,14 @@ st.markdown("""
         height: 50px !important;
     }
     
+    /* 放大逐句練習輸入框的文字與高度 */
+    div[data-baseweb="input"] input {
+        font-size: 22px !important;
+        color: #000000 !important;
+        font-weight: bold !important;
+        height: 50px !important;
+    }
+    
     .stTextArea textarea { 
         font-size: 22px !important; 
         color: #000000 !important; 
@@ -32,6 +40,19 @@ st.markdown("""
         resize: vertical !important; 
     }
     div.stButton > button { font-size: 20px !important; padding: 10px 20px !important; }
+    
+    /* 放大逐句練習區的原句文字大小（英文與中文） */
+    .sentence-display {
+        font-size: 24px !important;
+        font-weight: bold !important;
+        color: #ffffff !important;
+        line-height: 1.6 !important;
+    }
+    .sentence-sub {
+        font-size: 20px !important;
+        color: #dddddd !important;
+    }
+
     .yt-button {
         display: inline-flex;
         align-items: center;
@@ -245,23 +266,21 @@ for i, tab in enumerate(tabs):
         st.divider()
 
         # ----------------------------------------------------
-        # 新增：逐句互動輸入測驗與練習區
+        # 逐句互動輸入測驗與練習區（字體放大版）
         # ----------------------------------------------------
         st.subheader("✍️ 逐句英文輸入測驗與朗讀練習：")
         
-        # 篩選出包含英文字母的行作為練習題目
         all_lines = user_input_text.split('\n')
         english_lines = [line.strip() for line in all_lines if line.strip() and re.search(r'[A-Za-z]', line)]
         
         if english_lines:
-            st.markdown(f"**已自動抓取 {len(english_lines)} 個英文句子進行逐句練習：**")
+            st.markdown(f"<span style='font-size: 20px;'>**已自動抓取 {len(english_lines)} 個英文句子進行逐句練習：**</span>", unsafe_allow_html=True)
             
             for line_idx, eng_sentence in enumerate(english_lines):
                 st.markdown(f"---")
-                st.markdown(f"**第 {line_idx + 1} 句原句：** `{eng_sentence}`")
+                st.markdown(f"<div class='sentence-display'>第 {line_idx + 1} 句原句：<br>✨ {eng_sentence}</div>", unsafe_allow_html=True)
                 
-                # 每一句的排版：左邊聽發音，中間輸入框，右邊送出按鈕
-                cols = st.columns([1, 3, 1])
+                cols = st.columns([1.2, 3, 1])
                 with cols[0]:
                     if st.button(f"🔊 聽發音", key=f"line_audio_{i}_{line_idx}"):
                         try:
@@ -279,7 +298,6 @@ for i, tab in enumerate(tabs):
                 with cols[2]:
                     check_btn = st.button(f"✨ 檢查答案", key=f"check_btn_{i}_{line_idx}")
                 
-                # 檢查答案邏輯（支援大小寫寬容比對）
                 if check_btn:
                     clean_target = re.sub(r'\s+', ' ', eng_sentence).strip()
                     clean_user = re.sub(r'\s+', ' ', user_answer).strip()
@@ -287,9 +305,9 @@ for i, tab in enumerate(tabs):
                     if not clean_user:
                         st.warning("⚠️ 請先在輸入框中打字再檢查喔！")
                     elif clean_user.lower() == clean_target.lower():
-                        st.success(f"🎉 答對了！太棒囉！")
+                        st.markdown(f"<span style='font-size: 22px; color: #28a745; font-weight: bold;'>🎉 答對了！太棒囉！</span>", unsafe_allow_html=True)
                     else:
-                        st.error(f"❌ 再試一次看看喔！\n\n💡 正確解答提示：`{eng_sentence}`")
+                        st.markdown(f"<span style='font-size: 22px; color: #ff4b4b; font-weight: bold;'>❌ 再試一次看看喔！<br>💡 正確解答提示：{eng_sentence}</span>", unsafe_allow_html=True)
         else:
             st.info("💡 請在上方右側的「歌詞文字框」輸入包含英文的句子，下方就會自動產生對應的逐句練習題囉！")
 
@@ -303,7 +321,7 @@ for i, tab in enumerate(tabs):
             unique_words = sorted(list(set(words_in_text)), key=lambda x: words_in_text.index(x))
             
             if unique_words:
-                st.markdown(f"**偵測到以下英文單字（共 {len(unique_words)} 個）：**")
+                st.markdown(f"<span style='font-size: 20px;'>**偵測到以下英文單字（共 {len(unique_words)} 個）：**</span>", unsafe_allow_html=True)
                 
                 for w_idx, w in enumerate(unique_words):
                     w_lower = w.lower()
@@ -313,7 +331,7 @@ for i, tab in enumerate(tabs):
                     
                     cols = st.columns([3, 1, 2])
                     with cols[0]:
-                        st.markdown(f"🔹 **{w}** &nbsp; ` {kk_display} ` &nbsp; <span style='color:gray;'>{trans_display}</span>", unsafe_allow_html=True)
+                        st.markdown(f"<span style='font-size: 22px;'>🔹 **{w}** &nbsp; ` {kk_display} ` &nbsp; <span style='color:gray;'>{trans_display}</span></span>", unsafe_allow_html=True)
                     with cols[1]:
                         if st.button(f"🔊 聽發音", key=f"word_audio_{i}_{w_idx}_{w}"):
                             w_tts = gTTS(text=w, lang='en')
