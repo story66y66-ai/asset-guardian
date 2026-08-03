@@ -244,6 +244,57 @@ for i, tab in enumerate(tabs):
 
         st.divider()
 
+        # ----------------------------------------------------
+        # 新增：逐句互動輸入測驗與練習區
+        # ----------------------------------------------------
+        st.subheader("✍️ 逐句英文輸入測驗與朗讀練習：")
+        
+        # 篩選出包含英文字母的行作為練習題目
+        all_lines = user_input_text.split('\n')
+        english_lines = [line.strip() for line in all_lines if line.strip() and re.search(r'[A-Za-z]', line)]
+        
+        if english_lines:
+            st.markdown(f"**已自動抓取 {len(english_lines)} 個英文句子進行逐句練習：**")
+            
+            for line_idx, eng_sentence in enumerate(english_lines):
+                st.markdown(f"---")
+                st.markdown(f"**第 {line_idx + 1} 句原句：** `{eng_sentence}`")
+                
+                # 每一句的排版：左邊聽發音，中間輸入框，右邊送出按鈕
+                cols = st.columns([1, 3, 1])
+                with cols[0]:
+                    if st.button(f"🔊 聽發音", key=f"line_audio_{i}_{line_idx}"):
+                        try:
+                            s_tts = gTTS(text=eng_sentence, lang='en')
+                            s_fp = io.BytesIO()
+                            s_tts.write_to_fp(s_fp)
+                            st.audio(s_fp, autoplay=True)
+                        except Exception as e:
+                            st.error(f"語音錯誤：{e}")
+                
+                ans_key = f"ans_input_{i}_{line_idx}"
+                with cols[1]:
+                    user_answer = st.text_input(f"請輸入第 {line_idx + 1} 句英文：", key=ans_key, label_visibility="collapsed", placeholder="請在此輸入聽到的英文句子...")
+                
+                with cols[2]:
+                    check_btn = st.button(f"✨ 檢查答案", key=f"check_btn_{i}_{line_idx}")
+                
+                # 檢查答案邏輯（支援大小寫寬容比對）
+                if check_btn:
+                    clean_target = re.sub(r'\s+', ' ', eng_sentence).strip()
+                    clean_user = re.sub(r'\s+', ' ', user_answer).strip()
+                    
+                    if not clean_user:
+                        st.warning("⚠️ 請先在輸入框中打字再檢查喔！")
+                    elif clean_user.lower() == clean_target.lower():
+                        st.success(f"🎉 答對了！太棒囉！")
+                    else:
+                        st.error(f"❌ 再試一次看看喔！\n\n💡 正確解答提示：`{eng_sentence}`")
+        else:
+            st.info("💡 請在上方右側的「歌詞文字框」輸入包含英文的句子，下方就會自動產生對應的逐句練習題囉！")
+
+        st.divider()
+
         # 下方的單字解析區
         if user_input_text.strip():
             st.subheader("🔍 歌詞單字解析、KK音標與個別發音：")
