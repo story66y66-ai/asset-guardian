@@ -142,20 +142,24 @@ with left_col:
     if "yt_input_url" not in st.session_state:
         st.session_state.yt_input_url = ""
 
-    # 1. 顯示影片區
+    # 1. 顯示影片區（加入自動循環播放設定）
     user_yt_link = st.session_state.yt_input_url
     if user_yt_link.strip():
         try:
             embed_url = user_yt_link.strip()
+            video_id = ""
             if "shorts/" in embed_url:
                 video_id = embed_url.split("shorts/")[-1].split("?")[0]
-                embed_url = f"https://www.youtube.com/embed/{video_id}"
             elif "watch?v=" in embed_url:
                 video_id = embed_url.split("watch?v=")[-1].split("&")[0]
-                embed_url = f"https://www.youtube.com/embed/{video_id}"
             elif "youtu.be/" in embed_url:
                 video_id = embed_url.split("youtu.be/")[-1].split("?")[0]
-                embed_url = f"https://www.youtube.com/embed/{video_id}"
+                
+            if video_id:
+                # 加上 loop=1 與 playlist=影片ID 讓 YouTube 影片自動循環
+                embed_url = f"https://www.youtube.com/embed/{video_id}?loop=1&playlist={video_id}"
+            else:
+                embed_url = user_yt_link.strip()
                 
             st.markdown(f"""
                 <div style="display: flex; justify-content: center; margin-bottom: 15px;">
