@@ -182,6 +182,15 @@ if "playlist_names" not in st.session_state:
     st.session_state["my_text_input_1"] = "My Heart Will Go On 我心永恆\nEvery night in my dreams I see you, I feel you\n每個深夜在我的夢中，我見到你，感受到你"
     st.session_state.playlist_names[1] = "My Heart Will Go On"
 
+# 確保所有 50 首的網址與文字都有在 session_state 內初始化
+for idx in range(1, 51):
+    url_key = f"yt_input_url_{idx}"
+    text_key = f"my_text_input_{idx}"
+    if url_key not in st.session_state:
+        st.session_state[url_key] = ""
+    if text_key not in st.session_state:
+        st.session_state[text_key] = ""
+
 if "current_page" not in st.session_state:
     st.session_state.current_page = 1
 
@@ -193,17 +202,12 @@ st.markdown("<h3 style='font-size: 26px; color: #ffffff;'>📚 選擇練習冊�
 page_cols = st.columns(5)
 for p in range(1, 6):
     with page_cols[p-1]:
-        if st.session_state.current_page == p:
-            if st.button(f"👉 【第 {p} 頁】\n{st.session_state.page_names[p]}", key=f"page_btn_{p}", use_container_width=True):
-                st.session_state.current_page = p
-                st.rerun()
-        else:
-            if st.button(f"第 {p} 頁\n{st.session_state.page_names[p]}", key=f"page_btn_{p}", use_container_width=True):
-                st.session_state.current_page = p
-                st.rerun()
+        btn_label = f"👉 【第 {p} 頁】\n{st.session_state.page_names[p]}" if st.session_state.current_page == p else f"第 {p} 頁\n{st.session_state.page_names[p]}"
+        if st.button(btn_label, key=f"page_btn_{p}", use_container_width=True):
+            st.session_state.current_page = p
+            st.rerun()
 
 current_page = st.session_state.current_page
-
 st.write("")
 
 # 讓澄玄可以自訂當前這一頁（這一冊）的用途名稱
@@ -235,11 +239,6 @@ for tab_idx, tab in enumerate(tabs):
     with tab:
         url_key = f"yt_input_url_{absolute_idx}"
         text_key = f"my_text_input_{absolute_idx}"
-        
-        if url_key not in st.session_state:
-            st.session_state[url_key] = ""
-        if text_key not in st.session_state:
-            st.session_state[text_key] = ""
 
         with st.expander(f"✏️ 修改【曲目 {absolute_idx}】的歌名或用途"):
             curr_name = st.session_state.playlist_names[absolute_idx]
@@ -251,7 +250,21 @@ for tab_idx, tab in enumerate(tabs):
         left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
         with left_col:
+            # 透過 callback 直接更新網址，確保不會搞丟
+            def update_yt_url(k):
+                st.session_state[k] = st.session_state[f"input_{k}"]
+
+            st.text_input(
+                f"請在此貼上 YouTube 或 Shorts 網址：",
+                value=st.session_state[url_key],
+                key=f"input_{url_key}",
+                on_change=update_yt_url,
+                args=(url_key,)
+            )
+            
+            # 同步更新變數
             user_yt_link = st.session_state[url_key]
+
             if user_yt_link.strip():
                 try:
                     embed_url = user_yt_link.strip()
@@ -269,7 +282,7 @@ for tab_idx, tab in enumerate(tabs):
                         embed_url = user_yt_link.strip()
                         
                     st.markdown(f"""
-                        <div style="display: flex; justify-content: center; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: center; margin-bottom: 15px; margin-top: 15px;">
                             <iframe width="350" height="580" src="{embed_url}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                         </div>
                     """, unsafe_allow_html=True)
@@ -277,15 +290,10 @@ for tab_idx, tab in enumerate(tabs):
                     st.error(f"影片載入發生錯誤：{e}")
             else:
                 st.markdown("""
-                    <div style="display: flex; align-items: center; justify-content: center; height: 580px; border: 2px dashed #444; border-radius: 10px; color: #888; font-size: 20px; margin-bottom: 15px;">
-                        📺 請在下方輸入網址以顯示影片
+                    <div style="display: flex; align-items: center; justify-content: center; height: 350px; border: 2px dashed #444; border-radius: 10px; color: #888; font-size: 20px; margin-top: 15px; margin-bottom: 15px;">
+                        📺 請在上方輸入網址以顯示影片
                     </div>
                 """, unsafe_allow_html=True)
-
-            new_yt_link = st.text_input(f"請在此貼上 YouTube 或 Shorts 網址：", value=st.session_state[url_key], key=f"input_{url_key}")
-            if new_yt_link != st.session_state[url_key]:
-                st.session_state[url_key] = new_yt_link
-                st.rerun()
 
             col_copy1, col_copy2 = st.columns([1, 3])
             with col_copy1:
@@ -298,7 +306,8 @@ for tab_idx, tab in enumerate(tabs):
                         st.warning("目前網址框是空的！")
 
         with right_col:
-            encoded_text = urllib.parse.quote(st.session_state[text_key])
+            user_input_text = st.session_state[text_key]
+            encoded_text = urllib.parse.quote(user_input_text)
             translate_url = f"https://translate.google.com/?hl=zh-TW&sl=en&tl=zh-TW&text={encoded_text}&op=translate"
 
             title_col, btn_col = st.columns([3, 1.4], vertical_alignment="center")
@@ -307,13 +316,18 @@ for tab_idx, tab in enumerate(tabs):
             with btn_col:
                 st.markdown(f'<a href="{translate_url}" target="_blank" class="translate-button">🌐 Google 翻譯</a>', unsafe_allow_html=True)
 
-            user_input_text = st.text_area(
+            def update_text_area(k):
+                st.session_state[k] = st.session_state[f"textarea_{k}"]
+
+            st.text_area(
                 "輸入文字或歌詞：",
                 value=st.session_state[text_key],
-                key=f"textarea_{absolute_idx}"
+                key=f"textarea_{absolute_idx}",
+                on_change=update_text_area,
+                args=(text_key,)
             )
-
-            st.session_state[text_key] = user_input_text
+            
+            user_input_text = st.session_state[text_key]
 
             col1, col2 = st.columns([1, 1])
             with col1:
@@ -323,6 +337,7 @@ for tab_idx, tab in enumerate(tabs):
 
             if clear_btn:
                 st.session_state[text_key] = ""
+                st.session_state[f"textarea_{absolute_idx}"] = ""
                 st.rerun()
 
             if play_btn and user_input_text.strip():
@@ -384,13 +399,10 @@ for tab_idx, tab in enumerate(tabs):
                     # 智慧過濾比對邏輯：優先檢查是否有括號（英文括號或中文括號）
                     bracket_match = re.search(r'[\(\（](.*?)[\)\）]', eng_sentence)
                     if bracket_match:
-                        # 如果有括號，目標字串就是括號裡面的內容
                         compare_target = bracket_match.group(1)
                     else:
-                        # 如果沒有括號，就用整句
                         compare_target = eng_sentence
                     
-                    # 只抓出目標中的英文字母與數字進行比對
                     target_letters = "".join(re.findall(r'[A-Za-z0-9]', compare_target)).lower()
                     user_letters = "".join(re.findall(r'[A-Za-z0-9]', user_answer)).lower()
                     
