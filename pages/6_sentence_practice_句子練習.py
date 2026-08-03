@@ -186,15 +186,13 @@ if "current_page" not in st.session_state:
     st.session_state.current_page = 1
 
 # ----------------------------------------------------
-# 上方「翻書式」頁面選擇器（改用超大按鈕，清晰好讀不吃力）
+# 上方「翻書式」頁面選擇器
 # ----------------------------------------------------
 st.markdown("<h3 style='font-size: 26px; color: #ffffff;'>📚 選擇練習冊（翻書頁面）：</h3>", unsafe_allow_html=True)
 
 page_cols = st.columns(5)
 for p in range(1, 6):
     with page_cols[p-1]:
-        btn_label = f"📖 第 {p} 頁\n{st.session_state.page_names[p]}"
-        # 當前選中的頁面用不同顏色按鈕或標示
         if st.session_state.current_page == p:
             if st.button(f"👉 【第 {p} 頁】\n{st.session_state.page_names[p]}", key=f"page_btn_{p}", use_container_width=True):
                 st.session_state.current_page = p
@@ -222,7 +220,7 @@ with st.expander(f"✏️ 自訂【第 {current_page} 頁】的用途與名稱�
 
 st.write("")
 
-# 計算當前頁面涵蓋的 10 個曲目編號範圍 (例如第1頁是 1~10，第2頁是 11~20...)
+# 計算當前頁面涵蓋的 10 個曲目編號範圍
 start_idx = (current_page - 1) * 10 + 1
 end_idx = current_page * 10
 
@@ -243,7 +241,6 @@ for tab_idx, tab in enumerate(tabs):
         if text_key not in st.session_state:
             st.session_state[text_key] = ""
 
-        # 小工具列：讓澄玄可以直接在分頁內更改這首歌的名字
         with st.expander(f"✏️ 修改【曲目 {absolute_idx}】的歌名或用途"):
             curr_name = st.session_state.playlist_names[absolute_idx]
             new_track_name = st.text_input(f"曲目 {absolute_idx} 名稱：", value=curr_name, key=f"rename_track_{absolute_idx}")
@@ -251,7 +248,6 @@ for tab_idx, tab in enumerate(tabs):
                 st.session_state.playlist_names[absolute_idx] = new_track_name
                 st.rerun()
 
-        # 左右雙欄排版：左側放影片，右側放歌詞文字框
         left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
         with left_col:
@@ -341,7 +337,7 @@ for tab_idx, tab in enumerate(tabs):
         st.divider()
 
         # ----------------------------------------------------
-        # 逐句互動輸入測驗區（嚴格大小寫比對版）
+        # 逐句互動輸入測驗區（完美支援中英文與標點符號比對）
         # ----------------------------------------------------
         st.subheader("✍️ 逐句英文輸入測驗與朗讀練習：")
         
@@ -349,7 +345,7 @@ for tab_idx, tab in enumerate(tabs):
         english_lines = [line.strip() for line in all_lines if line.strip() and re.search(r'[A-Za-z]', line)]
         
         if english_lines:
-            st.markdown(f"<span style='font-size: 20px;'>**已自動抓取 {len(english_lines)} 個英文句子進行逐句練習（須嚴格符合大小寫，輸入完按 Enter 檢查）：**</span>", unsafe_allow_html=True)
+            st.markdown(f"<span style='font-size: 20px;'>**已自動抓取 {len(english_lines)} 個句子進行逐句練習（不分大小寫，輸入完按 Enter 檢查）：**</span>", unsafe_allow_html=True)
             
             for line_idx, eng_sentence in enumerate(english_lines):
                 st.markdown(f"---")
@@ -375,18 +371,19 @@ for tab_idx, tab in enumerate(tabs):
 
                 with cols[1]:
                     user_answer = st.text_input(
-                        f"請輸入第 {line_idx + 1} 句英文：",
+                        f"請輸入第 {line_idx + 1} 句：",
                         key=ans_key,
                         label_visibility="collapsed",
-                        placeholder="請在此輸入英文（注意大小寫），輸入完請直接按 Enter..."
+                        placeholder="請在此輸入文字，輸入完請直接按 Enter..."
                     )
                 
                 with cols[2]:
                     st.button(f"🗑️ 清除", key=f"clear_line_{absolute_idx}_{line_idx}", on_click=make_clear_callback(ans_key))
                 
                 if user_answer.strip():
-                    clean_target = re.sub(r'\s+', ' ', eng_sentence).strip()
-                    clean_user = re.sub(r'\s+', ' ', user_answer).strip()
+                    # 完美比對邏輯：保留中文字與夾雜符號，僅統一標準化前後空白與大小寫
+                    clean_target = re.sub(r'\s+', ' ', eng_sentence).strip().lower()
+                    clean_user = re.sub(r'\s+', ' ', user_answer).strip().lower()
                     
                     if clean_user == clean_target:
                         st.markdown(f"<span style='font-size: 22px; color: #28a745; font-weight: bold;'>🎉 答對了！大小寫完全正確，太棒囉！</span>", unsafe_allow_html=True)
