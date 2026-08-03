@@ -261,7 +261,7 @@ for i, tab in enumerate(tabs):
         st.divider()
 
         # ----------------------------------------------------
-        # 逐句互動輸入測驗區（輸入完按 Enter 即自動比對）
+        # 逐句互動輸入測驗區（含每一行的清除鍵與 Enter 即時檢查）
         # ----------------------------------------------------
         st.subheader("✍️ 逐句英文輸入測驗與朗讀練習：")
         
@@ -269,13 +269,13 @@ for i, tab in enumerate(tabs):
         english_lines = [line.strip() for line in all_lines if line.strip() and re.search(r'[A-Za-z]', line)]
         
         if english_lines:
-            st.markdown(f"<span style='font-size: 20px;'>**已自動抓取 {len(english_lines)} 個英文句子進行逐句練習（輸入完直接按 Enter 檢查）：**</span>", unsafe_allow_html=True)
+            st.markdown(f"<span style='font-size: 20px;'>**已自動抓取 {len(english_lines)} 個英文句子進行逐句練習（輸入完按 Enter 檢查，或點右側清除鍵重打）：**</span>", unsafe_allow_html=True)
             
             for line_idx, eng_sentence in enumerate(english_lines):
                 st.markdown(f"---")
                 st.markdown(f"<div class='sentence-display'>第 {line_idx + 1} 句原句：<br>✨ {eng_sentence}</div>", unsafe_allow_html=True)
                 
-                cols = st.columns([1.2, 5])
+                cols = st.columns([1.2, 4.2, 1])
                 with cols[0]:
                     if st.button(f"🔊 聽發音", key=f"line_audio_{i}_{line_idx}"):
                         try:
@@ -296,7 +296,13 @@ for i, tab in enumerate(tabs):
                         placeholder="請在此輸入英文，輸入完請直接按 Enter..."
                     )
                 
-                # 只要輸入框有內容，按下 Enter (畫面重新整理) 後就會自動檢查答案
+                with cols[2]:
+                    clear_line_btn = st.button(f"🗑️ 清除", key=f"clear_line_{i}_{line_idx}")
+                    if clear_line_btn:
+                        st.session_state[ans_key] = ""
+                        st.rerun()
+                
+                # 只要輸入框有內容，即自動進行答案比對
                 if user_answer.strip():
                     clean_target = re.sub(r'\s+', ' ', eng_sentence).strip()
                     clean_user = re.sub(r'\s+', ' ', user_answer).strip()
