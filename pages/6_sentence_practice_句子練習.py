@@ -39,16 +39,6 @@ st.markdown("""
         font-weight: bold !important;
         height: 55px !important;
     }
-    
-    /* 放大翻頁選項 (Radio button) 的文字大小與間距 */
-    div[data-baseweb="radio"] label {
-        font-size: 24px !important;
-        font-weight: bold !important;
-        color: #ffffff !important;
-    }
-    div[data-baseweb="radio"] div {
-        font-size: 24px !important;
-    }
 
     /* 放大上方分頁籤 (Tabs) 的文字大小 */
     button[data-baseweb="tab"] {
@@ -192,13 +182,31 @@ if "playlist_names" not in st.session_state:
     st.session_state["my_text_input_1"] = "My Heart Will Go On 我心永恆\nEvery night in my dreams I see you, I feel you\n每個深夜在我的夢中，我見到你，感受到你"
     st.session_state.playlist_names[1] = "My Heart Will Go On"
 
+if "current_page" not in st.session_state:
+    st.session_state.current_page = 1
+
 # ----------------------------------------------------
-# 上方「翻書式」頁面選擇器（共 5 頁，字體特別放大）
+# 上方「翻書式」頁面選擇器（改用超大按鈕，清晰好讀不吃力）
 # ----------------------------------------------------
-st.markdown("<h3 style='font-size: 28px;'>📚 選擇練習冊（翻書頁面）：</h3>", unsafe_allow_html=True)
-page_options = [f"📖 第 {p} 頁：{st.session_state.page_names[p]}" for p in range(1, 6)]
-selected_page_str = st.radio("翻書頁面切換", page_options, horizontal=True, label_visibility="collapsed")
-current_page = int(selected_page_str.split("：")[0].replace("📖 第 ", "").replace(" 頁", ""))
+st.markdown("<h3 style='font-size: 26px; color: #ffffff;'>📚 選擇練習冊（翻書頁面）：</h3>", unsafe_allow_html=True)
+
+page_cols = st.columns(5)
+for p in range(1, 6):
+    with page_cols[p-1]:
+        btn_label = f"📖 第 {p} 頁\n{st.session_state.page_names[p]}"
+        # 當前選中的頁面用不同顏色按鈕或標示
+        if st.session_state.current_page == p:
+            if st.button(f"👉 【第 {p} 頁】\n{st.session_state.page_names[p]}", key=f"page_btn_{p}", use_container_width=True):
+                st.session_state.current_page = p
+                st.rerun()
+        else:
+            if st.button(f"第 {p} 頁\n{st.session_state.page_names[p]}", key=f"page_btn_{p}", use_container_width=True):
+                st.session_state.current_page = p
+                st.rerun()
+
+current_page = st.session_state.current_page
+
+st.write("")
 
 # 讓澄玄可以自訂當前這一頁（這一冊）的用途名稱
 with st.expander(f"✏️ 自訂【第 {current_page} 頁】的用途與名稱設定"):
