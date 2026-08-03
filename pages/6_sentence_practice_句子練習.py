@@ -337,7 +337,7 @@ for tab_idx, tab in enumerate(tabs):
         st.divider()
 
         # ----------------------------------------------------
-        # 逐句互動輸入測驗區（完美支援中英文與標點符號比對）
+        # 逐句互動輸入測驗區（智慧過濾：只比對英文與數字，自動忽略中文與標點）
         # ----------------------------------------------------
         st.subheader("✍️ 逐句英文輸入測驗與朗讀練習：")
         
@@ -345,7 +345,7 @@ for tab_idx, tab in enumerate(tabs):
         english_lines = [line.strip() for line in all_lines if line.strip() and re.search(r'[A-Za-z]', line)]
         
         if english_lines:
-            st.markdown(f"<span style='font-size: 20px;'>**已自動抓取 {len(english_lines)} 個句子進行逐句練習（不分大小寫，輸入完按 Enter 檢查）：**</span>", unsafe_allow_html=True)
+            st.markdown(f"<span style='font-size: 20px;'>**已自動抓取 {len(english_lines)} 個句子進行逐句練習（只需輸入英文，不分大小寫，按 Enter 檢查）：**</span>", unsafe_allow_html=True)
             
             for line_idx, eng_sentence in enumerate(english_lines):
                 st.markdown(f"---")
@@ -371,24 +371,24 @@ for tab_idx, tab in enumerate(tabs):
 
                 with cols[1]:
                     user_answer = st.text_input(
-                        f"請輸入第 {line_idx + 1} 句：",
+                        f"請輸入第 {line_idx + 1} 句英文：",
                         key=ans_key,
                         label_visibility="collapsed",
-                        placeholder="請在此輸入文字，輸入完請直接按 Enter..."
+                        placeholder="請在此輸入英文，輸入完請直接按 Enter..."
                     )
                 
                 with cols[2]:
                     st.button(f"🗑️ 清除", key=f"clear_line_{absolute_idx}_{line_idx}", on_click=make_clear_callback(ans_key))
                 
                 if user_answer.strip():
-                    # 完美比對邏輯：保留中文字與夾雜符號，僅統一標準化前後空白與大小寫
-                    clean_target = re.sub(r'\s+', ' ', eng_sentence).strip().lower()
-                    clean_user = re.sub(r'\s+', ' ', user_answer).strip().lower()
+                    # 智慧過濾比對邏輯：只抓出英文字母與數字進行比對，自動略過所有中文與標點符號！
+                    target_letters = "".join(re.findall(r'[A-Za-z0-9]', eng_sentence)).lower()
+                    user_letters = "".join(re.findall(r'[A-Za-z0-9]', user_answer)).lower()
                     
-                    if clean_user == clean_target:
-                        st.markdown(f"<span style='font-size: 22px; color: #28a745; font-weight: bold;'>🎉 答對了！大小寫完全正確，太棒囉！</span>", unsafe_allow_html=True)
+                    if user_letters and user_letters == target_letters:
+                        st.markdown(f"<span style='font-size: 22px; color: #28a745; font-weight: bold;'>🎉 答對了！英文拼寫正確，太棒囉！</span>", unsafe_allow_html=True)
                     else:
-                        st.markdown(f"<span style='font-size: 22px; color: #ff4b4b; font-weight: bold;'>❌ 大小寫或拼寫有誤，再試一次看看喔！<br>💡 正確解答提示：{eng_sentence}</span>", unsafe_allow_html=True)
+                        st.markdown(f"<span style='font-size: 22px; color: #ff4b4b; font-weight: bold;'>❌ 英文拼寫有誤，再試一次看看喔！<br>💡 正確解答提示：{eng_sentence}</span>", unsafe_allow_html=True)
         else:
             st.info("💡 請在上方右側的「歌詞文字框」輸入包含英文的句子，下方就會自動產生對應的逐句練習題囉！")
 
