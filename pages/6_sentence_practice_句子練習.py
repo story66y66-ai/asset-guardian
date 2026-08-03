@@ -261,7 +261,7 @@ for i, tab in enumerate(tabs):
         st.divider()
 
         # ----------------------------------------------------
-        # 逐句互動輸入測驗區（安全版清除按鈕與 Enter 即時檢查）
+        # 逐句互動輸入測驗區（嚴格大小寫比對版）
         # ----------------------------------------------------
         st.subheader("✍️ 逐句英文輸入測驗與朗讀練習：")
         
@@ -269,7 +269,7 @@ for i, tab in enumerate(tabs):
         english_lines = [line.strip() for line in all_lines if line.strip() and re.search(r'[A-Za-z]', line)]
         
         if english_lines:
-            st.markdown(f"<span style='font-size: 20px;'>**已自動抓取 {len(english_lines)} 個英文句子進行逐句練習（輸入完按 Enter 檢查，或點右側清除鍵重打）：**</span>", unsafe_allow_html=True)
+            st.markdown(f"<span style='font-size: 20px;'>**已自動抓取 {len(english_lines)} 個英文句子進行逐句練習（須嚴格符合大小寫，輸入完按 Enter 檢查）：**</span>", unsafe_allow_html=True)
             
             for line_idx, eng_sentence in enumerate(english_lines):
                 st.markdown(f"---")
@@ -299,21 +299,21 @@ for i, tab in enumerate(tabs):
                         f"請輸入第 {line_idx + 1} 句英文：",
                         key=ans_key,
                         label_visibility="collapsed",
-                        placeholder="請在此輸入英文，輸入完請直接按 Enter..."
+                        placeholder="請在此輸入英文（注意大小寫），輸入完請直接按 Enter..."
                     )
                 
                 with cols[2]:
                     st.button(f"🗑️ 清除", key=f"clear_line_{i}_{line_idx}", on_click=make_clear_callback(ans_key))
                 
-                # 只要輸入框有內容，即自動進行答案比對
+                # 只要輸入框有內容，即進行嚴格大小寫答案比對
                 if user_answer.strip():
                     clean_target = re.sub(r'\s+', ' ', eng_sentence).strip()
                     clean_user = re.sub(r'\s+', ' ', user_answer).strip()
                     
-                    if clean_user.lower() == clean_target.lower():
-                        st.markdown(f"<span style='font-size: 22px; color: #28a745; font-weight: bold;'>🎉 答對了！太棒囉！</span>", unsafe_allow_html=True)
+                    if clean_user == clean_target:
+                        st.markdown(f"<span style='font-size: 22px; color: #28a745; font-weight: bold;'>🎉 答對了！大小寫完全正確，太棒囉！</span>", unsafe_allow_html=True)
                     else:
-                        st.markdown(f"<span style='font-size: 22px; color: #ff4b4b; font-weight: bold;'>❌ 再試一次看看喔！<br>💡 正確解答提示：{eng_sentence}</span>", unsafe_allow_html=True)
+                        st.markdown(f"<span style='font-size: 22px; color: #ff4b4b; font-weight: bold;'>❌ 大小寫或拼寫有誤，再試一次看看喔！<br>💡 正確解答提示：{eng_sentence}</span>", unsafe_allow_html=True)
         else:
             st.info("💡 請在上方右側的「歌詞文字框」輸入包含英文的句子，下方就會自動產生對應的逐句練習題囉！")
 
