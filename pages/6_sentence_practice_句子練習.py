@@ -6,6 +6,7 @@ from gtts import gTTS
 import io
 import re
 import urllib.parse
+import json
 
 # 設定頁面為寬螢幕模式
 st.set_page_config(layout="wide")
@@ -178,7 +179,6 @@ if "playlist_names" not in st.session_state:
     st.session_state.playlist_names = {
         idx: f"曲目 {idx}" for idx in range(1, 51)
     }
-    # 預設幫第一首填入範例
     st.session_state["my_text_input_1"] = "My Heart Will Go On 我心永恆\nEvery night in my dreams I see you, I feel you\n每個深夜在我的夢中，我見到你，感受到你"
     st.session_state.playlist_names[1] = "My Heart Will Go On"
 
@@ -193,6 +193,51 @@ for idx in range(1, 51):
 
 if "current_page" not in st.session_state:
     st.session_state.current_page = 1
+
+# ----------------------------------------------------
+# 💾 存檔與讀檔專屬控制面板（側邊欄或上方區塊）
+# ----------------------------------------------------
+with st.expander("💾 澄玄的專屬備份與還原中心（下載/上傳存檔）"):
+    col_save1, col_save2 = st.columns(2)
+    with col_save1:
+        st.markdown("**1. 備份下載目前的全部網址與歌詞：**")
+        backup_data = {
+            "page_names": st.session_state.page_names,
+            "playlist_names": st.session_state.playlist_names,
+        }
+        for idx in range(1, 51):
+            backup_data[f"yt_input_url_{idx}"] = st.session_state.get(f"yt_input_url_{idx}", "")
+            backup_data[f"my_text_input_{idx}"] = st.session_state.get(f"my_text_input_{idx}", "")
+        
+        json_str = json.dumps(backup_data, ensure_ascii=False, indent=4)
+        st.download_button(
+            label="📥 下載備份存檔 (.json)",
+            data=json_str,
+            file_name="chengyuan_backup.json",
+            mime="application/json"
+        )
+    
+    with col_save2:
+        st.markdown("**2. 還原上傳先前的備份存檔：**")
+        uploaded_file = st.file_uploader("選擇備份的 json 檔案", type=["json"])
+        if uploaded_file is not None:
+            try:
+                loaded_data = json.load(uploaded_file)
+                if "page_names" in loaded_data:
+                    st.session_state.page_names = loaded_data["page_names"]
+                if "playlist_names" in loaded_data:
+                    st.session_state.playlist_names = loaded_data["playlist_names"]
+                for idx in range(1, 51):
+                    if f"yt_input_url_{idx}" in loaded_data:
+                        st.session_state[f"yt_input_url_{idx}"] = loaded_data[f"yt_input_url_{idx}"]
+                    if f"my_text_input_{idx}" in loaded_data:
+                        st.session_state[f"my_text_input_{idx}"] = loaded_data[f"my_text_input_{idx}"]
+                st.success("🎉 成功還原備份檔案！")
+                st.rerun()
+            except Exception as e:
+                st.error(f"檔案讀取失敗：{e}")
+
+st.write("")
 
 # ----------------------------------------------------
 # 上方「翻書式」頁面選擇器
@@ -250,7 +295,6 @@ for tab_idx, tab in enumerate(tabs):
         left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
         with left_col:
-            # 透過 callback 直接更新網址，確保不會搞丟
             def update_yt_url(k):
                 st.session_state[k] = st.session_state[f"input_{k}"]
 
@@ -262,7 +306,6 @@ for tab_idx, tab in enumerate(tabs):
                 args=(url_key,)
             )
             
-            # 同步更新變數
             user_yt_link = st.session_state[url_key]
 
             if user_yt_link.strip():
@@ -352,7 +395,7 @@ for tab_idx, tab in enumerate(tabs):
         st.divider()
 
         # ----------------------------------------------------
-        # 逐句互動輸入測驗區（智慧過濾：若有括號，優先抓取括號內的英文作為比對標準）
+        # 逐句互動輸入測驗區
         # ----------------------------------------------------
         st.subheader("✍️ 逐句英文輸入測驗與朗讀練習：")
         
@@ -396,7 +439,6 @@ for tab_idx, tab in enumerate(tabs):
                     st.button(f"🗑️ 清除", key=f"clear_line_{absolute_idx}_{line_idx}", on_click=make_clear_callback(ans_key))
                 
                 if user_answer.strip():
-                    # 智慧過濾比對邏輯：優先檢查是否有括號（英文括號或中文括號）
                     bracket_match = re.search(r'[\(\（](.*?)[\)\）]', eng_sentence)
                     if bracket_match:
                         compare_target = bracket_match.group(1)
