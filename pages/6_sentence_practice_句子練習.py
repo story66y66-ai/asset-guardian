@@ -16,7 +16,7 @@ st.markdown("""
     [data-testid="stSidebar"] div, [data-testid="stSidebar"] a { font-size: 28px !important; }
     .red-word { color: #ff2b2b !important; font-weight: bold !important; }
     
-    /* 放大 YouTube 網址輸入框的文字與高度 */
+    /* 放大一般 YouTube 網址與輸入框的文字與高度 */
     .stTextInput input { 
         font-size: 22px !important; 
         color: #000000 !important; 
@@ -30,6 +30,32 @@ st.markdown("""
         color: #000000 !important;
         font-weight: bold !important;
         height: 50px !important;
+    }
+    
+    /* 專門放大第一到第五冊/頁名稱修改的輸入框文字與高度 */
+    div[data-testid="stExpander"] input {
+        font-size: 24px !important;
+        color: #000000 !important;
+        font-weight: bold !important;
+        height: 55px !important;
+    }
+    
+    /* 放大翻頁選項 (Radio button) 的文字大小與間距 */
+    div[data-baseweb="radio"] label {
+        font-size: 24px !important;
+        font-weight: bold !important;
+        color: #ffffff !important;
+    }
+    div[data-baseweb="radio"] div {
+        font-size: 24px !important;
+    }
+
+    /* 放大上方分頁籤 (Tabs) 的文字大小 */
+    button[data-baseweb="tab"] {
+        font-size: 22px !important;
+        font-weight: bold !important;
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
     }
     
     .stTextArea textarea { 
@@ -167,9 +193,9 @@ if "playlist_names" not in st.session_state:
     st.session_state.playlist_names[1] = "My Heart Will Go On"
 
 # ----------------------------------------------------
-# 上方「翻書式」頁面選擇器（共 5 ซ / 5 頁）
+# 上方「翻書式」頁面選擇器（共 5 頁，字體特別放大）
 # ----------------------------------------------------
-st.markdown("### 📚 選擇練習冊（翻書頁面）：")
+st.markdown("<h3 style='font-size: 28px;'>📚 選擇練習冊（翻書頁面）：</h3>", unsafe_allow_html=True)
 page_options = [f"📖 第 {p} 頁：{st.session_state.page_names[p]}" for p in range(1, 6)]
 selected_page_str = st.radio("翻書頁面切換", page_options, horizontal=True, label_visibility="collapsed")
 current_page = int(selected_page_str.split("：")[0].replace("📖 第 ", "").replace(" 頁", ""))
@@ -184,7 +210,7 @@ with st.expander(f"✏️ 自訂【第 {current_page} 頁】的用途與名稱�
             st.rerun()
     with col_p2:
         st.write("")
-        st.markdown(f"<span style='font-size: 16px; color: gray;'>💡 在此輸入這頁的專屬用途，方便辨識！</span>", unsafe_allow_html=True)
+        st.markdown(f"<span style='font-size: 20px; color: #a0a0a0;'>💡 在此輸入這頁的專屬用途，方便辨識！</span>", unsafe_allow_html=True)
 
 st.write("")
 
