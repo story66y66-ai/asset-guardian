@@ -48,10 +48,6 @@ st.markdown("""
         color: #ffffff !important;
         line-height: 1.6 !important;
     }
-    .sentence-sub {
-        font-size: 20px !important;
-        color: #dddddd !important;
-    }
 
     .yt-button {
         display: inline-flex;
@@ -163,7 +159,6 @@ tabs = st.tabs(tab_titles)
 # 迴圈建立 10 個分頁的獨立內容
 for i, tab in enumerate(tabs):
     with tab:
-        # 針對每個分頁建立獨立的 session_state 鍵值
         url_key = f"yt_input_url_{i}"
         text_key = f"my_text_input_{i}"
         
@@ -266,7 +261,7 @@ for i, tab in enumerate(tabs):
         st.divider()
 
         # ----------------------------------------------------
-        # 逐句互動輸入測驗與練習區（字體放大版）
+        # 逐句互動輸入測驗區（改為按 Enter 直接檢查）
         # ----------------------------------------------------
         st.subheader("✍️ 逐句英文輸入測驗與朗讀練習：")
         
@@ -274,13 +269,13 @@ for i, tab in enumerate(tabs):
         english_lines = [line.strip() for line in all_lines if line.strip() and re.search(r'[A-Za-z]', line)]
         
         if english_lines:
-            st.markdown(f"<span style='font-size: 20px;'>**已自動抓取 {len(english_lines)} 個英文句子進行逐句練習：**</span>", unsafe_allow_html=True)
+            st.markdown(f"<span style='font-size: 20px;'>**已自動抓取 {len(english_lines)} 個英文句子進行逐句練習（輸入完直接按 Enter 檢查）：**</span>", unsafe_allow_html=True)
             
             for line_idx, eng_sentence in enumerate(english_lines):
                 st.markdown(f"---")
                 st.markdown(f"<div class='sentence-display'>第 {line_idx + 1} 句原句：<br>✨ {eng_sentence}</div>", unsafe_allow_html=True)
                 
-                cols = st.columns([1.2, 3, 1])
+                cols = st.columns([1.2, 5])
                 with cols[0]:
                     if st.button(f"🔊 聽發音", key=f"line_audio_{i}_{line_idx}"):
                         try:
@@ -292,22 +287,41 @@ for i, tab in enumerate(tabs):
                             st.error(f"語音錯誤：{e}")
                 
                 ans_key = f"ans_input_{i}_{line_idx}"
+                result_key = f"result_msg_{i}_{line_idx}"
+                
+                # 定義按下 Enter 時觸發的檢查函式
+                def make_check_callback(target_sent, input_k, res_k):
+                    def callback():
+                        user_val = st.session_state.get(input_k, "")
+                        clean_target = re.sub(r'\s+', ' ', target_sent).strip()
+                        clean_user = re.sub(r'\s+', ' ', user_val).strip()
+                        
+                        if not clean_user:
+                            st.session_state[res_k] = "⚠️ ⚠️ 請先在輸入框中打字再按 Enter 喔！"
+                        elif clean_user.lower() == clean_target.lower():
+                            st.session_state[res_k] = "🎉 答對了！太棒囉！"
+                        else:
+                            st.session_state[res_k] = f"❌ 再試一次看看喔！正確解答：{target_sent}"
+                    return callback
+
                 with cols[1]:
-                    user_answer = st.text_input(f"請輸入第 {line_idx + 1} 句英文：", key=ans_key, label_visibility="collapsed", placeholder="請在此輸入聽到的英文句子...")
+                    st.text_input(
+                        f"請輸入第 {line_idx + 1} 句英文：",
+                        key=ans_key,
+                        label_visibility="collapsed",
+                        placeholder="請在此輸入英文，輸入完請直接按 Enter...",
+                        on_change=make_check_callback(eng_sentence, ans_key, result_key)
+                    )
                 
-                with cols[2]:
-                    check_btn = st.button(f"✨ 檢查答案", key=f"check_btn_{i}_{line_idx}")
-                
-                if check_btn:
-                    clean_target = re.sub(r'\s+', ' ', eng_sentence).strip()
-                    clean_user = re.sub(r'\s+', ' ', user_answer).strip()
-                    
-                    if not clean_user:
-                        st.warning("⚠️ 請先在輸入框中打字再檢查喔！")
-                    elif clean_user.lower() == clean_target.lower():
-                        st.markdown(f"<span style='font-size: 22px; color: #28a745; font-weight: bold;'>🎉 答對了！太棒囉！</span>", unsafe_allow_html=True)
+                # 顯示即時檢查結果訊息
+                if result_key in st.session_state and st.session_state[result_key]:
+                    msg = st.session_state[result_key]
+                    if "🎉" in msg:
+                        st.markdown(f"<span style='font-size: 22px; color: #28a745; font-weight: bold;'>{msg}</span>", unsafe_allow_html=True)
+                    elif "❌" in msg:
+                        st.markdown(f"<span style='font-size: 22px; color: #ff4b4b; font-weight: bold;'>{msg}</span>", unsafe_allow_html=True)
                     else:
-                        st.markdown(f"<span style='font-size: 22px; color: #ff4b4b; font-weight: bold;'>❌ 再試一次看看喔！<br>💡 正確解答提示：{eng_sentence}</span>", unsafe_allow_html=True)
+                        st.markdown(f"<span style='font-size: 20px; color: #ffa500; font-weight: bold;'>{msg}</span>", unsafe_allow_html=True)
         else:
             st.info("💡 請在上方右側的「歌詞文字框」輸入包含英文的句子，下方就會自動產生對應的逐句練習題囉！")
 
