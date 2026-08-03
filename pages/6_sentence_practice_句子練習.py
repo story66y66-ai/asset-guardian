@@ -6,7 +6,6 @@ from gtts import gTTS
 import io
 import re
 import urllib.parse
-import json
 
 # 設定頁面為寬螢幕模式
 st.set_page_config(layout="wide")
@@ -182,60 +181,8 @@ if "playlist_names" not in st.session_state:
     st.session_state["my_text_input_1"] = "My Heart Will Go On 我心永恆\nEvery night in my dreams I see you, I feel you\n每個深夜在我的夢中，我見到你，感受到你"
     st.session_state.playlist_names[1] = "My Heart Will Go On"
 
-# 確保所有 50 首的網址與文字都有在 session_state 內初始化
-for idx in range(1, 51):
-    url_key = f"yt_input_url_{idx}"
-    text_key = f"my_text_input_{idx}"
-    if url_key not in st.session_state:
-        st.session_state[url_key] = ""
-    if text_key not in st.session_state:
-        st.session_state[text_key] = ""
-
 if "current_page" not in st.session_state:
     st.session_state.current_page = 1
-
-# ----------------------------------------------------
-# 💾 存檔與讀檔專屬控制面板（側邊欄或上方區塊）
-# ----------------------------------------------------
-with st.expander("💾 澄玄的專屬備份與還原中心（下載/上傳存檔）"):
-    col_save1, col_save2 = st.columns(2)
-    with col_save1:
-        st.markdown("**1. 備份下載目前的全部網址與歌詞：**")
-        backup_data = {
-            "page_names": st.session_state.page_names,
-            "playlist_names": st.session_state.playlist_names,
-        }
-        for idx in range(1, 51):
-            backup_data[f"yt_input_url_{idx}"] = st.session_state.get(f"yt_input_url_{idx}", "")
-            backup_data[f"my_text_input_{idx}"] = st.session_state.get(f"my_text_input_{idx}", "")
-        
-        json_str = json.dumps(backup_data, ensure_ascii=False, indent=4)
-        st.download_button(
-            label="📥 下載備份存檔 (.json)",
-            data=json_str,
-            file_name="chengyuan_backup.json",
-            mime="application/json"
-        )
-    
-    with col_save2:
-        st.markdown("**2. 還原上傳先前的備份存檔：**")
-        uploaded_file = st.file_uploader("選擇備份的 json 檔案", type=["json"])
-        if uploaded_file is not None:
-            try:
-                loaded_data = json.load(uploaded_file)
-                if "page_names" in loaded_data:
-                    st.session_state.page_names = loaded_data["page_names"]
-                if "playlist_names" in loaded_data:
-                    st.session_state.playlist_names = loaded_data["playlist_names"]
-                for idx in range(1, 51):
-                    if f"yt_input_url_{idx}" in loaded_data:
-                        st.session_state[f"yt_input_url_{idx}"] = loaded_data[f"yt_input_url_{idx}"]
-                    if f"my_text_input_{idx}" in loaded_data:
-                        st.session_state[f"my_text_input_{idx}"] = loaded_data[f"my_text_input_{idx}"]
-                st.success("🎉 成功還原備份檔案！")
-                st.rerun()
-            except Exception as e:
-                st.error(f"檔案讀取失敗：{e}")
 
 st.write("")
 
@@ -285,6 +232,11 @@ for tab_idx, tab in enumerate(tabs):
         url_key = f"yt_input_url_{absolute_idx}"
         text_key = f"my_text_input_{absolute_idx}"
 
+        if url_key not in st.session_state:
+            st.session_state[url_key] = ""
+        if text_key not in st.session_state:
+            st.session_state[text_key] = ""
+
         with st.expander(f"✏️ 修改【曲目 {absolute_idx}】的歌名或用途"):
             curr_name = st.session_state.playlist_names[absolute_idx]
             new_track_name = st.text_input(f"曲目 {absolute_idx} 名稱：", value=curr_name, key=f"rename_track_{absolute_idx}")
@@ -295,18 +247,12 @@ for tab_idx, tab in enumerate(tabs):
         left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
         with left_col:
-            def update_yt_url(k):
-                st.session_state[k] = st.session_state[f"input_{k}"]
-
-            st.text_input(
+            user_yt_link = st.text_input(
                 f"請在此貼上 YouTube 或 Shorts 網址：",
                 value=st.session_state[url_key],
-                key=f"input_{url_key}",
-                on_change=update_yt_url,
-                args=(url_key,)
+                key=f"input_{url_key}"
             )
-            
-            user_yt_link = st.session_state[url_key]
+            st.session_state[url_key] = user_yt_link
 
             if user_yt_link.strip():
                 try:
@@ -359,18 +305,12 @@ for tab_idx, tab in enumerate(tabs):
             with btn_col:
                 st.markdown(f'<a href="{translate_url}" target="_blank" class="translate-button">🌐 Google 翻譯</a>', unsafe_allow_html=True)
 
-            def update_text_area(k):
-                st.session_state[k] = st.session_state[f"textarea_{k}"]
-
-            st.text_area(
+            user_input_text = st.text_area(
                 "輸入文字或歌詞：",
                 value=st.session_state[text_key],
-                key=f"textarea_{absolute_idx}",
-                on_change=update_text_area,
-                args=(text_key,)
+                key=f"textarea_{absolute_idx}"
             )
-            
-            user_input_text = st.session_state[text_key]
+            st.session_state[text_key] = user_input_text
 
             col1, col2 = st.columns([1, 1])
             with col1:
@@ -380,7 +320,6 @@ for tab_idx, tab in enumerate(tabs):
 
             if clear_btn:
                 st.session_state[text_key] = ""
-                st.session_state[f"textarea_{absolute_idx}"] = ""
                 st.rerun()
 
             if play_btn and user_input_text.strip():
@@ -403,7 +342,7 @@ for tab_idx, tab in enumerate(tabs):
         english_lines = [line.strip() for line in all_lines if line.strip() and re.search(r'[A-Za-z]', line)]
         
         if english_lines:
-            st.markdown(f"<span style='font-size: 20px;'>**已自動抓取 {len(english_lines)} 個句子進行逐句練習（若有括號請輸入括號內的英文，不分大小寫，按 Enter 檢查）：**</span>", unsafe_allow_html=True)
+            st.markdown(f"<span style='font-size: 20px;'>**已自動抓取 {len(english_lines)} 個句子進行逐句練習（若有括號請輸入括號內的英文，不分大小寫）：**</span>", unsafe_allow_html=True)
             
             for line_idx, eng_sentence in enumerate(english_lines):
                 st.markdown(f"---")
@@ -432,7 +371,7 @@ for tab_idx, tab in enumerate(tabs):
                         f"請輸入第 {line_idx + 1} 句英文：",
                         key=ans_key,
                         label_visibility="collapsed",
-                        placeholder="請在此輸入括號內的英文，輸入完請直接按 Enter..."
+                        placeholder="請在此輸入括號內的英文..."
                     )
                 
                 with cols[2]:
