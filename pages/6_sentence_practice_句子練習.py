@@ -261,7 +261,7 @@ for i, tab in enumerate(tabs):
         st.divider()
 
         # ----------------------------------------------------
-        # 逐句互動輸入測驗區（含每一行的清除鍵與 Enter 即時檢查）
+        # 逐句互動輸入測驗區（安全版清除按鈕與 Enter 即時檢查）
         # ----------------------------------------------------
         st.subheader("✍️ 逐句英文輸入測驗與朗讀練習：")
         
@@ -288,6 +288,12 @@ for i, tab in enumerate(tabs):
                 
                 ans_key = f"ans_input_{i}_{line_idx}"
                 
+                # 定義安全的清除函式 (Callback)
+                def make_clear_callback(k):
+                    def clear_func():
+                        st.session_state[k] = ""
+                    return clear_func
+
                 with cols[1]:
                     user_answer = st.text_input(
                         f"請輸入第 {line_idx + 1} 句英文：",
@@ -297,10 +303,7 @@ for i, tab in enumerate(tabs):
                     )
                 
                 with cols[2]:
-                    clear_line_btn = st.button(f"🗑️ 清除", key=f"clear_line_{i}_{line_idx}")
-                    if clear_line_btn:
-                        st.session_state[ans_key] = ""
-                        st.rerun()
+                    st.button(f"🗑️ 清除", key=f"clear_line_{i}_{line_idx}", on_click=make_clear_callback(ans_key))
                 
                 # 只要輸入框有內容，即自動進行答案比對
                 if user_answer.strip():
