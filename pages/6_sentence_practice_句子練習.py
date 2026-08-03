@@ -5,6 +5,7 @@ import os
 from gtts import gTTS
 import io
 import re
+import urllib.parse
 
 # 設定頁面為寬螢幕模式
 st.set_page_config(layout="wide")
@@ -67,6 +68,23 @@ st.markdown("""
         background-color: #3367D6;
         color: white !important;
     }
+    .translate-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #1a73e8;
+        color: white !important;
+        padding: 6px 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 16px;
+        border: none;
+    }
+    .translate-button:hover {
+        background-color: #1557b0;
+        color: white !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -117,14 +135,14 @@ if not df.empty and "word" in df.columns:
         kk_str = str(row['kk']) if 'kk' in df.columns and pd.notna(row['kk']) else ""
         word_dict[w_str] = {"trans": trans_str, "kk": kk_str}
 
-# 左右雙欄排版：左側直接放影片（對齊右側大文字框），網址輸入移至下方
+# 左右雙欄排版：左側直接放影片，右側放歌詞文字框
 left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
 with left_col:
     if "yt_input_url" not in st.session_state:
         st.session_state.yt_input_url = ""
 
-    # 1. 先顯示影片區，讓影片頂部與右側大文字框對齊
+    # 1. 顯示影片區
     user_yt_link = st.session_state.yt_input_url
     if user_yt_link.strip():
         try:
@@ -147,14 +165,13 @@ with left_col:
         except Exception as e:
             st.error(f"影片載入發生錯誤：{e}")
     else:
-        # 當還沒輸入網址時的佔位提示框，高度與右側相呼應
         st.markdown("""
             <div style="display: flex; align-items: center; justify-content: center; height: 580px; border: 2px dashed #444; border-radius: 10px; color: #888; font-size: 20px; margin-bottom: 15px;">
                 📺 請在下方輸入網址以顯示影片
             </div>
         """, unsafe_allow_html=True)
 
-    # 2. 網址輸入與複製區放到影片下方
+    # 2. 網址輸入與複製區
     new_yt_link = st.text_input("請在此貼上 YouTube 或 Shorts 網址：", value=st.session_state.yt_input_url)
     if new_yt_link != st.session_state.yt_input_url:
         st.session_state.yt_input_url = new_yt_link
@@ -171,10 +188,19 @@ with left_col:
                 st.warning("目前網址框是空的！")
 
 with right_col:
-    st.subheader("✍️ 歌詞文字框與朗讀練習：")
-
     if "my_text_input" not in st.session_state:
         st.session_state.my_text_input = "I can do all things through Christ who strengthens me."
+
+    # 先取得當前文字框內容並編碼，用來即時帶入 Google 翻譯按鈕
+    encoded_text = urllib.parse.quote(st.session_state.my_text_input)
+    translate_url = f"https://translate.google.com/?hl=zh-TW&sl=en&tl=zh-TW&text={encoded_text}&op=translate"
+
+    # 標題與帶有文字的 Google 翻譯任意門按鈕並排
+    title_col, btn_col = st.columns([3, 1.4], vertical_alignment="center")
+    with title_col:
+        st.subheader("✍️ 歌詞文字框與朗讀練習：")
+    with btn_col:
+        st.markdown(f'<a href="{translate_url}" target="_blank" class="translate-button">🌐 Google 翻譯</a>', unsafe_allow_html=True)
 
     user_input_text = st.text_area(
         "輸入文字或歌詞：",
