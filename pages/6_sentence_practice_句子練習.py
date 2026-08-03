@@ -152,24 +152,70 @@ if not df.empty and "word" in df.columns:
         kk_str = str(row['kk']) if 'kk' in df.columns and pd.notna(row['kk']) else ""
         word_dict[w_str] = {"trans": trans_str, "kk": kk_str}
 
-# 恢復原本的 10 個分頁籤結構
-tab_titles = [f"🎵 曲目 {i}" for i in range(1, 11)]
+# 初始化 5 頁的翻頁與曲目名稱記錄 (共 50 首)
+if "page_names" not in st.session_state:
+    st.session_state.page_names = {
+        p: f"第 {p} 冊 (曲目 {(p-1)*10 + 1} ~ {p*10})" for p in range(1, 6)
+    }
+
+if "playlist_names" not in st.session_state:
+    st.session_state.playlist_names = {
+        idx: f"曲目 {idx}" for idx in range(1, 51)
+    }
+    # 預設幫第一首填入範例
+    st.session_state["my_text_input_1"] = "My Heart Will Go On 我心永恆\nEvery night in my dreams I see you, I feel you\n每個深夜在我的夢中，我見到你，感受到你"
+    st.session_state.playlist_names[1] = "My Heart Will Go On"
+
+# ----------------------------------------------------
+# 上方「翻書式」頁面選擇器（共 5 ซ / 5 頁）
+# ----------------------------------------------------
+st.markdown("### 📚 選擇練習冊（翻書頁面）：")
+page_options = [f"📖 第 {p} 頁：{st.session_state.page_names[p]}" for p in range(1, 6)]
+selected_page_str = st.radio("翻書頁面切換", page_options, horizontal=True, label_visibility="collapsed")
+current_page = int(selected_page_str.split("：")[0].replace("📖 第 ", "").replace(" 頁", ""))
+
+# 讓澄玄可以自訂當前這一頁（這一冊）的用途名稱
+with st.expander(f"✏️ 自訂【第 {current_page} 頁】的用途與名稱設定"):
+    col_p1, col_p2 = st.columns([2, 1])
+    with col_p1:
+        new_page_name = st.text_input(f"第 {current_page} 頁總用途名稱：", value=st.session_state.page_names[current_page], key=f"input_page_name_{current_page}")
+        if new_page_name != st.session_state.page_names[current_page]:
+            st.session_state.page_names[current_page] = new_page_name
+            st.rerun()
+    with col_p2:
+        st.write("")
+        st.markdown(f"<span style='font-size: 16px; color: gray;'>💡 在此輸入這頁的專屬用途，方便辨識！</span>", unsafe_allow_html=True)
+
+st.write("")
+
+# 計算當前頁面涵蓋的 10 個曲目編號範圍 (例如第1頁是 1~10，第2頁是 11~20...)
+start_idx = (current_page - 1) * 10 + 1
+end_idx = current_page * 10
+
+# 建立該頁面專屬的 10 個分頁籤
+tab_titles = [f"🎵 {st.session_state.playlist_names[idx]}" for idx in range(start_idx, end_idx + 1)]
 tabs = st.tabs(tab_titles)
 
-# 迴圈建立 10 個分頁的獨立內容
-for i, tab in enumerate(tabs):
+# 迴圈建立這 10 個分頁的獨立內容
+for tab_idx, tab in enumerate(tabs):
+    absolute_idx = start_idx + tab_idx  # 實際的全局曲目編號 (1~50)
+    
     with tab:
-        url_key = f"yt_input_url_{i}"
-        text_key = f"my_text_input_{i}"
+        url_key = f"yt_input_url_{absolute_idx}"
+        text_key = f"my_text_input_{absolute_idx}"
         
         if url_key not in st.session_state:
             st.session_state[url_key] = ""
-            
         if text_key not in st.session_state:
-            if i == 0:
-                st.session_state[text_key] = "My Heart Will Go On 我心永恆\nEvery night in my dreams I see you, I feel you\n每個深夜在我的夢中，我見到你，感受到你"
-            else:
-                st.session_state[text_key] = ""
+            st.session_state[text_key] = ""
+
+        # 小工具列：讓澄玄可以直接在分頁內更改這首歌的名字
+        with st.expander(f"✏️ 修改【曲目 {absolute_idx}】的歌名或用途"):
+            curr_name = st.session_state.playlist_names[absolute_idx]
+            new_track_name = st.text_input(f"曲目 {absolute_idx} 名稱：", value=curr_name, key=f"rename_track_{absolute_idx}")
+            if new_track_name != curr_name:
+                st.session_state.playlist_names[absolute_idx] = new_track_name
+                st.rerun()
 
         # 左右雙欄排版：左側放影片，右側放歌詞文字框
         left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
@@ -213,7 +259,7 @@ for i, tab in enumerate(tabs):
 
             col_copy1, col_copy2 = st.columns([1, 3])
             with col_copy1:
-                copy_btn = st.button(f"📋 複製網址", key=f"copy_{i}")
+                copy_btn = st.button(f"📋 複製網址", key=f"copy_{absolute_idx}")
             with col_copy2:
                 if copy_btn:
                     if user_yt_link.strip():
@@ -234,16 +280,16 @@ for i, tab in enumerate(tabs):
             user_input_text = st.text_area(
                 "輸入文字或歌詞：",
                 value=st.session_state[text_key],
-                key=f"textarea_{i}"
+                key=f"textarea_{absolute_idx}"
             )
 
             st.session_state[text_key] = user_input_text
 
             col1, col2 = st.columns([1, 1])
             with col1:
-                play_btn = st.button(f"🔊 播放整段發音 (循環)", key=f"play_{i}")
+                play_btn = st.button(f"🔊 播放整段發音 (循環)", key=f"play_{absolute_idx}")
             with col2:
-                clear_btn = st.button(f"🗑️ 清空文字框", key=f"clear_{i}")
+                clear_btn = st.button(f"🗑️ 清空文字框", key=f"clear_{absolute_idx}")
 
             if clear_btn:
                 st.session_state[text_key] = ""
@@ -277,7 +323,7 @@ for i, tab in enumerate(tabs):
                 
                 cols = st.columns([1.2, 4.2, 1])
                 with cols[0]:
-                    if st.button(f"🔊 聽發音", key=f"line_audio_{i}_{line_idx}"):
+                    if st.button(f"🔊 聽發音", key=f"line_audio_{absolute_idx}_{line_idx}"):
                         try:
                             s_tts = gTTS(text=eng_sentence, lang='en')
                             s_fp = io.BytesIO()
@@ -286,7 +332,7 @@ for i, tab in enumerate(tabs):
                         except Exception as e:
                             st.error(f"語音錯誤：{e}")
                 
-                ans_key = f"ans_input_{i}_{line_idx}"
+                ans_key = f"ans_input_{absolute_idx}_{line_idx}"
                 
                 def make_clear_callback(k):
                     def clear_func():
@@ -302,7 +348,7 @@ for i, tab in enumerate(tabs):
                     )
                 
                 with cols[2]:
-                    st.button(f"🗑️ 清除", key=f"clear_line_{i}_{line_idx}", on_click=make_clear_callback(ans_key))
+                    st.button(f"🗑️ 清除", key=f"clear_line_{absolute_idx}_{line_idx}", on_click=make_clear_callback(ans_key))
                 
                 if user_answer.strip():
                     clean_target = re.sub(r'\s+', ' ', eng_sentence).strip()
@@ -337,7 +383,7 @@ for i, tab in enumerate(tabs):
                     with cols[0]:
                         st.markdown(f"<span style='font-size: 22px;'>🔹 **{w}** &nbsp; ` {kk_display} ` &nbsp; <span style='color:gray;'>{trans_display}</span></span>", unsafe_allow_html=True)
                     with cols[1]:
-                        if st.button(f"🔊 聽發音", key=f"word_audio_{i}_{w_idx}_{w}"):
+                        if st.button(f"🔊 聽發音", key=f"word_audio_{absolute_idx}_{w_idx}_{w}"):
                             w_tts = gTTS(text=w, lang='en')
                             w_fp = io.BytesIO()
                             w_tts.write_to_fp(w_fp)
