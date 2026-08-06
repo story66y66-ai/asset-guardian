@@ -236,7 +236,6 @@ for idx in range(1, 51):
     })
 
 df_export = pd.DataFrame(csv_data_list)
-# 加上 quoting=1 (csv.QUOTE_ALL) 確保所有文字欄位都被雙引號包起來，完美防止 Excel 換行崩潰
 csv_text_output = df_export.to_csv(index=False, encoding="utf-8-sig", quoting=1)
 
 with st.expander("📥 產生並下載包含完整歌詞的 CSV 庫（支援 Excel 直接開啟與 GitHub）"):
@@ -465,11 +464,16 @@ for tab_idx, tab in enumerate(tabs):
                     st.button(f"🗑️ 清除", key=f"clear_line_{absolute_idx}_{line_idx}", on_click=make_clear_callback(ans_key))
                 
                 if user_answer.strip():
-                    bracket_match = re.search(r'[\(\（](.*?)[\)\）]', eng_sentence)
-                    if bracket_match:
-                        compare_target = bracket_match.group(1)
+                    # 修正：優先尋找包含英文的括號內容，若括號內是中文則使用括號外或整句英文
+                    bracket_matches = re.findall(r'[\(\（](.*?)[\)\）]', eng_sentence)
+                    compare_target = eng_sentence
+                    for bm in bracket_matches:
+                        if re.search(r'[A-Za-z]', bm):
+                            compare_target = bm
+                            break
                     else:
-                        compare_target = eng_sentence
+                        # 如果括號內都沒有英文（例如中文翻譯），則把括號去除，比對整句的英文
+                        compare_target = re.sub(r'[\(\（].*?[\)\）]', '', eng_sentence).strip()
                     
                     target_letters = "".join(re.findall(r'[A-Za-z0-9]', compare_target)).lower()
                     user_letters = "".join(re.findall(r'[A-Za-z0-9]', user_answer)).lower()
