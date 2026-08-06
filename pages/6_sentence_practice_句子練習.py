@@ -188,25 +188,44 @@ for idx in range(1, 51):
     if f"my_text_input_{idx}" not in st.session_state:
         st.session_state[f"my_text_input_{idx}"] = ""
 
+# 嘗試自動從已存在的 CSV 讀取資料（如果檔案存在）
+if os.path.exists("playlist_heart_歌曲結連庫.csv"):
+    try:
+        saved_df = pd.read_csv("playlist_heart_歌曲結連庫.csv")
+        for _, row in saved_df.iterrows():
+            idx_val = int(row['id'])
+            if 1 <= idx_val <= 50:
+                if pd.notna(row.get('url')):
+                    st.session_state[f"yt_input_url_{idx_val}"] = str(row['url'])
+                if pd.notna(row.get('title')):
+                    st.session_state.playlist_names[idx_val] = str(row['title'])
+                if pd.notna(row.get('lyrics')):
+                    st.session_state[f"my_text_input_{idx_val}"] = str(row['lyrics'])
+    except Exception:
+        pass
+
 if "current_page" not in st.session_state:
     st.session_state.current_page = 1
 
 st.write("")
 
 # ----------------------------------------------------
-# 收集資料並產生 CSV 下載檔案區塊
+# 收集資料並使用 pandas 產生安全包覆雙引號的 CSV 檔案
 # ----------------------------------------------------
-csv_lines = ["id,url,title"]
+csv_data_list = []
 for idx in range(1, 51):
-    t_name = st.session_state.playlist_names.get(idx, f"曲目 {idx}")
-    t_url = st.session_state.get(f"yt_input_url_{idx}", "").strip()
-    t_name_safe = t_name.replace(",", " ")
-    csv_lines.append(f"{idx},{t_url},{t_name_safe}")
+    csv_data_list.append({
+        "id": idx,
+        "url": st.session_state.get(f"yt_input_url_{idx}", "").strip(),
+        "title": st.session_state.playlist_names.get(idx, f"曲目 {idx}"),
+        "lyrics": st.session_state.get(f"my_text_input_{idx}", "")
+    })
 
-csv_text_output = "\n".join(csv_lines)
+df_export = pd.DataFrame(csv_data_list)
+csv_text_output = df_export.to_csv(index=False, encoding="utf-8-sig")
 
-with st.expander("📥 產生並下載 playlist_heart_歌曲結連庫.csv 檔案"):
-    st.markdown("<span style='font-size: 20px; font-weight: bold;'>只要點擊下方的下載按鈕，就會自動把所有 50 首曲目完整打包成 `.csv` 檔案下載！</span>", unsafe_allow_html=True)
+with st.expander("📥 產生並下載包含【網址、歌名、歌詞】的完整 CSV 庫"):
+    st.markdown("<span style='font-size: 20px; font-weight: bold;'>點擊下方按鈕，就能把 50 首曲目的網址、歌名與長篇歌詞全部完美打包（自動加上雙引號保護，版面絕對不亂）！</span>", unsafe_allow_html=True)
     
     st.download_button(
         label="📥 點我直接下載 playlist_heart_歌曲結連庫.csv 檔案",
@@ -216,8 +235,8 @@ with st.expander("📥 產生並下載 playlist_heart_歌曲結連庫.csv 檔案
         use_container_width=True
     )
     
-    st.markdown("<span style='font-size: 18px; font-weight: bold;'>完整 50 首資料預覽與複製：</span>", unsafe_allow_html=True)
-    st.text_area("完整 50 首資料預覽與複製：", value=csv_text_output, height=120, label_visibility="collapsed")
+    st.markdown("<span style='font-size: 18px; font-weight: bold;'>完整資料預覽與複製：</span>", unsafe_allow_html=True)
+    st.text_area("完整資料預覽與複製：", value=csv_text_output, height=120, label_visibility="collapsed")
 
 st.write("")
 
@@ -277,8 +296,8 @@ for tab_idx, tab in enumerate(tabs):
             )
             st.session_state[url_key] = user_yt_link
 
-            if st.button(f"💾 儲存【曲目 {absolute_idx}】網址與歌名到 CSV 庫", key=f"save_url_{absolute_idx}", use_container_width=True):
-                st.success(f"🎉 曲目 {absolute_idx} 的網址已成功儲存並同步至 CSV 庫！")
+            if st.button(f"💾 儲存【曲目 {absolute_idx}】的網址、歌名與歌詞", key=f"save_url_{absolute_idx}", use_container_width=True):
+                st.success(f"🎉 曲目 {absolute_idx} 的所有資料（網址、歌名、歌詞）已成功儲存並同步！")
                 st.rerun()
 
             if user_yt_link.strip():
@@ -357,23 +376,15 @@ for tab_idx, tab in enumerate(tabs):
             if update_trans_btn:
                 st.success("✨ 翻譯連結已更新！")
 
-            # 智慧分句不寫死演算法：根據常見英文子句引導詞（that, i, you, and, across, where 等代名詞與連接詞）自動智慧分行與補上斷句
+            # 智慧分句不寫死演算法
             if smart_split_btn and user_input_text.strip():
                 raw_text = user_input_text.replace("\n", " ")
-                # 智慧分句關鍵字規則（不寫死特定歌曲，適用所有英文歌詞與長句）
-                # 當遇到主詞切換或從屬子句連接詞時自動分行
-                split_patterns = r'\b(that|i|you|he|she|we|they|and|but|because|where|when|who|which|across|through)\b'
-                
-                # 智慧替換：在關鍵字前方加上換行（但保留第一個字）
-                processed_text = raw_text.strip()
-                # 為了避免過度分割，我們用正則聰明地在特定從屬結構前換行
-                words_list = processed_text.split()
+                words_list = raw_text.split()
                 new_lines = []
                 current_line = []
                 
                 for w in words_list:
                     w_lower = w.lower()
-                    # 當累積到一定長度，或遇到常見的子句引導詞時，自動折行
                     if w_lower in ["that", "i", "you", "and", "where", "when", "across"] and len(current_line) >= 4:
                         new_lines.append(" ".join(current_line))
                         current_line = [w]
