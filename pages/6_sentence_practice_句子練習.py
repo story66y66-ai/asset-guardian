@@ -118,6 +118,26 @@ st.markdown("""
         background-color: #1557b0;
         color: white !important;
     }
+    .watch-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #ff0000;
+        color: white !important;
+        padding: 14px 20px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 22px;
+        width: 100%;
+        margin-top: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    .watch-btn:hover {
+        background-color: #cc0000;
+        color: white !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -159,7 +179,6 @@ def load_and_merge_data():
 
 df = load_and_merge_data()
 
-# 建立字典加速查詢 (word -> {trans, kk})
 word_dict = {}
 if not df.empty and "word" in df.columns:
     for _, row in df.iterrows():
@@ -168,7 +187,6 @@ if not df.empty and "word" in df.columns:
         kk_str = str(row['kk']) if 'kk' in df.columns and pd.notna(row['kk']) else ""
         word_dict[w_str] = {"trans": trans_str, "kk": kk_str}
 
-# 初始化 5 頁的翻頁與曲目名稱記錄 (共 50 首)
 if "page_names" not in st.session_state:
     st.session_state.page_names = {
         p: f"第 {p} 頁 (曲目 {(p-1)*10 + 1} ~ {p*10})" for p in range(1, 6)
@@ -177,14 +195,12 @@ if "page_names" not in st.session_state:
 if "playlist_names" not in st.session_state:
     st.session_state.playlist_names = {idx: f"曲目 {idx}" for idx in range(1, 51)}
 
-# 初始化所有 50 首曲目的網址與文字內容
 for idx in range(1, 51):
     if f"yt_input_url_{idx}" not in st.session_state:
         st.session_state[f"yt_input_url_{idx}"] = ""
     if f"my_text_input_{idx}" not in st.session_state:
         st.session_state[f"my_text_input_{idx}"] = ""
 
-# 預設第一首範例
 if not st.session_state["my_text_input_1"]:
     st.session_state["my_text_input_1"] = "My Heart Will Go On 我心永恆\nEvery night in my dreams I see you, I feel you\n每個深夜在我的夢中，我見到你，感受到你"
     st.session_state.playlist_names[1] = "My Heart Will Go On"
@@ -195,11 +211,8 @@ if "current_page" not in st.session_state:
 
 st.write("")
 
-# ----------------------------------------------------
-# CSV 內容匯出與「一鍵直接下載檔案」按鈕區（完整累積 50 首）
-# ----------------------------------------------------
 with st.expander("📥 產生並下載 playlist_heart_歌曲結連庫.csv 檔案"):
-    st.markdown("只要點擊下方的下載按鈕，就會自動把所有 50 首曲目（包含你曾經輸入、修改過的歌名與網址）完整打包成 `.csv` 檔案下載！")
+    st.markdown("只要點擊下方的下載按鈕，就會自動把所有 50 首曲目完整打包成 `.csv` 檔案下載！")
     
     csv_lines = ["id,title,url"]
     for idx in range(1, 51):
@@ -222,9 +235,6 @@ with st.expander("📥 產生並下載 playlist_heart_歌曲結連庫.csv 檔案
 
 st.write("")
 
-# ----------------------------------------------------
-# 上方「翻書式」頁面選擇器
-# ----------------------------------------------------
 st.markdown("<h3 style='font-size: 26px; color: #ffffff;'>📚 選擇練習冊（翻書頁面）：</h3>", unsafe_allow_html=True)
 
 page_cols = st.columns(5)
@@ -258,7 +268,7 @@ tab_titles = [f"🎵 {st.session_state.playlist_names[idx]}" for idx in range(st
 tabs = st.tabs(tab_titles)
 
 for tab_idx, tab in enumerate(tabs):
-    absolute_idx = start_idx + tab_idx  # 實際的全局曲目編號 (1~50)
+    absolute_idx = start_idx + tab_idx
     
     with tab:
         url_key = f"yt_input_url_{absolute_idx}"
@@ -281,35 +291,13 @@ for tab_idx, tab in enumerate(tabs):
             )
             st.session_state[url_key] = user_yt_link
 
+            # 增設超顯眼的專屬 YouTube 觀看按鈕，突破嵌入限制！
             if user_yt_link.strip():
-                try:
-                    raw_url = user_yt_link.strip()
-                    video_id = ""
-                    
-                    # 智慧解析各種 YouTube 網址格式
-                    if "shorts/" in raw_url:
-                        video_id = raw_url.split("shorts/")[-1].split("?")[0].split("/")[0]
-                    elif "watch?v=" in raw_url:
-                        video_id = raw_url.split("watch?v=")[-1].split("&")[0]
-                    elif "youtu.be/" in raw_url:
-                        video_id = raw_url.split("youtu.be/")[-1].split("?")[0].split("/")[0]
-                        
-                    if video_id:
-                        embed_url = f"https://www.youtube.com/embed/{video_id}?loop=1&playlist={video_id}"
-                    else:
-                        embed_url = raw_url
-                        
-                    st.markdown(f"""
-                        <div style="display: flex; justify-content: center; margin-bottom: 15px; margin-top: 15px;">
-                            <iframe width="350" height="580" src="{embed_url}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                        </div>
-                    """, unsafe_allow_html=True)
-                except Exception as e:
-                    st.error(f"影片載入發生錯誤：{e}")
+                st.markdown(f'<a href="{user_yt_link}" target="_blank" class="watch-btn">▶️ 點我直接開啟 YouTube 觀看影片</a>', unsafe_allow_html=True)
             else:
                 st.markdown("""
-                    <div style="display: flex; align-items: center; justify-content: center; height: 350px; border: 2px dashed #444; border-radius: 10px; color: #888; font-size: 20px; margin-top: 15px; margin-bottom: 15px;">
-                        📺 請在上方輸入網址以顯示影片
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100px; border: 2px dashed #444; border-radius: 10px; color: #888; font-size: 18px; margin-top: 15px; margin-bottom: 15px;">
+                        📺 請在上方輸入網址以解鎖播放按鈕
                     </div>
                 """, unsafe_allow_html=True)
 
