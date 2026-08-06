@@ -180,9 +180,29 @@ if "playlist_names" not in st.session_state:
     }
     st.session_state["my_text_input_1"] = "My Heart Will Go On 我心永恆\nEvery night in my dreams I see you, I feel you\n每個深夜在我的夢中，我見到你，感受到你"
     st.session_state.playlist_names[1] = "My Heart Will Go On"
+    st.session_state["yt_input_url_1"] = "https://youtu.be/nutG0EKVVzM?si=xFICPEO0Zsy1yDIF"
 
 if "current_page" not in st.session_state:
     st.session_state.current_page = 1
+
+st.write("")
+
+# ----------------------------------------------------
+# 新增：CSV 內容匯出小幫手（供同步到 playlist_heart_歌曲結連庫.csv）
+# ----------------------------------------------------
+with st.expander("📥 產生並複製 CSV 格式內容（供同步到 playlist_heart_歌曲結連庫.csv）"):
+    st.markdown("只要點擊下方，就會自動把當前所有曲目的編號、歌名與網址整理成標準 CSV 格式。直接複製貼到 GitHub 的 `playlist_heart_歌曲結連庫.csv` 裡就大功告成！")
+    
+    csv_lines = ["id,title,url"]
+    for idx in range(1, 51):
+        t_name = st.session_state.playlist_names.get(idx, f"曲目 {idx}")
+        t_url = st.session_state.get(f"yt_input_url_{idx}", "").strip()
+        # 避免逗號影響 csv 格式，將曲目名稱內逗號替換
+        t_name_safe = t_name.replace(",", " ")
+        csv_lines.append(f"{idx},{t_name_safe},{t_url}")
+    
+    csv_text_output = "\n".join(csv_lines)
+    st.text_area("請複製下方完整內容貼到你的 .csv 檔案中：", value=csv_text_output, height=150)
 
 st.write("")
 
