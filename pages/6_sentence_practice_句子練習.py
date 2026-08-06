@@ -168,16 +168,24 @@ if not df.empty and "word" in df.columns:
         kk_str = str(row['kk']) if 'kk' in df.columns and pd.notna(row['kk']) else ""
         word_dict[w_str] = {"trans": trans_str, "kk": kk_str}
 
-# 初始化 5 頁的翻頁與曲目名稱記錄 (共 50 首)
+# 初始化 5 頁的翻頁與曲目名稱記錄 (共 50 首)，確保所有 50 首資料完整保存
 if "page_names" not in st.session_state:
     st.session_state.page_names = {
-        p: f"第 {p} 冊 (曲目 {(p-1)*10 + 1} ~ {p*10})" for p in range(1, 6)
+        p: f"第 {p} 頁 (曲目 {(p-1)*10 + 1} ~ {p*10})" for p in range(1, 6)
     }
 
 if "playlist_names" not in st.session_state:
-    st.session_state.playlist_names = {
-        idx: f"曲目 {idx}" for idx in range(1, 51)
-    }
+    st.session_state.playlist_names = {idx: f"曲目 {idx}" for idx in range(1, 51)}
+
+# 初始化所有 50 首曲目的網址與文字內容，確保切換或修改時資料不會消失
+for idx in range(1, 51):
+    if f"yt_input_url_{idx}" not in st.session_state:
+        st.session_state[f"yt_input_url_{idx}"] = ""
+    if f"my_text_input_{idx}" not in st.session_state:
+        st.session_state[f"my_text_input_{idx}"] = ""
+
+# 預設第一首範例
+if not st.session_state["my_text_input_1"]:
     st.session_state["my_text_input_1"] = "My Heart Will Go On 我心永恆\nEvery night in my dreams I see you, I feel you\n每個深夜在我的夢中，我見到你，感受到你"
     st.session_state.playlist_names[1] = "My Heart Will Go On"
     st.session_state["yt_input_url_1"] = "https://youtu.be/nutG0EKVVzM?si=xFICPEO0Zsy1yDIF"
@@ -188,10 +196,10 @@ if "current_page" not in st.session_state:
 st.write("")
 
 # ----------------------------------------------------
-# 新增：CSV 內容匯出與「一鍵直接下載檔案」按鈕區
+# CSV 內容匯出與「一鍵直接下載檔案」按鈕區（完整累積 50 首）
 # ----------------------------------------------------
 with st.expander("📥 產生並下載 playlist_heart_歌曲結連庫.csv 檔案"):
-    st.markdown("只要點擊下方的下載按鈕，就會自動把當前所有曲目的編號、歌名與網址打包成 `.csv` 檔案下載！下載後直接上傳到 GitHub 覆蓋即可！")
+    st.markdown("只要點擊下方的下載按鈕，就會自動把所有 50 首曲目（包含你曾經輸入、修改過的歌名與網址）完整打包成 `.csv` 檔案下載！")
     
     csv_lines = ["id,title,url"]
     for idx in range(1, 51):
@@ -211,7 +219,7 @@ with st.expander("📥 產生並下載 playlist_heart_歌曲結連庫.csv 檔案
         use_container_width=True
     )
     
-    st.text_area("或者預覽與複製下方文字：", value=csv_text_output, height=120)
+    st.text_area("完整 50 首資料預覽與複製：", value=csv_text_output, height=120)
 
 st.write("")
 
@@ -260,11 +268,6 @@ for tab_idx, tab in enumerate(tabs):
     with tab:
         url_key = f"yt_input_url_{absolute_idx}"
         text_key = f"my_text_input_{absolute_idx}"
-
-        if url_key not in st.session_state:
-            st.session_state[url_key] = ""
-        if text_key not in st.session_state:
-            st.session_state[text_key] = ""
 
         with st.expander(f"✏️ 修改【曲目 {absolute_idx}】的歌名或用途"):
             curr_name = st.session_state.playlist_names[absolute_idx]
