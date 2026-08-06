@@ -40,12 +40,27 @@ st.markdown("""
         height: 55px !important;
     }
 
-    /* 放大上方分頁籤 (Tabs) 的文字大小 */
+    /* 放大上方分頁籤 (Tabs) 的文字大小與寬度 */
     button[data-baseweb="tab"] {
         font-size: 22px !important;
         font-weight: bold !important;
-        padding-top: 10px !important;
-        padding-bottom: 10px !important;
+        padding-top: 12px !important;
+        padding-bottom: 12px !important;
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+    }
+    
+    /* 專門強力放大藍色框框內的翻書頁面按鈕與曲目按鈕字體 */
+    div.stButton > button { 
+        font-size: 20px !important; 
+        padding: 12px 20px !important; 
+        font-weight: bold !important;
+    }
+
+    /* 針對翻書頁面按鈕（多行按鈕）特別加大行距與字體 */
+    div[data-testid="column"] div.stButton > button {
+        font-size: 20px !important;
+        font-weight: bold !important;
     }
     
     .stTextArea textarea { 
@@ -55,7 +70,6 @@ st.markdown("""
         height: 580px !important;
         resize: vertical !important; 
     }
-    div.stButton > button { font-size: 20px !important; padding: 10px 20px !important; }
     
     /* 放大逐句練習區的原句文字大小（英文與中文） */
     .sentence-display {
