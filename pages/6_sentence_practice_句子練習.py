@@ -65,6 +65,12 @@ st.markdown("""
         line-height: 1.6 !important;
     }
 
+    /* 放大 Expander 標題與內部文字（針對 CSV 下載區塊） */
+    div[data-testid="stExpander"] summary span {
+        font-size: 22px !important;
+        font-weight: bold !important;
+    }
+
     .yt-button {
         display: inline-flex;
         align-items: center;
@@ -187,7 +193,7 @@ if "current_page" not in st.session_state:
 st.write("")
 
 # ----------------------------------------------------
-# 收集資料並產生 CSV 下載檔案區塊（順序改為 id,url,title，完全由澄玄輸入）
+# 收集資料並產生 CSV 下載檔案區塊（順序改為 id,url,title，字體放大）
 # ----------------------------------------------------
 csv_lines = ["id,url,title"]
 for idx in range(1, 51):
@@ -199,7 +205,7 @@ for idx in range(1, 51):
 csv_text_output = "\n".join(csv_lines)
 
 with st.expander("📥 產生並下載 playlist_heart_歌曲結連庫.csv 檔案"):
-    st.markdown("只要點擊下方的下載按鈕，就會自動把所有 50 首曲目完整打包成 `.csv` 檔案下載！")
+    st.markdown("<span style='font-size: 20px; font-weight: bold;'>只要點擊下方的下載按鈕，就會自動把所有 50 首曲目完整打包成 `.csv` 檔案下載！</span>", unsafe_allow_html=True)
     
     st.download_button(
         label="📥 點我直接下載 playlist_heart_歌曲結連庫.csv 檔案",
@@ -209,7 +215,8 @@ with st.expander("📥 產生並下載 playlist_heart_歌曲結連庫.csv 檔案
         use_container_width=True
     )
     
-    st.text_area("完整 50 首資料預覽與複製：", value=csv_text_output, height=120)
+    st.markdown("<span style='font-size: 18px; font-weight: bold;'>完整 50 首資料預覽與複製：</span>", unsafe_allow_html=True)
+    st.text_area("完整 50 首資料預覽與複製：", value=csv_text_output, height=120, label_visibility="collapsed")
 
 st.write("")
 
