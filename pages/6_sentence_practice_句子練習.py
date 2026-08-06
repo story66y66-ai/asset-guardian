@@ -119,6 +119,7 @@ st.markdown("""
         font-weight: bold;
         font-size: 16px;
         border: none;
+        width: 100%;
     }
     .translate-button:hover {
         background-color: #1557b0;
@@ -193,7 +194,7 @@ if "current_page" not in st.session_state:
 st.write("")
 
 # ----------------------------------------------------
-# 收集資料並產生 CSV 下載檔案區塊（順序改為 id,url,title，字體放大）
+# 收集資料並產生 CSV 下載檔案區塊
 # ----------------------------------------------------
 csv_lines = ["id,url,title"]
 for idx in range(1, 51):
@@ -322,13 +323,14 @@ for tab_idx, tab in enumerate(tabs):
 
         with right_col:
             user_input_text = st.session_state[text_key]
-            encoded_text = urllib.parse.quote(user_input_text)
-            translate_url = f"https://translate.google.com/?hl=zh-TW&sl=en&tl=zh-TW&text={encoded_text}&op=translate"
-
+            
             title_col, btn_col = st.columns([3, 1.4], vertical_alignment="center")
             with title_col:
                 st.subheader("✍️ 歌詞文字框與朗讀練習：")
             with btn_col:
+                # 讓 Google 翻譯按鈕點擊前先透過按鈕重新整理更新文字
+                encoded_text = urllib.parse.quote(user_input_text)
+                translate_url = f"https://translate.google.com/?hl=zh-TW&sl=en&tl=zh-TW&text={encoded_text}&op=translate"
                 st.markdown(f'<a href="{translate_url}" target="_blank" class="translate-button">🌐 Google 翻譯</a>', unsafe_allow_html=True)
 
             user_input_text = st.text_area(
@@ -338,15 +340,21 @@ for tab_idx, tab in enumerate(tabs):
             )
             st.session_state[text_key] = user_input_text
 
-            col1, col2 = st.columns([1, 1])
+            # 額外加上更新與清理按鈕，確保點擊翻譯前能直接抓到最新輸入的文字
+            col1, col2, col3 = st.columns([1, 1, 1])
             with col1:
                 play_btn = st.button(f"🔊 播放整段發音 (循環)", key=f"play_{absolute_idx}")
             with col2:
+                update_trans_btn = st.button(f"🔄 更新翻譯連結", key=f"update_t_{absolute_idx}")
+            with col3:
                 clear_btn = st.button(f"🗑️ 清空文字框", key=f"clear_{absolute_idx}")
 
             if clear_btn:
                 st.session_state[text_key] = ""
                 st.rerun()
+                
+            if update_trans_btn:
+                st.success("✨ 翻譯連結已更新！現在點擊右上角的「Google 翻譯」就可以順利帶入文字囉！")
 
             if play_btn and user_input_text.strip():
                 try:
