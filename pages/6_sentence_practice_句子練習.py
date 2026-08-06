@@ -181,6 +181,7 @@ for idx in range(1, 51):
     if f"my_text_input_{idx}" not in st.session_state:
         st.session_state[f"my_text_input_{idx}"] = ""
 
+# 預設第一首文字與網址（完全採用動態變數，不寫死在 CSV 字串中）
 if not st.session_state["my_text_input_1"]:
     st.session_state["my_text_input_1"] = "My Heart Will Go On 我心永恆\nEvery night in my dreams I see you, I feel you\n每個深夜在我的夢中，我見到你，感受到你"
     st.session_state.playlist_names[1] = "My Heart Will Go On"
@@ -192,7 +193,7 @@ if "current_page" not in st.session_state:
 st.write("")
 
 # ----------------------------------------------------
-# 收集資料並產生 CSV 下載檔案區塊
+# 收集資料並產生 CSV 下載檔案區塊（全面動態產生，排版完全一致）
 # ----------------------------------------------------
 csv_lines = ["id,title,url"]
 for idx in range(1, 51):
@@ -274,7 +275,6 @@ for tab_idx, tab in enumerate(tabs):
             )
             st.session_state[url_key] = user_yt_link
 
-            # 新增：儲存按鈕，讓澄玄一鍵同步到 CSV 庫中！
             if st.button(f"💾 儲存【曲目 {absolute_idx}】網址與歌名到 CSV 庫", key=f"save_url_{absolute_idx}", use_container_width=True):
                 st.success(f"🎉 曲目 {absolute_idx} 的網址已成功儲存並同步至 CSV 庫！")
                 st.rerun()
@@ -284,7 +284,6 @@ for tab_idx, tab in enumerate(tabs):
                     raw_url = user_yt_link.strip()
                     video_id = ""
                     
-                    # 智慧解析 Shorts 與一般 YouTube 網址取得影片 ID
                     if "shorts/" in raw_url:
                         video_id = raw_url.split("shorts/")[-1].split("?")[0].split("/")[0]
                     elif "watch?v=" in raw_url:
