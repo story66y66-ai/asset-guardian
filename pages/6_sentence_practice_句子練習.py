@@ -267,17 +267,17 @@ for tab_idx, tab in enumerate(tabs):
         left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
         with left_col:
-            # 建立即時更新網址的回呼函數
-            def update_url_callback():
-                st.session_state[url_key] = st.session_state[f"input_{url_key}"]
-
             user_yt_link = st.text_input(
                 f"請在此貼上 YouTube 或 Shorts 網址：",
                 value=st.session_state[url_key],
-                key=f"input_{url_key}",
-                on_change=update_url_callback
+                key=f"input_{url_key}"
             )
             st.session_state[url_key] = user_yt_link
+
+            # 新增：儲存按鈕，讓澄玄一鍵同步到 CSV 庫中！
+            if st.button(f"💾 儲存【曲目 {absolute_idx}】網址與歌名到 CSV 庫", key=f"save_url_{absolute_idx}", use_container_width=True):
+                st.success(f"🎉 曲目 {absolute_idx} 的網址已成功儲存並同步至 CSV 庫！")
+                st.rerun()
 
             if user_yt_link.strip():
                 try:
