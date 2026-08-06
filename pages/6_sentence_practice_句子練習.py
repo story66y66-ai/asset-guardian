@@ -191,17 +191,20 @@ if "current_page" not in st.session_state:
 
 st.write("")
 
+# ----------------------------------------------------
+# 收集資料並產生 CSV 下載檔案區塊
+# ----------------------------------------------------
+csv_lines = ["id,title,url"]
+for idx in range(1, 51):
+    t_name = st.session_state.playlist_names.get(idx, f"曲目 {idx}")
+    t_url = st.session_state.get(f"yt_input_url_{idx}", "").strip()
+    t_name_safe = t_name.replace(",", " ")
+    csv_lines.append(f"{idx},{t_name_safe},{t_url}")
+
+csv_text_output = "\n".join(csv_lines)
+
 with st.expander("📥 產生並下載 playlist_heart_歌曲結連庫.csv 檔案"):
     st.markdown("只要點擊下方的下載按鈕，就會自動把所有 50 首曲目完整打包成 `.csv` 檔案下載！")
-    
-    csv_lines = ["id,title,url"]
-    for idx in range(1, 51):
-        t_name = st.session_state.playlist_names.get(idx, f"曲目 {idx}")
-        t_url = st.session_state.get(f"yt_input_url_{idx}", "").strip()
-        t_name_safe = t_name.replace(",", " ")
-        csv_lines.append(f"{idx},{t_name_safe},{t_url}")
-    
-    csv_text_output = "\n".join(csv_lines)
     
     st.download_button(
         label="📥 點我直接下載 playlist_heart_歌曲結連庫.csv 檔案",
@@ -264,10 +267,15 @@ for tab_idx, tab in enumerate(tabs):
         left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
         with left_col:
+            # 建立即時更新網址的回呼函數
+            def update_url_callback():
+                st.session_state[url_key] = st.session_state[f"input_{url_key}"]
+
             user_yt_link = st.text_input(
                 f"請在此貼上 YouTube 或 Shorts 網址：",
                 value=st.session_state[url_key],
-                key=f"input_{url_key}"
+                key=f"input_{url_key}",
+                on_change=update_url_callback
             )
             st.session_state[url_key] = user_yt_link
 
