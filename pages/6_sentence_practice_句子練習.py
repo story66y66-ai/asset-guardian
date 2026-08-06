@@ -188,21 +188,30 @@ if "current_page" not in st.session_state:
 st.write("")
 
 # ----------------------------------------------------
-# 新增：CSV 內容匯出小幫手（供同步到 playlist_heart_歌曲結連庫.csv）
+# 新增：CSV 內容匯出與「一鍵直接下載檔案」按鈕區
 # ----------------------------------------------------
-with st.expander("📥 產生並複製 CSV 格式內容（供同步到 playlist_heart_歌曲結連庫.csv）"):
-    st.markdown("只要點擊下方，就會自動把當前所有曲目的編號、歌名與網址整理成標準 CSV 格式。直接複製貼到 GitHub 的 `playlist_heart_歌曲結連庫.csv` 裡就大功告成！")
+with st.expander("📥 產生並下載 playlist_heart_歌曲結連庫.csv 檔案"):
+    st.markdown("只要點擊下方的下載按鈕，就會自動把當前所有曲目的編號、歌名與網址打包成 `.csv` 檔案下載！下載後直接上傳到 GitHub 覆蓋即可！")
     
     csv_lines = ["id,title,url"]
     for idx in range(1, 51):
         t_name = st.session_state.playlist_names.get(idx, f"曲目 {idx}")
         t_url = st.session_state.get(f"yt_input_url_{idx}", "").strip()
-        # 避免逗號影響 csv 格式，將曲目名稱內逗號替換
         t_name_safe = t_name.replace(",", " ")
         csv_lines.append(f"{idx},{t_name_safe},{t_url}")
     
     csv_text_output = "\n".join(csv_lines)
-    st.text_area("請複製下方完整內容貼到你的 .csv 檔案中：", value=csv_text_output, height=150)
+    
+    # 加入一鍵下載檔案按鈕
+    st.download_button(
+        label="📥 點我直接下載 playlist_heart_歌曲結連庫.csv 檔案",
+        data=csv_text_output,
+        file_name="playlist_heart_歌曲結連庫.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
+    
+    st.text_area("或者預覽與複製下方文字：", value=csv_text_output, height=120)
 
 st.write("")
 
@@ -436,7 +445,7 @@ for tab_idx, tab in enumerate(tabs):
                     with cols[0]:
                         st.markdown(f"<span style='font-size: 22px;'>🔹 **{w}** &nbsp; ` {kk_display} ` &nbsp; <span style='color:gray;'>{trans_display}</span></span>", unsafe_allow_html=True)
                     with cols[1]:
-                        if st.button(f"🔊 聽發音", key=f"word_audio_{absolute_idx}_{w_idx}_{w}"):
+                        if st.button(f"🔊 聽發音", key=f"word_audio_{absolute_idx}_{w_idx}_{w}id"):
                             w_tts = gTTS(text=w, lang='en')
                             w_fp = io.BytesIO()
                             w_tts.write_to_fp(w_fp)
