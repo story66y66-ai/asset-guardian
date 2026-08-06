@@ -181,26 +181,20 @@ for idx in range(1, 51):
     if f"my_text_input_{idx}" not in st.session_state:
         st.session_state[f"my_text_input_{idx}"] = ""
 
-# 預設第一首文字與網址（完全採用動態變數，不寫死在 CSV 字串中）
-if not st.session_state["my_text_input_1"]:
-    st.session_state["my_text_input_1"] = "My Heart Will Go On 我心永恆\nEvery night in my dreams I see you, I feel you\n每個深夜在我的夢中，我見到你，感受到你"
-    st.session_state.playlist_names[1] = "My Heart Will Go On"
-    st.session_state["yt_input_url_1"] = "https://youtube.com/shorts/nutG0EKVVzM?si=fSiizSodNUixFPx8"
-
 if "current_page" not in st.session_state:
     st.session_state.current_page = 1
 
 st.write("")
 
 # ----------------------------------------------------
-# 收集資料並產生 CSV 下載檔案區塊（全面動態產生，排版完全一致）
+# 收集資料並產生 CSV 下載檔案區塊（順序改為 id,url,title，完全由澄玄輸入）
 # ----------------------------------------------------
-csv_lines = ["id,title,url"]
+csv_lines = ["id,url,title"]
 for idx in range(1, 51):
     t_name = st.session_state.playlist_names.get(idx, f"曲目 {idx}")
     t_url = st.session_state.get(f"yt_input_url_{idx}", "").strip()
     t_name_safe = t_name.replace(",", " ")
-    csv_lines.append(f"{idx},{t_name_safe},{t_url}")
+    csv_lines.append(f"{idx},{t_url},{t_name_safe}")
 
 csv_text_output = "\n".join(csv_lines)
 
