@@ -126,8 +126,8 @@ st.title("📖 澄玄大學 - 自訂文字與歌詞語音朗讀工坊")
 # 最上方的兩個專屬任意門按鈕
 col_btn1, col_btn2 = st.columns([1, 1])
 with col_btn1:
-    yt_url = "https://www.youtube.com/@%E8%8B%B1%E8%AA%9E%E5%A4%A9%E5%A4%A9%E5%AD%B8/shorts?view=0&sort=p&flow=grid"
-    st.markdown(f'<a href="{yt_url}" target="_blank" class="yt-button">🔥 英語天天學熱門 Shorts 任意門</a>', unsafe_allow_html=True)
+    yt_url_top = "https://www.youtube.com/@%E8%8B%B1%E8%AA%9E%E5%A4%A9%E5%A4%A9%E5%AD%B8/shorts?view=0&sort=p&flow=grid"
+    st.markdown(f'<a href="{yt_url_top}" target="_blank" class="yt-button">🔥 英語天天學熱門 Shorts 任意門</a>', unsafe_allow_html=True)
 with col_btn2:
     notebook_url = "https://notebooklm.google.com/"
     st.markdown(f'<a href="{notebook_url}" target="_blank" class="notebook-button">✨ 澄玄的隨身英文秘書任意門</a>', unsafe_allow_html=True)
@@ -168,7 +168,7 @@ if not df.empty and "word" in df.columns:
         kk_str = str(row['kk']) if 'kk' in df.columns and pd.notna(row['kk']) else ""
         word_dict[w_str] = {"trans": trans_str, "kk": kk_str}
 
-# 初始化 5 頁的翻頁與曲目名稱記錄 (共 50 首)，確保所有 50 首資料完整保存
+# 初始化 5 頁的翻頁與曲目名稱記錄 (共 50 首)
 if "page_names" not in st.session_state:
     st.session_state.page_names = {
         p: f"第 {p} 頁 (曲目 {(p-1)*10 + 1} ~ {p*10})" for p in range(1, 6)
@@ -177,7 +177,7 @@ if "page_names" not in st.session_state:
 if "playlist_names" not in st.session_state:
     st.session_state.playlist_names = {idx: f"曲目 {idx}" for idx in range(1, 51)}
 
-# 初始化所有 50 首曲目的網址與文字內容，確保切換或修改時資料不會消失
+# 初始化所有 50 首曲目的網址與文字內容
 for idx in range(1, 51):
     if f"yt_input_url_{idx}" not in st.session_state:
         st.session_state[f"yt_input_url_{idx}"] = ""
@@ -210,7 +210,6 @@ with st.expander("📥 產生並下載 playlist_heart_歌曲結連庫.csv 檔案
     
     csv_text_output = "\n".join(csv_lines)
     
-    # 加入一鍵下載檔案按鈕
     st.download_button(
         label="📥 點我直接下載 playlist_heart_歌曲結連庫.csv 檔案",
         data=csv_text_output,
@@ -239,7 +238,6 @@ for p in range(1, 6):
 current_page = st.session_state.current_page
 st.write("")
 
-# 讓澄玄可以自訂當前這一頁（這一冊）的用途名稱
 with st.expander(f"✏️ 自訂【第 {current_page} 頁】的用途與名稱設定"):
     col_p1, col_p2 = st.columns([2, 1])
     with col_p1:
@@ -253,15 +251,12 @@ with st.expander(f"✏️ 自訂【第 {current_page} 頁】的用途與名稱�
 
 st.write("")
 
-# 計算當前頁面涵蓋的 10 個曲目編號範圍
 start_idx = (current_page - 1) * 10 + 1
 end_idx = current_page * 10
 
-# 建立該頁面專屬的 10 個分頁籤
 tab_titles = [f"🎵 {st.session_state.playlist_names[idx]}" for idx in range(start_idx, end_idx + 1)]
 tabs = st.tabs(tab_titles)
 
-# 迴圈建立這 10 個分頁的獨立內容
 for tab_idx, tab in enumerate(tabs):
     absolute_idx = start_idx + tab_idx  # 實際的全局曲目編號 (1~50)
     
@@ -288,19 +283,21 @@ for tab_idx, tab in enumerate(tabs):
 
             if user_yt_link.strip():
                 try:
-                    embed_url = user_yt_link.strip()
+                    raw_url = user_yt_link.strip()
                     video_id = ""
-                    if "shorts/" in embed_url:
-                        video_id = embed_url.split("shorts/")[-1].split("?")[0]
-                    elif "watch?v=" in embed_url:
-                        video_id = embed_url.split("watch?v=")[-1].split("&")[0]
-                    elif "youtu.be/" in embed_url:
-                        video_id = embed_url.split("youtu.be/")[-1].split("?")[0]
+                    
+                    # 智慧解析各種 YouTube 網址格式
+                    if "shorts/" in raw_url:
+                        video_id = raw_url.split("shorts/")[-1].split("?")[0].split("/")[0]
+                    elif "watch?v=" in raw_url:
+                        video_id = raw_url.split("watch?v=")[-1].split("&")[0]
+                    elif "youtu.be/" in raw_url:
+                        video_id = raw_url.split("youtu.be/")[-1].split("?")[0].split("/")[0]
                         
                     if video_id:
                         embed_url = f"https://www.youtube.com/embed/{video_id}?loop=1&playlist={video_id}"
                     else:
-                        embed_url = user_yt_link.strip()
+                        embed_url = raw_url
                         
                     st.markdown(f"""
                         <div style="display: flex; justify-content: center; margin-bottom: 15px; margin-top: 15px;">
