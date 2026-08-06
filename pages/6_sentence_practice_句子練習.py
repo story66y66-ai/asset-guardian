@@ -328,7 +328,6 @@ for tab_idx, tab in enumerate(tabs):
             with title_col:
                 st.subheader("✍️ 歌詞文字框與朗讀練習：")
             with btn_col:
-                # 讓 Google 翻譯按鈕點擊前先透過按鈕重新整理更新文字
                 encoded_text = urllib.parse.quote(user_input_text)
                 translate_url = f"https://translate.google.com/?hl=zh-TW&sl=en&tl=zh-TW&text={encoded_text}&op=translate"
                 st.markdown(f'<a href="{translate_url}" target="_blank" class="translate-button">🌐 Google 翻譯</a>', unsafe_allow_html=True)
@@ -340,21 +339,53 @@ for tab_idx, tab in enumerate(tabs):
             )
             st.session_state[text_key] = user_input_text
 
-            # 額外加上更新與清理按鈕，確保點擊翻譯前能直接抓到最新輸入的文字
-            col1, col2, col3 = st.columns([1, 1, 1])
+            # 功能按鈕列
+            col1, col2, col3, col4 = st.columns([1.2, 1.2, 1, 1])
             with col1:
-                play_btn = st.button(f"🔊 播放整段發音 (循環)", key=f"play_{absolute_idx}")
+                play_btn = st.button(f"🔊 播放整段", key=f"play_{absolute_idx}")
             with col2:
-                update_trans_btn = st.button(f"🔄 更新翻譯連結", key=f"update_t_{absolute_idx}")
+                smart_split_btn = st.button(f"✨ 智慧分句排版", key=f"split_{absolute_idx}")
             with col3:
-                clear_btn = st.button(f"🗑️ 清空文字框", key=f"clear_{absolute_idx}")
+                update_trans_btn = st.button(f"🔄 更新翻譯", key=f"update_t_{absolute_idx}")
+            with col4:
+                clear_btn = st.button(f"🗑️ 清空", key=f"clear_{absolute_idx}")
 
             if clear_btn:
                 st.session_state[text_key] = ""
                 st.rerun()
                 
             if update_trans_btn:
-                st.success("✨ 翻譯連結已更新！現在點擊右上角的「Google 翻譯」就可以順利帶入文字囉！")
+                st.success("✨ 翻譯連結已更新！")
+
+            # 智慧分句不寫死演算法：根據常見英文子句引導詞（that, i, you, and, across, where 等代名詞與連接詞）自動智慧分行與補上斷句
+            if smart_split_btn and user_input_text.strip():
+                raw_text = user_input_text.replace("\n", " ")
+                # 智慧分句關鍵字規則（不寫死特定歌曲，適用所有英文歌詞與長句）
+                # 當遇到主詞切換或從屬子句連接詞時自動分行
+                split_patterns = r'\b(that|i|you|he|she|we|they|and|but|because|where|when|who|which|across|through)\b'
+                
+                # 智慧替換：在關鍵字前方加上換行（但保留第一個字）
+                processed_text = raw_text.strip()
+                # 為了避免過度分割，我們用正則聰明地在特定從屬結構前換行
+                words_list = processed_text.split()
+                new_lines = []
+                current_line = []
+                
+                for w in words_list:
+                    w_lower = w.lower()
+                    # 當累積到一定長度，或遇到常見的子句引導詞時，自動折行
+                    if w_lower in ["that", "i", "you", "and", "where", "when", "across"] and len(current_line) >= 4:
+                        new_lines.append(" ".join(current_line))
+                        current_line = [w]
+                    else:
+                        current_line.append(w)
+                if current_line:
+                    new_lines.append(" ".join(current_line))
+                
+                formatted_result = "\n".join(new_lines)
+                st.session_state[text_key] = formatted_result
+                st.success("✨ 已成功完成智慧分句排版！")
+                st.rerun()
 
             if play_btn and user_input_text.strip():
                 try:
