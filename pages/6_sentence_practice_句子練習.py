@@ -130,7 +130,7 @@ st.markdown("""
 
 st.title("📖 澄玄大學 - 自訂文字與歌詞語音朗讀工坊")
 
-# 最上方的兩個專屬任意門按鈕
+# 最上方的兩個專屬按鈕
 col_btn1, col_btn2 = st.columns([1, 1])
 with col_btn1:
     yt_url_top = "https://www.youtube.com/@%E8%8B%B1%E8%AA%9E%E5%A4%A9%E5%A4%A9%E5%AD%B8/shorts?view=0&sort=p&flow=grid"
@@ -188,7 +188,7 @@ for idx in range(1, 51):
     if f"my_text_input_{idx}" not in st.session_state:
         st.session_state[f"my_text_input_{idx}"] = ""
 
-# 嘗試自動從已存在的 CSV 讀取資料（如果檔案存在）
+# 自動從已存在的 CSV 讀取網址、歌名與完整歌詞
 if os.path.exists("playlist_heart_歌曲結連庫.csv"):
     try:
         saved_df = pd.read_csv("playlist_heart_歌曲結連庫.csv")
@@ -199,7 +199,7 @@ if os.path.exists("playlist_heart_歌曲結連庫.csv"):
                     st.session_state[f"yt_input_url_{idx_val}"] = str(row['url'])
                 if pd.notna(row.get('title')):
                     st.session_state.playlist_names[idx_val] = str(row['title'])
-                if pd.notna(row.get('lyrics')):
+                if 'lyrics' in saved_df.columns and pd.notna(row.get('lyrics')):
                     st.session_state[f"my_text_input_{idx_val}"] = str(row['lyrics'])
     except Exception:
         pass
@@ -210,7 +210,7 @@ if "current_page" not in st.session_state:
 st.write("")
 
 # ----------------------------------------------------
-# 收集資料並使用 pandas 產生安全包覆雙引號的 CSV 檔案
+# 包含完整的 id, url, title, lyrics，並強制使用 utf-8-sig 輸出
 # ----------------------------------------------------
 csv_data_list = []
 for idx in range(1, 51):
@@ -222,10 +222,11 @@ for idx in range(1, 51):
     })
 
 df_export = pd.DataFrame(csv_data_list)
-csv_text_output = df_export.to_csv(index=False, encoding="utf-8-sig")
+# 加上 quoting=1 (csv.QUOTE_ALL) 確保所有文字欄位都被雙引號包起來，完美防止 Excel 換行崩潰
+csv_text_output = df_export.to_csv(index=False, encoding="utf-8-sig", quoting=1)
 
-with st.expander("📥 產生並下載包含【網址、歌名、歌詞】的完整 CSV 庫"):
-    st.markdown("<span style='font-size: 20px; font-weight: bold;'>點擊下方按鈕，就能把 50 首曲目的網址、歌名與長篇歌詞全部完美打包（自動加上雙引號保護，版面絕對不亂）！</span>", unsafe_allow_html=True)
+with st.expander("📥 產生並下載包含完整歌詞的 CSV 庫（支援 Excel 直接開啟與 GitHub）"):
+    st.markdown("<span style='font-size: 20px; font-weight: bold;'>點擊下方按鈕下載，歌詞會完整保留，用 Excel 打開也不會亂掉！</span>", unsafe_allow_html=True)
     
     st.download_button(
         label="📥 點我直接下載 playlist_heart_歌曲結連庫.csv 檔案",
@@ -235,8 +236,8 @@ with st.expander("📥 產生並下載包含【網址、歌名、歌詞】的完
         use_container_width=True
     )
     
-    st.markdown("<span style='font-size: 18px; font-weight: bold;'>完整資料預覽與複製：</span>", unsafe_allow_html=True)
-    st.text_area("完整資料預覽與複製：", value=csv_text_output, height=120, label_visibility="collapsed")
+    st.markdown("<span style='font-size: 18px; font-weight: bold;'>完整資料預覽：</span>", unsafe_allow_html=True)
+    st.text_area("完整資料預覽：", value=csv_text_output, height=120, label_visibility="collapsed")
 
 st.write("")
 
@@ -296,8 +297,8 @@ for tab_idx, tab in enumerate(tabs):
             )
             st.session_state[url_key] = user_yt_link
 
-            if st.button(f"💾 儲存【曲目 {absolute_idx}】的網址、歌名與歌詞", key=f"save_url_{absolute_idx}", use_container_width=True):
-                st.success(f"🎉 曲目 {absolute_idx} 的所有資料（網址、歌名、歌詞）已成功儲存並同步！")
+            if st.button(f"💾 儲存【曲目 {absolute_idx}】的資料", key=f"save_url_{absolute_idx}", use_container_width=True):
+                st.success(f"🎉 曲目 {absolute_idx} 的資料已成功儲存！")
                 st.rerun()
 
             if user_yt_link.strip():
@@ -358,7 +359,6 @@ for tab_idx, tab in enumerate(tabs):
             )
             st.session_state[text_key] = user_input_text
 
-            # 功能按鈕列
             col1, col2, col3, col4 = st.columns([1.2, 1.2, 1, 1])
             with col1:
                 play_btn = st.button(f"🔊 播放整段", key=f"play_{absolute_idx}")
@@ -376,7 +376,6 @@ for tab_idx, tab in enumerate(tabs):
             if update_trans_btn:
                 st.success("✨ 翻譯連結已更新！")
 
-            # 智慧分句不寫死演算法
             if smart_split_btn and user_input_text.strip():
                 raw_text = user_input_text.replace("\n", " ")
                 words_list = raw_text.split()
@@ -409,9 +408,7 @@ for tab_idx, tab in enumerate(tabs):
 
         st.divider()
 
-        # ----------------------------------------------------
         # 逐句互動輸入測驗區
-        # ----------------------------------------------------
         st.subheader("✍️ 逐句英文輸入測驗與朗讀練習：")
         
         all_lines = user_input_text.split('\n')
@@ -472,7 +469,7 @@ for tab_idx, tab in enumerate(tabs):
 
         st.divider()
 
-        # 下方的單字解析區
+        # 單字解析區
         if user_input_text.strip():
             st.subheader("🔍 歌詞單字解析、KK音標與個別發音：")
             
