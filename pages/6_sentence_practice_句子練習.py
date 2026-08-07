@@ -158,32 +158,37 @@ st.write("")
 # 讀取單字資料庫（包含 level 與通用庫）
 @st.cache_data
 def load_and_merge_data():
-    all_files = glob.glob("words_level*.csv")
+    # 1. 讀取通用庫 (優先權最高)
+    universal_df = pd.DataFrame(columns=["word", "trans", "kk", "level"])
+    if os.path.exists("words_universal_通用庫.csv"):
+        universal_df = pd.read_csv("words_universal_通用庫.csv")
+    
+    # 2. 讀取所有 level 檔案
+    all_level_files = glob.glob("words_level*.csv")
     df_list = []
     
-    universal_file = "words_universal_通用庫.csv"
-    if os.path.exists(universal_file):
-        all_files.append(universal_file)
-        
-    if all_files:
-        for filename in sorted(list(set(all_files))):
-            try:
-                temp_df = pd.read_csv(filename)
-                df_list.append(temp_df)
-            except Exception:
-                pass
-                
+    # 將 level 檔案讀入列表
+    for f in all_level_files:
+        try:
+            df_list.append(pd.read_csv(f))
+        except:
+            pass
+            
+    # 3. 合併所有資料 (先 Level，再 Universal)
     if df_list:
         combined_df = pd.concat(df_list, ignore_index=True)
     else:
-        try:
-            combined_df = pd.read_csv("words.csv")
-        except Exception:
-            combined_df = pd.DataFrame(columns=["word", "trans", "kk", "level"])
-            
-    if "word" in combined_df.columns:
-        combined_df = combined_df.drop_duplicates(subset=["word"], keep='last')
-    return combined_df
+        combined_df = pd.DataFrame(columns=["word", "trans", "kk", "level"])
+        
+    # 4. 強制將通用庫追加到最下方，並透過 drop_duplicates 保留「最後出現的」
+    # 因為我們要保留通用庫的正確音標，所以將 universal_df 放後面
+    final_df = pd.concat([combined_df, universal_df], ignore_index=True)
+    
+    # 保留「最後出現的」，這樣通用庫的資料就會覆蓋掉 level 檔案裡不完整的定義
+    if not final_df.empty and "word" in final_df.columns:
+        final_df = final_df.drop_duplicates(subset=["word"], keep='last')
+        
+    return final_df
 
 df = load_and_merge_data()
 
