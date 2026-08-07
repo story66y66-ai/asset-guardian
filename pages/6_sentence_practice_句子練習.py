@@ -6,6 +6,7 @@ from gtts import gTTS
 import io
 import re
 import urllib.parse
+import streamlit.components.v1 as components
 
 # 設定頁面為寬螢幕模式
 st.set_page_config(layout="wide")
@@ -16,7 +17,6 @@ st.markdown("""
     [data-testid="stSidebar"] div, [data-testid="stSidebar"] a { font-size: 28px !important; }
     .red-word { color: #ff2b2b !important; font-weight: bold !important; }
     
-    /* 放大一般 YouTube 網址與輸入框的文字與高度 */
     .stTextInput input { 
         font-size: 22px !important; 
         color: #000000 !important; 
@@ -24,7 +24,6 @@ st.markdown("""
         height: 50px !important;
     }
     
-    /* 放大逐句練習輸入框的文字與高度 */
     div[data-baseweb="input"] input {
         font-size: 22px !important;
         color: #000000 !important;
@@ -32,7 +31,6 @@ st.markdown("""
         height: 50px !important;
     }
     
-    /* 專門放大第一到第五冊/頁名稱修改的輸入框文字與高度 */
     div[data-testid="stExpander"] input {
         font-size: 24px !important;
         color: #000000 !important;
@@ -40,7 +38,6 @@ st.markdown("""
         height: 55px !important;
     }
 
-    /* 放大上方分頁籤 (Tabs) 的文字大小與寬度 */
     button[data-baseweb="tab"] {
         font-size: 22px !important;
         font-weight: bold !important;
@@ -50,14 +47,12 @@ st.markdown("""
         padding-right: 20px !important;
     }
     
-    /* 專門強力放大藍色框框內的翻書頁面按鈕與曲目按鈕字體 */
     div.stButton > button { 
         font-size: 20px !important; 
         padding: 12px 20px !important; 
         font-weight: bold !important;
     }
 
-    /* 針對翻書頁面按鈕（多行按鈕）特別加大行距與字體 */
     div[data-testid="column"] div.stButton > button {
         font-size: 20px !important;
         font-weight: bold !important;
@@ -71,7 +66,6 @@ st.markdown("""
         resize: vertical !important; 
     }
     
-    /* 放大逐句練習區的原句文字大小（英文與中文） */
     .sentence-display {
         font-size: 24px !important;
         font-weight: bold !important;
@@ -79,7 +73,6 @@ st.markdown("""
         line-height: 1.6 !important;
     }
 
-    /* 放大 Expander 標題與內部文字（針對 CSV 下載區塊） */
     div[data-testid="stExpander"] summary span {
         font-size: 22px !important;
         font-weight: bold !important;
@@ -155,7 +148,6 @@ with col_btn2:
 
 st.write("")
 
-# 讀取單字資料庫（包含 level 與通用庫，強制通用庫覆蓋）
 @st.cache_data
 def load_and_merge_data():
     universal_df = pd.DataFrame(columns=["word", "trans", "kk", "level"])
@@ -207,7 +199,6 @@ for idx in range(1, 51):
     if f"my_text_input_{idx}" not in st.session_state:
         st.session_state[f"my_text_input_{idx}"] = ""
 
-# 自動從已存在的 CSV 讀取網址、歌名與完整歌詞
 if os.path.exists("playlist_heart_歌曲結連庫.csv"):
     try:
         saved_df = pd.read_csv("playlist_heart_歌曲結連庫.csv")
@@ -436,8 +427,8 @@ for tab_idx, tab in enumerate(tabs):
                 st.markdown(f"---")
                 st.markdown(f"<div class='sentence-display'>第 {line_idx + 1} 句原句：<br>✨ {eng_sentence}</div>", unsafe_allow_html=True)
                 
-                # 調整欄位比例：加入正常語音、慢速語音、輸入框、清除按鈕
-                cols = st.columns([1.1, 1.1, 3.8, 1])
+                # 調整欄位比例：加入正常語音、0.4倍超慢速、輸入框、清除按鈕
+                cols = st.columns([1.1, 1.4, 3.5, 1])
                 with cols[0]:
                     if st.button(f"🔊 聽發音", key=f"line_audio_{absolute_idx}_{line_idx}"):
                         try:
@@ -449,14 +440,30 @@ for tab_idx, tab in enumerate(tabs):
                             st.error(f"語音錯誤：{e}")
                             
                 with cols[1]:
-                    if st.button(f"🐢 0.5倍慢速", key=f"line_audio_slow_{absolute_idx}_{line_idx}"):
-                        try:
-                            s_tts = gTTS(text=eng_sentence, lang='en', slow=True)
-                            s_fp = io.BytesIO()
-                            s_tts.write_to_fp(s_fp)
-                            st.audio(s_fp, autoplay=True)
-                        except Exception as e:
-                            st.error(f"語音錯誤：{e}")
+                    # 0.4倍超慢速按鈕（透過瀏覽器語音合成技術支援精確 0.4 倍速）
+                    clean_sentence = re.sub(r'[\(\（].*?[\)\）]', '', eng_sentence).strip()
+                    safe_sentence_js = clean_sentence.replace("'", "\\'")
+                    
+                    slow_btn_id = f"slow_04_{absolute_idx}_{line_idx}"
+                    components.html(f"""
+                        <button onclick="
+                            const utterance = new SpeechSynthesisUtterance('{safe_sentence_js}');
+                            utterance.lang = 'en-US';
+                            utterance.rate = 0.4;
+                            window.speechSynthesis.cancel();
+                            window.speechSynthesis.speak(utterance);
+                        " style="
+                            background-color: #f0f2f6;
+                            color: #262730;
+                            border: 1px solid #d6d6d8;
+                            padding: 8px 12px;
+                            border-radius: 4px;
+                            font-size: 16px;
+                            font-weight: bold;
+                            cursor: pointer;
+                            width: 100%;
+                        ">🐢 0.4倍超慢</button>
+                    """, height=45)
                 
                 ans_key = f"ans_input_{absolute_idx}_{line_idx}"
                 
