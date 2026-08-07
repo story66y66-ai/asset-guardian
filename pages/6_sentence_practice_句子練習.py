@@ -155,36 +155,29 @@ with col_btn2:
 
 st.write("")
 
-# 讀取單字資料庫（包含 level 與通用庫）
+# 讀取單字資料庫（包含 level 與通用庫，強制通用庫覆蓋）
 @st.cache_data
 def load_and_merge_data():
-    # 1. 讀取通用庫 (優先權最高)
     universal_df = pd.DataFrame(columns=["word", "trans", "kk", "level"])
     if os.path.exists("words_universal_通用庫.csv"):
         universal_df = pd.read_csv("words_universal_通用庫.csv")
     
-    # 2. 讀取所有 level 檔案
     all_level_files = glob.glob("words_level*.csv")
     df_list = []
     
-    # 將 level 檔案讀入列表
     for f in all_level_files:
         try:
             df_list.append(pd.read_csv(f))
         except:
             pass
             
-    # 3. 合併所有資料 (先 Level，再 Universal)
     if df_list:
         combined_df = pd.concat(df_list, ignore_index=True)
     else:
         combined_df = pd.DataFrame(columns=["word", "trans", "kk", "level"])
         
-    # 4. 強制將通用庫追加到最下方，並透過 drop_duplicates 保留「最後出現的」
-    # 因為我們要保留通用庫的正確音標，所以將 universal_df 放後面
     final_df = pd.concat([combined_df, universal_df], ignore_index=True)
     
-    # 保留「最後出現的」，這樣通用庫的資料就會覆蓋掉 level 檔案裡不完整的定義
     if not final_df.empty and "word" in final_df.columns:
         final_df = final_df.drop_duplicates(subset=["word"], keep='last')
         
@@ -443,11 +436,22 @@ for tab_idx, tab in enumerate(tabs):
                 st.markdown(f"---")
                 st.markdown(f"<div class='sentence-display'>第 {line_idx + 1} 句原句：<br>✨ {eng_sentence}</div>", unsafe_allow_html=True)
                 
-                cols = st.columns([1.2, 4.2, 1])
+                # 調整欄位比例：加入正常語音、慢速語音、輸入框、清除按鈕
+                cols = st.columns([1.1, 1.1, 3.8, 1])
                 with cols[0]:
                     if st.button(f"🔊 聽發音", key=f"line_audio_{absolute_idx}_{line_idx}"):
                         try:
-                            s_tts = gTTS(text=eng_sentence, lang='en')
+                            s_tts = gTTS(text=eng_sentence, lang='en', slow=False)
+                            s_fp = io.BytesIO()
+                            s_tts.write_to_fp(s_fp)
+                            st.audio(s_fp, autoplay=True)
+                        except Exception as e:
+                            st.error(f"語音錯誤：{e}")
+                            
+                with cols[1]:
+                    if st.button(f"🐢 0.5倍慢速", key=f"line_audio_slow_{absolute_idx}_{line_idx}"):
+                        try:
+                            s_tts = gTTS(text=eng_sentence, lang='en', slow=True)
                             s_fp = io.BytesIO()
                             s_tts.write_to_fp(s_fp)
                             st.audio(s_fp, autoplay=True)
@@ -461,7 +465,7 @@ for tab_idx, tab in enumerate(tabs):
                         st.session_state[k] = ""
                     return clear_func
 
-                with cols[1]:
+                with cols[2]:
                     user_answer = st.text_input(
                         f"請輸入第 {line_idx + 1} 句英文：",
                         key=ans_key,
@@ -469,7 +473,7 @@ for tab_idx, tab in enumerate(tabs):
                         placeholder="請在此輸入括號內的英文..."
                     )
                 
-                with cols[2]:
+                with cols[3]:
                     st.button(f"🗑️ 清除", key=f"clear_line_{absolute_idx}_{line_idx}", on_click=make_clear_callback(ans_key))
                 
                 if user_answer.strip():
