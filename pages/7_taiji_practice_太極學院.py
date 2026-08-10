@@ -161,10 +161,11 @@ for idx in range(1, 51):
     if f"taiji_my_text_input_{idx}" not in st.session_state:
         st.session_state[f"taiji_my_text_input_{idx}"] = ""
 
-# 從太極專屬 CSV 讀取（如果有的話）
-if os.path.exists("taiji_playlist_heart_太極結連庫.csv"):
+# 從太極專屬 CSV 讀取
+TAIJI_CSV_FILE = "taiji_playlist_heart_太極結連庫.csv"
+if os.path.exists(TAIJI_CSV_FILE):
     try:
-        saved_df = pd.read_csv("taiji_playlist_heart_太極結連庫.csv")
+        saved_df = pd.read_csv(TAIJI_CSV_FILE)
         for _, row in saved_df.iterrows():
             idx_val = int(row['id'])
             if 1 <= idx_val <= 50:
@@ -182,31 +183,35 @@ if "taiji_current_page" not in st.session_state:
 
 st.write("")
 
-csv_data_list = []
-for idx in range(1, 51):
-    csv_data_list.append({
-        "id": idx,
-        "url": st.session_state.get(f"taiji_yt_input_url_{idx}", "").strip(),
-        "title": st.session_state.taiji_playlist_names.get(idx, f"套路 {idx}"),
-        "lyrics": st.session_state.get(f"taiji_my_text_input_{idx}", "")
-    })
+def save_taiji_data_to_csv():
+    csv_data_list = []
+    for idx in range(1, 51):
+        csv_data_list.append({
+            "id": idx,
+            "url": st.session_state.get(f"taiji_yt_input_url_{idx}", "").strip(),
+            "title": st.session_state.taiji_playlist_names.get(idx, f"套路 {idx}"),
+            "lyrics": st.session_state.get(f"taiji_my_text_input_{idx}", "")
+        })
+    df_export = pd.DataFrame(csv_data_list)
+    df_export.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig", quoting=1)
+    return df_export.to_csv(index=False, encoding="utf-8-sig", quoting=1)
 
-df_export = pd.DataFrame(csv_data_list)
-csv_text_output = df_export.to_csv(index=False, encoding="utf-8-sig", quoting=1)
+# 自動儲存回呼函數 (Auto-save callback)
+def auto_save_taiji():
+    save_taiji_data_to_csv()
+
+csv_text_output = save_taiji_data_to_csv()
 
 with st.expander("📥 產生並下載包含完整太極招式的 CSV 庫（支援 Excel 直接開啟與 GitHub）"):
-    st.markdown("<span style='font-size: 20px; font-weight: bold;'>點擊下方按鈕下載，太極招式會完整保留，用 Excel 打開也不會亂掉！</span>", unsafe_allow_html=True)
+    st.markdown("<span style='font-size: 20px; font-weight: bold;'>系統已啟用自動儲存，您輸入的內容會隨時安全備份！</span>", unsafe_allow_html=True)
     
     st.download_button(
         label="📥 點我直接下載 taiji_playlist_heart_太極結連庫.csv 檔案",
         data=csv_text_output,
-        file_name="taiji_playlist_heart_太極結連庫.csv",
+        file_name=TAIJI_CSV_FILE,
         mime="text/csv",
         use_container_width=True
     )
-    
-    st.markdown("<span style='font-size: 18px; font-weight: bold;'>完整資料預覽：</span>", unsafe_allow_html=True)
-    st.text_area("完整資料預覽：", value=csv_text_output, height=120, label_visibility="collapsed")
 
 st.write("")
 
@@ -226,13 +231,10 @@ st.write("")
 with st.expander(f"✏️ 自訂【第 {current_page} 頁】的用途與名稱設定"):
     col_p1, col_p2 = st.columns([2, 1])
     with col_p1:
-        new_page_name = st.text_input(f"第 {current_page} 頁總用途名稱（例如：24式太極拳、太極劍）：", value=st.session_state.taiji_page_names[current_page], key=f"input_taiji_page_name_{current_page}")
+        new_page_name = st.text_input(f"第 {current_page} 頁總用途名稱：", value=st.session_state.taiji_page_names[current_page], key=f"input_taiji_page_name_{current_page}")
         if new_page_name != st.session_state.taiji_page_names[current_page]:
             st.session_state.taiji_page_names[current_page] = new_page_name
             st.rerun()
-    with col_p2:
-        st.write("")
-        st.markdown(f"<span style='font-size: 20px; color: #a0a0a0;'>💡 在此輸入這頁的專屬套路名稱，方便辨識！</span>", unsafe_allow_html=True)
 
 st.write("")
 
@@ -254,6 +256,7 @@ for tab_idx, tab in enumerate(tabs):
             new_track_name = st.text_input(f"單元 {absolute_idx} 名稱：", value=curr_name, key=f"rename_taiji_track_{absolute_idx}")
             if new_track_name != curr_name:
                 st.session_state.taiji_playlist_names[absolute_idx] = new_track_name
+                save_taiji_data_to_csv()
                 st.rerun()
 
         left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
@@ -262,13 +265,10 @@ for tab_idx, tab in enumerate(tabs):
             user_yt_link = st.text_input(
                 f"請在此貼上 YouTube 或 Shorts 網址：",
                 value=st.session_state[url_key],
-                key=f"input_{url_key}"
+                key=f"input_{url_key}",
+                on_change=auto_save_taiji
             )
             st.session_state[url_key] = user_yt_link
-
-            if st.button(f"💾 儲存【單元 {absolute_idx}】的資料", key=f"save_taiji_url_{absolute_idx}", use_container_width=True):
-                st.success(f"🎉 單元 {absolute_idx} 的資料已成功儲存！")
-                st.rerun()
 
             if user_yt_link.strip():
                 try:
@@ -324,33 +324,30 @@ for tab_idx, tab in enumerate(tabs):
             user_input_text = st.text_area(
                 "輸入太極招式：",
                 value=st.session_state[text_key],
-                key=f"textarea_taiji_{absolute_idx}"
+                key=f"textarea_taiji_{absolute_idx}",
+                on_change=auto_save_taiji
             )
             st.session_state[text_key] = user_input_text
 
-            col1, col2, col3, col4 = st.columns([1.2, 1.2, 1, 1])
+            col1, col2, col3 = st.columns([1.2, 1.2, 1])
             with col1:
                 play_btn = st.button(f"🔊 播放整段", key=f"play_taiji_{absolute_idx}")
             with col2:
                 smart_split_btn = st.button(f"✨ 自動換行排版", key=f"split_taiji_{absolute_idx}")
             with col3:
-                update_trans_btn = st.button(f"🔄 更新連結", key=f"update_t_taiji_{absolute_idx}")
-            with col4:
                 clear_btn = st.button(f"🗑️ 清空", key=f"clear_taiji_{absolute_idx}")
 
             if clear_btn:
                 st.session_state[text_key] = ""
+                save_taiji_data_to_csv()
                 st.rerun()
-                
-            if update_trans_btn:
-                st.success("✨ 連結已更新！")
 
             if smart_split_btn and user_input_text.strip():
-                # 中文招式可以依據標點符號或換行整理
                 lines = [l.strip() for l in user_input_text.split('\n') if l.strip()]
                 formatted_result = "\n".join(lines)
                 st.session_state[text_key] = formatted_result
-                st.success("✨ 已成功完成排版整理！")
+                save_taiji_data_to_csv()
+                st.success("✨ 已成功完成排版整理並自動儲存！")
                 st.rerun()
 
             if play_btn and user_input_text.strip():
@@ -389,7 +386,6 @@ for tab_idx, tab in enumerate(tabs):
                             st.error(f"語音錯誤：{e}")
                             
                 with cols[1]:
-                    # 0.5倍慢速按鈕（中文太極口令練習）
                     safe_sentence_js = taiji_sentence.replace("'", "\\'")
                     components.html(f"""
                         <button onclick="
