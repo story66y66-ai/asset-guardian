@@ -151,7 +151,7 @@ with col_btn2:
   notebook_url = "https://notebooklm.google.com/"
   st.markdown(
       f'<a href="{notebook_url}" target="_blank" class="notebook-button">✨'
-      " 澄玄的隨身太極筆記任意門</a>",
+      " 澄玄的隨身太極筆记任意門</a>",
       unsafe_allow_html=True,
   )
 
@@ -167,22 +167,16 @@ if "taiji_playlist_names" not in st.session_state:
       idx: f"套路 {idx}" for idx in range(1, 61)
   }
 
-for idx in range(1, 61):
-  if f"taiji_yt_input_url_{idx}" not in st.session_state:
-    st.session_state[f"taiji_yt_input_url_{idx}"] = ""
-  if f"taiji_my_text_input_{idx}" not in st.session_state:
-    st.session_state[f"taiji_my_text_input_{idx}"] = ""
-
 # 指定對接的 CSV 檔名
 TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
 
-# 載入 CSV 並自動合併同套路的招式文字
+# 讀取 CSV 並直接解析
+first_url = ""
+lyrics_list = []
+
 if os.path.exists(TAIJI_CSV_FILE):
   try:
     saved_df = pd.read_csv(TAIJI_CSV_FILE, dtype=str).fillna("")
-
-    first_url = ""
-    lyrics_list = []
 
     for _, row in saved_df.iterrows():
       url_val = str(row.get("url", "")).strip()
@@ -193,17 +187,22 @@ if os.path.exists(TAIJI_CSV_FILE):
       if lyric_val:
         lyrics_list.append(lyric_val)
 
-    # 設定第 1 單元預設值
-    st.session_state.taiji_playlist_names[1] = "24式太極拳"
-
-    if first_url and not st.session_state.get("taiji_yt_input_url_1"):
-      st.session_state["taiji_yt_input_url_1"] = first_url
-
-    if lyrics_list and not st.session_state.get("taiji_my_text_input_1"):
-      st.session_state["taiji_my_text_input_1"] = "\n".join(lyrics_list)
-
   except Exception as e:
     print(f"CSV 讀取錯誤: {e}")
+
+# 初始化 session_state
+for idx in range(1, 61):
+  if f"taiji_yt_input_url_{idx}" not in st.session_state:
+    st.session_state[f"taiji_yt_input_url_{idx}"] = ""
+  if f"taiji_my_text_input_{idx}" not in st.session_state:
+    st.session_state[f"taiji_my_text_input_{idx}"] = ""
+
+# 強制將 CSV 讀到的 24式太極拳 網址與招式填入單元 1
+st.session_state.taiji_playlist_names[1] = "24式太極拳"
+if first_url:
+  st.session_state["taiji_yt_input_url_1"] = first_url
+if lyrics_list:
+  st.session_state["taiji_my_text_input_1"] = "\n".join(lyrics_list)
 
 if "taiji_current_page" not in st.session_state:
   st.session_state.taiji_current_page = 1
@@ -322,7 +321,6 @@ for tab_idx, tab in enumerate(tabs):
     left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
     with left_col:
-      # 直接綁定 url_key，Enter 按下時自動寫入 Session State 並重新整理渲染影片
       user_yt_link = st.text_input(
           "請在此貼上 YouTube 或 Shorts 網址：",
           key=url_key,
