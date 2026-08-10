@@ -161,7 +161,7 @@ for idx in range(1, 51):
     if f"taiji_my_text_input_{idx}" not in st.session_state:
         st.session_state[f"taiji_my_text_input_{idx}"] = ""
 
-# 準確對應澄玄上傳的正確檔名：taiji_recipes_太極學院.csv
+# 從正確的 CSV 讀取並完整載入 session_state
 TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
 if os.path.exists(TAIJI_CSV_FILE):
     try:
@@ -250,10 +250,6 @@ for tab_idx, tab in enumerate(tabs):
         url_key = f"taiji_yt_input_url_{absolute_idx}"
         text_key = f"taiji_my_text_input_{absolute_idx}"
 
-        # 每次切換分頁時，將 session_state 裡的值強迫帶入 widget 暫存
-        st.session_state[f"textarea_taiji_{absolute_idx}"] = st.session_state.get(text_key, "")
-        st.session_state[f"input_{url_key}"] = st.session_state.get(url_key, "")
-
         with st.expander(f"✏️ 修改【單元 {absolute_idx}】的套路名稱"):
             curr_name = st.session_state.taiji_playlist_names[absolute_idx]
             new_track_name = st.text_input(f"單元 {absolute_idx} 名稱：", value=curr_name, key=f"rename_taiji_track_{absolute_idx}")
@@ -267,6 +263,7 @@ for tab_idx, tab in enumerate(tabs):
         with left_col:
             user_yt_link = st.text_input(
                 f"請在此貼上 YouTube 或 Shorts 網址：",
+                value=st.session_state.get(url_key, ""),
                 key=f"input_{url_key}",
                 on_change=auto_save_taiji
             )
@@ -313,6 +310,7 @@ for tab_idx, tab in enumerate(tabs):
                         st.warning("目前網址框是空的！")
 
         with right_col:
+            # 讓 text_area 直接以 value 屬性抓取 session_state 裡的歌詞內容，這樣就會完整顯示 CSV 裡的 24 式文字
             current_lyrics_value = st.session_state.get(text_key, "")
             
             title_col, btn_col = st.columns([3, 1.4], vertical_alignment="center")
@@ -325,11 +323,14 @@ for tab_idx, tab in enumerate(tabs):
 
             user_input_text = st.text_area(
                 "輸入太極招式：",
+                value=current_lyrics_value,
                 key=f"textarea_taiji_{absolute_idx}",
                 on_change=auto_save_taiji
             )
             
-            st.session_state[text_key] = user_input_text
+            # 若使用者手動修改了文字，即時存回 session_state
+            if user_input_text != current_lyrics_value:
+                st.session_state[text_key] = user_input_text
 
             col1, col2, col3 = st.columns([1.2, 1.2, 1])
             with col1:
@@ -341,7 +342,6 @@ for tab_idx, tab in enumerate(tabs):
 
             if clear_btn:
                 st.session_state[text_key] = ""
-                st.session_state[f"textarea_taiji_{absolute_idx}"] = ""
                 save_taiji_data_to_csv()
                 st.rerun()
 
@@ -349,7 +349,6 @@ for tab_idx, tab in enumerate(tabs):
                 lines = [l.strip() for l in user_input_text.split('\n') if l.strip()]
                 formatted_result = "\n".join(lines)
                 st.session_state[text_key] = formatted_result
-                st.session_state[f"textarea_taiji_{absolute_idx}"] = formatted_result
                 save_taiji_data_to_csv()
                 st.success("✨ 已成功完成排版整理並自動儲存！")
                 st.rerun()
