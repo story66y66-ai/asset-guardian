@@ -1,130 +1,438 @@
-import os
-import re
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import glob
+import os
+from gtts import gTTS
+import io
+import re
+import urllib.parse
+import streamlit.components.v1 as components
 
-st.set_page_config(page_title="太極學院", page_icon="🥋", layout="wide")
+# 設定頁面為寬螢幕模式
+st.set_page_config(layout="wide")
 
-st.title("🥋 太極學院 - 招式與句子練習")
+st.markdown("""
+    <style>
+    [data-testid="stSidebar"] { font-size: 28px !important; }
+    [data-testid="stSidebar"] div, [data-testid="stSidebar"] a { font-size: 28px !important; }
+    
+    .stTextInput input { 
+        font-size: 22px !important; 
+        color: #000000 !important; 
+        font-weight: bold !important; 
+        height: 50px !important;
+    }
+    
+    div[data-baseweb="input"] input {
+        font-size: 22px !important;
+        color: #000000 !important;
+        font-weight: bold !important;
+        height: 50px !important;
+    }
+    
+    div[data-testid="stExpander"] input {
+        font-size: 24px !important;
+        color: #000000 !important;
+        font-weight: bold !important;
+        height: 55px !important;
+    }
 
+    button[data-baseweb="tab"] {
+        font-size: 22px !important;
+        font-weight: bold !important;
+        padding-top: 12px !important;
+        padding-bottom: 12px !important;
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+    }
+    
+    div.stButton > button { 
+        font-size: 20px !important; 
+        padding: 12px 20px !important; 
+        font-weight: bold !important;
+    }
 
-# 1. 讀取 CSV 資料函數
-@st.cache_data
-def load_data():
-    csv_paths = ["taiji_recipes_太極學院.csv", "pages/taiji_recipes_太極學院.csv"]
-    df = None
-    for path in csv_paths:
-        if os.path.exists(path):
-            df = pd.read_csv(path, encoding="utf-8-sig")
-            break
-    if df is None:
-        df = pd.DataFrame(
-            {
-                "id": [1],
-                "url": [
-                    "https://youtu.be/FFAnPE9dvSo?si=1UVou4UawOr0TCfo"
-                ],
-                "title": ["1.起勢"],
-            }
-        )
-    return df
+    div[data-testid="column"] div.stButton > button {
+        font-size: 20px !important;
+        font-weight: bold !important;
+    }
+    
+    .stTextArea textarea { 
+        font-size: 22px !important; 
+        color: #000000 !important; 
+        font-weight: bold !important; 
+        height: 580px !important;
+        resize: vertical !important; 
+    }
+    
+    .sentence-display {
+        font-size: 24px !important;
+        font-weight: bold !important;
+        color: #ffffff !important;
+        line-height: 1.6 !important;
+    }
 
+    div[data-testid="stExpander"] summary span {
+        font-size: 22px !important;
+        font-weight: bold !important;
+    }
 
-df = load_data()
+    .yt-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #28a745;
+        color: white !important;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 20px;
+        border: none;
+        width: 100%;
+    }
+    .yt-button:hover {
+        background-color: #218838;
+        color: white !important;
+    }
+    .notebook-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #4285F4;
+        color: white !important;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 20px;
+        border: none;
+        width: 100%;
+    }
+    .notebook-button:hover {
+        background-color: #3367D6;
+        color: white !important;
+    }
+    .translate-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #1a73e8;
+        color: white !important;
+        padding: 6px 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 16px;
+        border: none;
+        width: 100%;
+    }
+    .translate-button:hover {
+        background-color: #1557b0;
+        color: white !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-# 初始化 Session State
-if "selected_index" not in st.session_state:
-    st.session_state.selected_index = 0
+st.title("🥋 澄玄大學 - 太極學院（拳、劍、扇招式記憶與朗讀工坊）")
 
-total_items = len(df)
-if st.session_state.selected_index >= total_items:
-    st.session_state.selected_index = 0
+# 最上方的兩個專屬按鈕
+col_btn1, col_btn2 = st.columns([1, 1])
+with col_btn1:
+    yt_url_top = "https://www.youtube.com/"
+    st.markdown(f'<a href="{yt_url_top}" target="_blank" class="yt-button">🔥 太極教學熱門影片任意門</a>', unsafe_allow_html=True)
+with col_btn2:
+    notebook_url = "https://notebooklm.google.com/"
+    st.markdown(f'<a href="{notebook_url}" target="_blank" class="notebook-button">✨ 澄玄的隨身太極筆記任意門</a>', unsafe_allow_html=True)
 
-current_row = df.iloc[st.session_state.selected_index]
-current_title_raw = str(current_row["title"])
+st.write("")
 
-# 自動將標題前面的數字和點濾掉，留下純招式名稱給句子測驗用
-clean_move_name = re.sub(r"^\d+\.", "", current_title_raw).strip()
+if "taiji_page_names" not in st.session_state:
+    st.session_state.taiji_page_names = {
+        p: f"第 {p} 冊 (套路 {(p-1)*10 + 1} ~ {p*10})" for p in range(1, 6)
+    }
 
-# 2. 上方按鈕列：點擊切換招式
-st.markdown("### 📌 選擇招式")
-cols_per_row = 8
-for i in range(0, total_items, cols_per_row):
-    cols = st.columns(cols_per_row)
-    for j in range(cols_per_row):
-        idx = i + j
-        if idx < total_items:
-            row_item = df.iloc[idx]
-            btn_label = str(row_item["title"])
-            with cols[j]:
-                if st.button(btn_label, key=f"btn_{idx}", use_container_width=True):
-                    st.session_state.selected_index = idx
-                    st.rerun()
+if "taiji_playlist_names" not in st.session_state:
+    st.session_state.taiji_playlist_names = {idx: f"套路 {idx}" for idx in range(1, 51)}
 
-st.markdown("---")
+for idx in range(1, 51):
+    if f"taiji_yt_input_url_{idx}" not in st.session_state:
+        st.session_state[f"taiji_yt_input_url_{idx}"] = ""
+    if f"taiji_my_text_input_{idx}" not in st.session_state:
+        st.session_state[f"taiji_my_text_input_{idx}"] = ""
 
-# 3. 左右分欄介面
-col_left, col_right = st.columns([1, 1])
+# 從太極專屬 CSV 讀取（如果有的話）
+if os.path.exists("taiji_playlist_heart_太極結連庫.csv"):
+    try:
+        saved_df = pd.read_csv("taiji_playlist_heart_太極結連庫.csv")
+        for _, row in saved_df.iterrows():
+            idx_val = int(row['id'])
+            if 1 <= idx_val <= 50:
+                if pd.notna(row.get('url')):
+                    st.session_state[f"taiji_yt_input_url_{idx_val}"] = str(row['url'])
+                if pd.notna(row.get('title')):
+                    st.session_state.taiji_playlist_names[idx_val] = str(row['title'])
+                if 'lyrics' in saved_df.columns and pd.notna(row.get('lyrics')):
+                    st.session_state[f"taiji_my_text_input_{idx_val}"] = str(row['lyrics'])
+    except Exception:
+        pass
 
-with col_left:
-    st.subheader(f"📺 影片教學：{current_title_raw}")
-    current_url = (
-        str(current_row["url"])
-        if pd.notna(current_row["url"])
-        else ""
+if "taiji_current_page" not in st.session_state:
+    st.session_state.taiji_current_page = 1
+
+st.write("")
+
+csv_data_list = []
+for idx in range(1, 51):
+    csv_data_list.append({
+        "id": idx,
+        "url": st.session_state.get(f"taiji_yt_input_url_{idx}", "").strip(),
+        "title": st.session_state.taiji_playlist_names.get(idx, f"套路 {idx}"),
+        "lyrics": st.session_state.get(f"taiji_my_text_input_{idx}", "")
+    })
+
+df_export = pd.DataFrame(csv_data_list)
+csv_text_output = df_export.to_csv(index=False, encoding="utf-8-sig", quoting=1)
+
+with st.expander("📥 產生並下載包含完整太極招式的 CSV 庫（支援 Excel 直接開啟與 GitHub）"):
+    st.markdown("<span style='font-size: 20px; font-weight: bold;'>點擊下方按鈕下載，太極招式會完整保留，用 Excel 打開也不會亂掉！</span>", unsafe_allow_html=True)
+    
+    st.download_button(
+        label="📥 點我直接下載 taiji_playlist_heart_太極結連庫.csv 檔案",
+        data=csv_text_output,
+        file_name="taiji_playlist_heart_太極結連庫.csv",
+        mime="text/csv",
+        use_container_width=True
     )
+    
+    st.markdown("<span style='font-size: 18px; font-weight: bold;'>完整資料預覽：</span>", unsafe_allow_html=True)
+    st.text_area("完整資料預覽：", value=csv_text_output, height=120, label_visibility="collapsed")
 
-    user_url = st.text_input(
-        "輸入或修改 YouTube 網址：",
-        value=current_url,
-        key=f"url_input_{st.session_state.selected_index}",
-    )
+st.write("")
 
-    if user_url and "youtu" in user_url:
-        try:
-            embed_url = user_url
-            if "watch?v=" in user_url:
-                embed_url = user_url.replace("watch?v=", "embed/")
-            elif "youtu.be/" in user_url:
-                parts = user_url.split("youtu.be/")
-                if len(parts) > 1:
-                    video_id = parts[1].split("?")[0]
-                    embed_url = f"https://www.youtube.com/embed/{video_id}"
+st.markdown("<h3 style='font-size: 26px; color: #ffffff;'>📚 選擇太極練習冊（翻書頁面）：</h3>", unsafe_allow_html=True)
 
-            st.components.v1.iframe(embed_url, height=315)
-        except Exception:
-            st.warning("無法載入影片預覽，請確認網址格式是否正確。")
-    else:
-        st.info("目前尚無此招式的 YouTube 網址，請在上方輸入框貼上。")
+page_cols = st.columns(5)
+for p in range(1, 6):
+    with page_cols[p-1]:
+        btn_label = f"👉 【第 {p} 頁】\n{st.session_state.taiji_page_names[p]}" if st.session_state.taiji_current_page == p else f"第 {p} 頁\n{st.session_state.taiji_page_names[p]}"
+        if st.button(btn_label, key=f"taiji_page_btn_{p}", use_container_width=True):
+            st.session_state.taiji_current_page = p
+            st.rerun()
 
-with col_right:
-    st.subheader("📝 太極招式文字與句子測驗")
+current_page = st.session_state.taiji_current_page
+st.write("")
 
-    st.markdown(
-        f"""
-    <div style="padding: 15px; border-radius: 8px; background-color: #262730; color: white; font-size: 20px; font-weight: bold; text-align: center; margin-bottom: 20px;">
-        當前練習招式：{clean_move_name}
-    </div>
-    """,
-        unsafe_allow_html=True,
-    )
+with st.expander(f"✏️ 自訂【第 {current_page} 頁】的用途與名稱設定"):
+    col_p1, col_p2 = st.columns([2, 1])
+    with col_p1:
+        new_page_name = st.text_input(f"第 {current_page} 頁總用途名稱（例如：24式太極拳、太極劍）：", value=st.session_state.taiji_page_names[current_page], key=f"input_taiji_page_name_{current_page}")
+        if new_page_name != st.session_state.taiji_page_names[current_page]:
+            st.session_state.taiji_page_names[current_page] = new_page_name
+            st.rerun()
+    with col_p2:
+        st.write("")
+        st.markdown(f"<span style='font-size: 20px; color: #a0a0a0;'>💡 在此輸入這頁的專屬套路名稱，方便辨識！</span>", unsafe_allow_html=True)
 
-    st.markdown("#### ✍️ 句子測驗練習")
-    st.text(f"請依據上方招式進行輸入練習：")
+st.write("")
 
-    user_input = st.text_input(
-        "請在此輸入招式名稱：", key=f"quiz_input_{st.session_state.selected_index}"
-    )
+start_idx = (current_page - 1) * 10 + 1
+end_idx = current_page * 10
 
-    if st.button("檢查答案"):
-        if not user_input.strip():
-            st.warning("請先輸入文字再檢查喔！")
-        elif user_input.strip() == clean_move_name:
-            st.success(f"🎉 太棒了！答對了！正確答案就是【{clean_move_name}】")
+tab_titles = [f"🥋 {st.session_state.taiji_playlist_names[idx]}" for idx in range(start_idx, end_idx + 1)]
+tabs = st.tabs(tab_titles)
+
+for tab_idx, tab in enumerate(tabs):
+    absolute_idx = start_idx + tab_idx
+    
+    with tab:
+        url_key = f"taiji_yt_input_url_{absolute_idx}"
+        text_key = f"taiji_my_text_input_{absolute_idx}"
+
+        with st.expander(f"✏️ 修改【單元 {absolute_idx}】的套路名稱"):
+            curr_name = st.session_state.taiji_playlist_names[absolute_idx]
+            new_track_name = st.text_input(f"單元 {absolute_idx} 名稱：", value=curr_name, key=f"rename_taiji_track_{absolute_idx}")
+            if new_track_name != curr_name:
+                st.session_state.taiji_playlist_names[absolute_idx] = new_track_name
+                st.rerun()
+
+        left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
+
+        with left_col:
+            user_yt_link = st.text_input(
+                f"請在此貼上 YouTube 或 Shorts 網址：",
+                value=st.session_state[url_key],
+                key=f"input_{url_key}"
+            )
+            st.session_state[url_key] = user_yt_link
+
+            if st.button(f"💾 儲存【單元 {absolute_idx}】的資料", key=f"save_taiji_url_{absolute_idx}", use_container_width=True):
+                st.success(f"🎉 單元 {absolute_idx} 的資料已成功儲存！")
+                st.rerun()
+
+            if user_yt_link.strip():
+                try:
+                    raw_url = user_yt_link.strip()
+                    video_id = ""
+                    
+                    if "shorts/" in raw_url:
+                        video_id = raw_url.split("shorts/")[-1].split("?")[0].split("/")[0]
+                    elif "watch?v=" in raw_url:
+                        video_id = raw_url.split("watch?v=")[-1].split("&")[0]
+                    elif "youtu.be/" in raw_url:
+                        video_id = raw_url.split("youtu.be/")[-1].split("?")[0].split("/")[0]
+                        
+                    if video_id:
+                        embed_url = f"https://www.youtube.com/embed/{video_id}?loop=1&playlist={video_id}"
+                        st.markdown(f"""
+                            <div style="display: flex; justify-content: center; margin-bottom: 15px; margin-top: 15px;">
+                                <iframe width="350" height="580" src="{embed_url}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.warning("無法辨識此網址格式，請確認是否為正確的 YouTube 網址。")
+                except Exception as e:
+                    st.error(f"影片載入發生錯誤：{e}")
+            else:
+                st.markdown("""
+                    <div style="display: flex; align-items: center; justify-content: center; height: 350px; border: 2px dashed #444; border-radius: 10px; color: #888; font-size: 20px; margin-top: 15px; margin-bottom: 15px;">
+                        📺 請在上方輸入網址以顯示影片
+                    </div>
+                """, unsafe_allow_html=True)
+
+            col_copy1, col_copy2 = st.columns([1, 3])
+            with col_copy1:
+                copy_btn = st.button(f"📋 複製網址", key=f"copy_taiji_{absolute_idx}")
+            with col_copy2:
+                if copy_btn:
+                    if user_yt_link.strip():
+                        st.code(user_yt_link, language="text")
+                    else:
+                        st.warning("目前網址框是空的！")
+
+        with right_col:
+            user_input_text = st.session_state[text_key]
+            
+            title_col, btn_col = st.columns([3, 1.4], vertical_alignment="center")
+            with title_col:
+                st.subheader("✍️ 太極招式文字框與朗讀練習：")
+            with btn_col:
+                encoded_text = urllib.parse.quote(user_input_text)
+                translate_url = f"https://translate.google.com/?hl=zh-TW&sl=zh-TW&tl=zh-TW&text={encoded_text}&op=translate"
+                st.markdown(f'<a href="{translate_url}" target="_blank" class="translate-button">🌐 Google 搜尋</a>', unsafe_allow_html=True)
+
+            user_input_text = st.text_area(
+                "輸入太極招式：",
+                value=st.session_state[text_key],
+                key=f"textarea_taiji_{absolute_idx}"
+            )
+            st.session_state[text_key] = user_input_text
+
+            col1, col2, col3, col4 = st.columns([1.2, 1.2, 1, 1])
+            with col1:
+                play_btn = st.button(f"🔊 播放整段", key=f"play_taiji_{absolute_idx}")
+            with col2:
+                smart_split_btn = st.button(f"✨ 自動換行排版", key=f"split_taiji_{absolute_idx}")
+            with col3:
+                update_trans_btn = st.button(f"🔄 更新連結", key=f"update_t_taiji_{absolute_idx}")
+            with col4:
+                clear_btn = st.button(f"🗑️ 清空", key=f"clear_taiji_{absolute_idx}")
+
+            if clear_btn:
+                st.session_state[text_key] = ""
+                st.rerun()
+                
+            if update_trans_btn:
+                st.success("✨ 連結已更新！")
+
+            if smart_split_btn and user_input_text.strip():
+                # 中文招式可以依據標點符號或換行整理
+                lines = [l.strip() for l in user_input_text.split('\n') if l.strip()]
+                formatted_result = "\n".join(lines)
+                st.session_state[text_key] = formatted_result
+                st.success("✨ 已成功完成排版整理！")
+                st.rerun()
+
+            if play_btn and user_input_text.strip():
+                try:
+                    tts = gTTS(text=user_input_text, lang='zh-TW')
+                    fp = io.BytesIO()
+                    tts.write_to_fp(fp)
+                    st.audio(fp, autoplay=True, loop=True)
+                except Exception as e:
+                    st.error(f"語音生成發生錯誤：{e}")
+
+        st.divider()
+
+        # 逐句互動輸入測驗區
+        st.subheader("✍️ 逐招太極輸入測驗與朗讀練習：")
+        
+        all_lines = user_input_text.split('\n')
+        taiji_lines = [line.strip() for line in all_lines if line.strip()]
+        
+        if taiji_lines:
+            st.markdown(f"<span style='font-size: 20px;'>**已自動抓取 {len(taiji_lines)} 個招式進行逐句練習：**</span>", unsafe_allow_html=True)
+            
+            for line_idx, taiji_sentence in enumerate(taiji_lines):
+                st.markdown(f"---")
+                st.markdown(f"<div class='sentence-display'>第 {line_idx + 1} 招原招式：<br>🥋 {taiji_sentence}</div>", unsafe_allow_html=True)
+                
+                cols = st.columns([1.1, 1.4, 3.5, 1])
+                with cols[0]:
+                    if st.button(f"🔊 聽發音", key=f"taiji_line_audio_{absolute_idx}_{line_idx}"):
+                        try:
+                            s_tts = gTTS(text=taiji_sentence, lang='zh-TW', slow=False)
+                            s_fp = io.BytesIO()
+                            s_tts.write_to_fp(s_fp)
+                            st.audio(s_fp, autoplay=True)
+                        except Exception as e:
+                            st.error(f"語音錯誤：{e}")
+                            
+                with cols[1]:
+                    # 0.5倍慢速按鈕（中文太極口令練習）
+                    safe_sentence_js = taiji_sentence.replace("'", "\\'")
+                    components.html(f"""
+                        <button onclick="
+                            const utterance = new SpeechSynthesisUtterance('{safe_sentence_js}');
+                            utterance.lang = 'zh-TW';
+                            utterance.rate = 0.5;
+                            window.speechSynthesis.cancel();
+                            window.speechSynthesis.speak(utterance);
+                        " style="
+                            background-color: #f0f2f6;
+                            color: #262730;
+                            border: 1px solid #d6d6d8;
+                            padding: 8px 12px;
+                            border-radius: 4px;
+                            font-size: 16px;
+                            font-weight: bold;
+                            cursor: pointer;
+                            width: 100%;
+                        ">🐢 0.5倍慢速</button>
+                    """, height=45)
+                
+                ans_key = f"taiji_ans_input_{absolute_idx}_{line_idx}"
+                
+                def make_clear_callback(k):
+                    def clear_func():
+                        st.session_state[k] = ""
+                    return clear_func
+
+                with cols[2]:
+                    user_answer = st.text_input(
+                        f"請輸入第 {line_idx + 1} 招：",
+                        key=ans_key,
+                        label_visibility="collapsed",
+                        placeholder="請在此輸入對應的招式名稱..."
+                    )
+                
+                with cols[3]:
+                    st.button(f"🗑️ 清除", key=f"clear_taiji_line_{absolute_idx}_{line_idx}", on_click=make_clear_callback(ans_key))
+                
+                if user_answer.strip():
+                    if user_answer.strip() == taiji_sentence:
+                        st.markdown(f"<span style='font-size: 22px; color: #28a745; font-weight: bold;'>🎉 答對了！招式名稱正確，太棒囉！</span>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"<span style='font-size: 22px; color: #ff4b4b; font-weight: bold;'>❌ 名稱有出入，再試一次看看喔！<br>💡 正確解答提示：{taiji_sentence}</span>", unsafe_allow_html=True)
         else:
-            st.error(f"❌ 哎呀，再試一次看看！您輸入的是：{user_input}")
-
-    with st.expander("📂 檢視全部 24 式清單"):
-        for idx, row in df.iterrows():
-            prefix = "👉 " if idx == st.session_state.selected_index else "  "
-            st.text(f"{prefix} {row['title']}")
+            st.info("💡 請在上方右側的文字框輸入太極招式（一行一招），下方就會自動產生對應的逐招練習題囉！")
