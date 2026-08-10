@@ -21,6 +21,12 @@ if st.button("進入中文學院"):
     st.switch_page("pages/3_chinese_class_中文學院.py")
 
 st.write("---")
+st.subheader("🥋 太極學院")
+
+if st.button("進入太極學院"):
+    st.switch_page("pages/7_taiji_practice_太極學院.py")
+
+st.write("---")
 st.subheader("🍲 食品學院")
 
 if st.button("進入烘焙教室"):
