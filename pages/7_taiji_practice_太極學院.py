@@ -161,7 +161,7 @@ for idx in range(1, 51):
     if f"taiji_my_text_input_{idx}" not in st.session_state:
         st.session_state[f"taiji_my_text_input_{idx}"] = ""
 
-# 從太極專屬 CSV 讀取
+# 從太極專屬 CSV 讀取並載入到 session_state 中
 TAIJI_CSV_FILE = "taiji_playlist_heart_太極結連庫.csv"
 if os.path.exists(TAIJI_CSV_FILE):
     try:
@@ -196,14 +196,13 @@ def save_taiji_data_to_csv():
     df_export.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig", quoting=1)
     return df_export.to_csv(index=False, encoding="utf-8-sig", quoting=1)
 
-# 自動儲存回呼函數 (Auto-save callback)
 def auto_save_taiji():
     save_taiji_data_to_csv()
 
 csv_text_output = save_taiji_data_to_csv()
 
 with st.expander("📥 產生並下載包含完整太極招式的 CSV 庫（支援 Excel 直接開啟與 GitHub）"):
-    st.markdown("<span style='font-size: 20px; font-weight: bold;'>系統已啟用自動儲存，您輸入的內容會隨時安全備份！</span>", unsafe_allow_html=True)
+    st.markdown("<span style='font-size: 20px; font-weight: bold;'>系統已啟用自動儲存與聯動帶入，點擊選項即可無縫切換！</span>", unsafe_allow_html=True)
     
     st.download_button(
         label="📥 點我直接下載 taiji_playlist_heart_太極結連庫.csv 檔案",
@@ -262,6 +261,7 @@ for tab_idx, tab in enumerate(tabs):
         left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
         with left_col:
+            # 直接綁定 session_state，點選分頁時自動帶入對應的網址
             user_yt_link = st.text_input(
                 f"請在此貼上 YouTube 或 Shorts 網址：",
                 value=st.session_state[url_key],
@@ -311,6 +311,7 @@ for tab_idx, tab in enumerate(tabs):
                         st.warning("目前網址框是空的！")
 
         with right_col:
+            # 直接從 session_state 讀取對應的文字，點選分頁時自動帶入對應的招式文字
             user_input_text = st.session_state[text_key]
             
             title_col, btn_col = st.columns([3, 1.4], vertical_alignment="center")
