@@ -161,7 +161,7 @@ for idx in range(1, 51):
     if f"taiji_my_text_input_{idx}" not in st.session_state:
         st.session_state[f"taiji_my_text_input_{idx}"] = ""
 
-# 從太極專屬 CSV 讀取並強制載入到 session_state 中
+# 1. 頁面剛啟動時，先從 CSV 讀取資料填入 session_state
 TAIJI_CSV_FILE = "taiji_playlist_heart_太極結連庫.csv"
 if os.path.exists(TAIJI_CSV_FILE):
     try:
@@ -174,7 +174,6 @@ if os.path.exists(TAIJI_CSV_FILE):
                 if pd.notna(row.get('title')):
                     st.session_state.taiji_playlist_names[idx_val] = str(row['title'])
                 if 'lyrics' in saved_df.columns and pd.notna(row.get('lyrics')):
-                    # 確保正確寫入 session_state
                     st.session_state[f"taiji_my_text_input_{idx_val}"] = str(row['lyrics'])
     except Exception as e:
         print(f"CSV 讀取錯誤: {e}")
@@ -251,6 +250,11 @@ for tab_idx, tab in enumerate(tabs):
         url_key = f"taiji_yt_input_url_{absolute_idx}"
         text_key = f"taiji_my_text_input_{absolute_idx}"
 
+        # 關鍵：每次點進分頁或重新整理時，把對應 key 的 widget 狀態同步為 session_state 的最新值
+        # 這樣就能強迫文字框讀出 CSV 裡抓到的文字
+        st.session_state[f"textarea_taiji_{absolute_idx}"] = st.session_state.get(text_key, "")
+        st.session_state[f"input_{url_key}"] = st.session_state.get(url_key, "")
+
         with st.expander(f"✏️ 修改【單元 {absolute_idx}】的套路名稱"):
             curr_name = st.session_state.taiji_playlist_names[absolute_idx]
             new_track_name = st.text_input(f"單元 {absolute_idx} 名稱：", value=curr_name, key=f"rename_taiji_track_{absolute_idx}")
@@ -264,7 +268,6 @@ for tab_idx, tab in enumerate(tabs):
         with left_col:
             user_yt_link = st.text_input(
                 f"請在此貼上 YouTube 或 Shorts 網址：",
-                value=st.session_state.get(url_key, ""),
                 key=f"input_{url_key}",
                 on_change=auto_save_taiji
             )
@@ -311,7 +314,6 @@ for tab_idx, tab in enumerate(tabs):
                         st.warning("目前網址框是空的！")
 
         with right_col:
-            # 確保文字框每次切換都能抓到 session_state 裡從 CSV 讀進來的值
             current_lyrics_value = st.session_state.get(text_key, "")
             
             title_col, btn_col = st.columns([3, 1.4], vertical_alignment="center")
@@ -322,17 +324,15 @@ for tab_idx, tab in enumerate(tabs):
                 translate_url = f"https://translate.google.com/?hl=zh-TW&sl=zh-TW&tl=zh-TW&text={encoded_text}&op=translate"
                 st.markdown(f'<a href="{translate_url}" target="_blank" class="translate-button">🌐 Google 搜尋</a>', unsafe_allow_html=True)
 
-            # 移除 value 參數，直接讓 text_area 與 session_state 綁定，避免狀態衝突
+            # 透過將 session_state 預先同步，這裡就能完美呈現對應的文字
             user_input_text = st.text_area(
                 "輸入太極招式：",
-                value=current_lyrics_value,
                 key=f"textarea_taiji_{absolute_idx}",
                 on_change=auto_save_taiji
             )
             
-            # 即時同步更新 session_state
-            if user_input_text != current_lyrics_value:
-                st.session_state[text_key] = user_input_text
+            # 即時同步回對應的文字 storage key
+            st.session_state[text_key] = user_input_text
 
             col1, col2, col3 = st.columns([1.2, 1.2, 1])
             with col1:
@@ -344,6 +344,7 @@ for tab_idx, tab in enumerate(tabs):
 
             if clear_btn:
                 st.session_state[text_key] = ""
+                st.session_state[f"textarea_taiji_{absolute_idx}"] = ""
                 save_taiji_data_to_csv()
                 st.rerun()
 
@@ -351,6 +352,7 @@ for tab_idx, tab in enumerate(tabs):
                 lines = [l.strip() for l in user_input_text.split('\n') if l.strip()]
                 formatted_result = "\n".join(lines)
                 st.session_state[text_key] = formatted_result
+                st.session_state[f"textarea_taiji_{absolute_idx}"] = formatted_result
                 save_taiji_data_to_csv()
                 st.success("✨ 已成功完成排版整理並自動儲存！")
                 st.rerun()
