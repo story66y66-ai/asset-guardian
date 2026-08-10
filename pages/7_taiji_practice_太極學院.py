@@ -157,12 +157,9 @@ with col_btn2:
 
 st.write("")
 
-# 定義目標 CSV 檔案名稱
-TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
-
 if "taiji_page_names" not in st.session_state:
   st.session_state.taiji_page_names = {
-      p: f"第 {p} 冊 (套路 {(p-1)*10 + 1} ~ {p*10})" for p in range(1, 7)
+      p: f"第 {p} 冊 (套路 {(p-1)*10 + 1} ~ {p*10})" for p in range(1, 6)
   }
 
 if "taiji_playlist_names" not in st.session_state:
@@ -170,23 +167,35 @@ if "taiji_playlist_names" not in st.session_state:
       idx: f"套路 {idx}" for idx in range(1, 61)
   }
 
-# 從 CSV 讀取資料並自動寫入 session_state
+for idx in range(1, 61):
+  if f"taiji_yt_input_url_{idx}" not in st.session_state:
+    st.session_state[f"taiji_yt_input_url_{idx}"] = ""
+  if f"taiji_my_text_input_{idx}" not in st.session_state:
+    st.session_state[f"taiji_my_text_input_{idx}"] = ""
+
+# 指定對接的 CSV 檔名
+TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
+
+# 從 CSV 讀取並強制載入到 session_state
 if os.path.exists(TAIJI_CSV_FILE):
   try:
     saved_df = pd.read_csv(TAIJI_CSV_FILE, dtype=str).fillna("")
     for _, row in saved_df.iterrows():
       try:
         idx_val = int(row["id"])
-        # 自動載入 url, title (套路名稱), lyrics (文字內容)
-        st.session_state[f"taiji_yt_input_url_{idx_val}"] = str(
-            row.get("url", "")
-        )
-        if row.get("title"):
-          st.session_state.taiji_playlist_names[idx_val] = str(row["title"])
-        st.session_state[f"taiji_my_text_input_{idx_val}"] = str(
-            row.get("lyrics", "")
-        )
-      except ValueError:
+        if pd.notna(row.get("url")):
+          st.session_state[f"taiji_yt_input_url_{idx_val}"] = str(
+              row["url"]
+          ).strip()
+        if pd.notna(row.get("title")):
+          st.session_state.taiji_playlist_names[idx_val] = str(
+              row["title"]
+          ).strip()
+        if pd.notna(row.get("lyrics")):
+          st.session_state[f"taiji_my_text_input_{idx_val}"] = str(
+              row["lyrics"]
+          )
+      except (ValueError, KeyError):
         continue
   except Exception as e:
     print(f"CSV 讀取錯誤: {e}")
@@ -199,9 +208,7 @@ st.write("")
 
 def save_taiji_data_to_csv():
   csv_data_list = []
-  # 抓取目前存在的最深索引數
-  max_idx = max(58, len(st.session_state.taiji_playlist_names))
-  for idx in range(1, max_idx + 1):
+  for idx in range(1, 61):
     csv_data_list.append({
         "id": idx,
         "url": st.session_state.get(
@@ -248,8 +255,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-page_cols = st.columns(6)
-for p in range(1, 7):
+page_cols = st.columns(5)
+for p in range(1, 6):
   with page_cols[p - 1]:
     btn_label = (
         f"👉 【第 {p} 頁】\n{st.session_state.taiji_page_names[p]}"
@@ -283,7 +290,7 @@ start_idx = (current_page - 1) * 10 + 1
 end_idx = current_page * 10
 
 tab_titles = [
-    f"🥋 {st.session_state.taiji_playlist_names.get(idx, f'套路 {idx}')}"
+    f"🥋 {st.session_state.taiji_playlist_names[idx]}"
     for idx in range(start_idx, end_idx + 1)
 ]
 tabs = st.tabs(tab_titles)
@@ -296,9 +303,7 @@ for tab_idx, tab in enumerate(tabs):
     text_key = f"taiji_my_text_input_{absolute_idx}"
 
     with st.expander(f"✏️ 修改【單元 {absolute_idx}】的套路名稱"):
-      curr_name = st.session_state.taiji_playlist_names.get(
-          absolute_idx, f"套路 {absolute_idx}"
-      )
+      curr_name = st.session_state.taiji_playlist_names[absolute_idx]
       new_track_name = st.text_input(
           f"單元 {absolute_idx} 名稱：",
           value=curr_name,
@@ -312,10 +317,9 @@ for tab_idx, tab in enumerate(tabs):
     left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
     with left_col:
-      current_yt_url = st.session_state.get(url_key, "")
       user_yt_link = st.text_input(
           "請在此貼上 YouTube 或 Shorts 網址：",
-          value=current_yt_url,
+          value=st.session_state.get(url_key, ""),
           key=f"input_{url_key}",
           on_change=auto_save_taiji,
       )
