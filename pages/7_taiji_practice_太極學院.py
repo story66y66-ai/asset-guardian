@@ -161,7 +161,7 @@ for idx in range(1, 51):
     if f"taiji_my_text_input_{idx}" not in st.session_state:
         st.session_state[f"taiji_my_text_input_{idx}"] = ""
 
-# 從正確的 CSV 讀取並完整載入 session_state
+# 準確讀取 taiji_recipes_太極學院.csv 裡的網址、標題與整串招式內容
 TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
 if os.path.exists(TAIJI_CSV_FILE):
     try:
@@ -174,7 +174,10 @@ if os.path.exists(TAIJI_CSV_FILE):
                 if 'title' in saved_df.columns and pd.notna(row.get('title')):
                     st.session_state.taiji_playlist_names[idx_val] = str(row['title']).strip()
                 if 'lyrics' in saved_df.columns and pd.notna(row.get('lyrics')):
-                    st.session_state[f"taiji_my_text_input_{idx_val}"] = str(row['lyrics'])
+                    # 確保正確載入完整多行招式文字
+                    raw_lyrics = str(row['lyrics'])
+                    if raw_lyrics != "nan":
+                        st.session_state[f"taiji_my_text_input_{idx_val}"] = raw_lyrics
     except Exception as e:
         st.error(f"讀取 CSV 發生錯誤: {e}")
 
@@ -310,7 +313,7 @@ for tab_idx, tab in enumerate(tabs):
                         st.warning("目前網址框是空的！")
 
         with right_col:
-            # 讓 text_area 直接以 value 屬性抓取 session_state 裡的歌詞內容，這樣就會完整顯示 CSV 裡的 24 式文字
+            # 確保每次渲染分頁時，都直接抓取 session_state 裡從 CSV 讀進來的完整招式內容
             current_lyrics_value = st.session_state.get(text_key, "")
             
             title_col, btn_col = st.columns([3, 1.4], vertical_alignment="center")
@@ -328,7 +331,7 @@ for tab_idx, tab in enumerate(tabs):
                 on_change=auto_save_taiji
             )
             
-            # 若使用者手動修改了文字，即時存回 session_state
+            # 若手動修改，即時更新 session_state
             if user_input_text != current_lyrics_value:
                 st.session_state[text_key] = user_input_text
 
