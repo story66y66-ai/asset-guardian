@@ -3,7 +3,7 @@ import io
 import os
 import re
 import urllib.parse
-import gTTS
+from gtts import gTTS
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
@@ -95,7 +95,6 @@ if os.path.exists(TAICHI_CSV_FILE):
         if pd.notna(row.get("title")):
           st.session_state.playlist_names[idx_val] = str(row["title"])
 
-        # 自動相容各種可能紀錄招式文字的欄位名稱 (text, lyrics, content)
         text_val = ""
         if "text" in saved_df.columns and pd.notna(row.get("text")):
           text_val = str(row["text"])
@@ -114,7 +113,7 @@ if "current_page" not in st.session_state:
 
 st.write("")
 
-# 匯出與儲存功能（檔案名稱精準鎖定 taiji_recipes_太極學院.csv）
+# 匯出與儲存功能
 csv_data_list = []
 for idx in range(1, 51):
   csv_data_list.append({
@@ -193,7 +192,6 @@ for tab_idx, tab in enumerate(tabs):
     left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
     with left_col:
-      # 直接綁定 key，確保 YouTube 網址順利帶入框中
       user_yt_link = st.text_input(
           "請在此貼上太極教學影片網址：", key=url_key
       )
@@ -241,32 +239,17 @@ for tab_idx, tab in enumerate(tabs):
     with right_col:
       st.subheader("✍️ 太極招式說明、口訣與筆記：")
 
-      # 直接綁定 key=text_key，徹底解決 CSV 太極招式文字帶不進輸入框的問題
       user_input_text = st.text_area(
           "輸入招式口訣或動作細節：", key=text_key, height=480
       )
 
-      col1, col2 = st.columns([1, 1])
-      with col1:
-        if st.button(f"🔊 朗讀招式口訣", key=f"play_{absolute_idx}"):
-          if user_input_text.strip():
-            try:
-              tts = gTTS(text=user_input_text, lang="zh-TW")
-              fp = io.BytesIO()
-              tts.write_to_fp(fp)
-              st.audio(fp, autoplay=True)
-            except Exception as e:
-              st.error(f"語音生成發生錯誤：{e}")
-          else:
-            st.warning("請先輸入口訣文字！")
-      with col2:
-        if st.button(f"🗑️ 清空筆記", key=f"clear_{absolute_idx}"):
-          st.session_state[text_key] = ""
-          st.rerun()
+      if st.button(f"🗑️ 清空筆記", key=f"clear_{absolute_idx}"):
+        st.session_state[text_key] = ""
+        st.rerun()
 
     st.divider()
 
-    # 太極分句/分式口訣展示區
+    # 太極分句/分式口訣展示區與語音朗讀
     st.subheader("📋 招式分解動作清單：")
     lines = [
         line.strip()
@@ -280,5 +263,14 @@ for tab_idx, tab in enumerate(tabs):
             f"<div class='sentence-display'>動作 {l_idx + 1}： {line}</div>",
             unsafe_allow_html=True,
         )
+        # 語音朗讀功能
+        try:
+          tts = gTTS(text=line, lang="zh-tw")
+          fp = io.BytesIO()
+          tts.write_to_fp(fp)
+          fp.seek(0)
+          st.audio(fp, format="audio/mp3")
+        except Exception:
+          pass
     else:
-      st.info("💡 在上方輸入招式說明或口訣後，這裡會自動呈現分段列表。")
+      st.info("💡 在上方輸入招式說明或口訣後，這裡會自動呈現分段列表與語音朗讀。")
