@@ -151,7 +151,7 @@ with col_btn2:
   notebook_url = "https://notebooklm.google.com/"
   st.markdown(
       f'<a href="{notebook_url}" target="_blank" class="notebook-button">✨'
-      " 澄玄的隨身太極筆记任意門</a>",
+      " 澄玄的隨身太極筆記任意門</a>",
       unsafe_allow_html=True,
   )
 
@@ -170,7 +170,7 @@ if "taiji_playlist_names" not in st.session_state:
 # 指定對接的 CSV 檔名
 TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
 
-# 讀取 CSV 並直接解析
+# 讀取 CSV 並解析
 first_url = ""
 lyrics_list = []
 
@@ -232,6 +232,17 @@ def save_taiji_data_to_csv():
 
 def auto_save_taiji():
   save_taiji_data_to_csv()
+
+
+# 工具函式：精準抓取 YouTube 11 位數的 Video ID
+def extract_youtube_id(url):
+  regex = r"(?:v=|\/([0-9A-Za-z_-]{11}).*|youtu\.be\/|\/embed\/|\/shorts\/)([0-9A-Za-z_-]{11})"
+  match = re.search(regex, url)
+  if match:
+    for group in match.groups():
+      if group and len(group) == 11:
+        return group
+  return None
 
 
 csv_text_output = save_taiji_data_to_csv()
@@ -328,39 +339,13 @@ for tab_idx, tab in enumerate(tabs):
       )
 
       if user_yt_link.strip():
-        try:
-          raw_url = user_yt_link.strip()
-          video_id = ""
+        video_id = extract_youtube_id(user_yt_link.strip())
 
-          if "shorts/" in raw_url:
-            video_id = (
-                raw_url.split("shorts/")[-1].split("?")[0].split("/")[0]
-            )
-          elif "watch?v=" in raw_url:
-            video_id = raw_url.split("watch?v=")[-1].split("&")[0]
-          elif "youtu.be/" in raw_url:
-            video_id = (
-                raw_url.split("youtu.be/")[-1].split("?")[0].split("/")[0]
-            )
-
-          if video_id:
-            embed_url = (
-                f"https://www.youtube.com/embed/{video_id}?loop=1&playlist={video_id}"
-            )
-            st.markdown(
-                f"""
-                                <div style="display: flex; justify-content: center; margin-bottom: 15px; margin-top: 15px;">
-                                    <iframe width="350" height="580" src="{embed_url}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                                </div>
-                            """,
-                unsafe_allow_html=True,
-            )
-          else:
-            st.warning(
-                "無法辨識此網址格式，請確認是否為正確的 YouTube 網址。"
-            )
-        except Exception as e:
-          st.error(f"影片載入發生錯誤：{e}")
+        if video_id:
+          # 使用原生 st.video 以確保最高相容性與自動撥放支援
+          st.video(f"https://www.youtube.com/watch?v={video_id}")
+        else:
+          st.warning("無法辨識此網址格式，請確認是否為正確的 YouTube 網址。")
       else:
         st.markdown(
             """
