@@ -7,7 +7,7 @@ st.set_page_config(page_title="烘焙教室 - 澄玄大學", layout="wide", page
 st.title("🍞 澄玄大學 - 食品學院：烘焙教室")
 st.write("---")
 
-CSV_FILE = "baking_recipes.csv"
+CSV_FILE = "baking_recipes_烘焙學院.csv"
 
 # 初始化 CSV 檔案
 if not os.path.exists(CSV_FILE):
