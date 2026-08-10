@@ -181,7 +181,6 @@ if os.path.exists(TAIJI_CSV_FILE):
   try:
     saved_df = pd.read_csv(TAIJI_CSV_FILE, dtype=str).fillna("")
 
-    # 提取第一個有效的影片網址與完整招式清單
     first_url = ""
     lyrics_list = []
 
@@ -194,15 +193,13 @@ if os.path.exists(TAIJI_CSV_FILE):
       if lyric_val:
         lyrics_list.append(lyric_val)
 
-    # 1. 自動帶入第一個 Tab (單元 1) 的套路名稱為「24式太極拳」
+    # 設定第 1 單元預設值
     st.session_state.taiji_playlist_names[1] = "24式太極拳"
 
-    # 2. 自動帶入網址
-    if first_url:
+    if first_url and not st.session_state.get("taiji_yt_input_url_1"):
       st.session_state["taiji_yt_input_url_1"] = first_url
 
-    # 3. 將 CSV 裡的所有招式一次性用換行合併，填入文字框
-    if lyrics_list:
+    if lyrics_list and not st.session_state.get("taiji_my_text_input_1"):
       st.session_state["taiji_my_text_input_1"] = "\n".join(lyrics_list)
 
   except Exception as e:
@@ -325,13 +322,12 @@ for tab_idx, tab in enumerate(tabs):
     left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
     with left_col:
+      # 直接綁定 url_key，Enter 按下時自動寫入 Session State 並重新整理渲染影片
       user_yt_link = st.text_input(
           "請在此貼上 YouTube 或 Shorts 網址：",
-          value=st.session_state.get(url_key, ""),
-          key=f"input_{url_key}",
+          key=url_key,
           on_change=auto_save_taiji,
       )
-      st.session_state[url_key] = user_yt_link
 
       if user_yt_link.strip():
         try:
