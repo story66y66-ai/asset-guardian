@@ -176,27 +176,35 @@ for idx in range(1, 61):
 # 指定對接的 CSV 檔名
 TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
 
-# 從 CSV 讀取並強制載入到 session_state
+# 載入 CSV 並自動合併同套路的招式文字
 if os.path.exists(TAIJI_CSV_FILE):
   try:
     saved_df = pd.read_csv(TAIJI_CSV_FILE, dtype=str).fillna("")
+
+    # 提取第一個有效的影片網址與完整招式清單
+    first_url = ""
+    lyrics_list = []
+
     for _, row in saved_df.iterrows():
-      try:
-        idx_val = int(row["id"])
-        if pd.notna(row.get("url")):
-          st.session_state[f"taiji_yt_input_url_{idx_val}"] = str(
-              row["url"]
-          ).strip()
-        if pd.notna(row.get("title")):
-          st.session_state.taiji_playlist_names[idx_val] = str(
-              row["title"]
-          ).strip()
-        if pd.notna(row.get("lyrics")):
-          st.session_state[f"taiji_my_text_input_{idx_val}"] = str(
-              row["lyrics"]
-          )
-      except (ValueError, KeyError):
-        continue
+      url_val = str(row.get("url", "")).strip()
+      lyric_val = str(row.get("lyrics", "")).strip()
+
+      if url_val and not first_url:
+        first_url = url_val
+      if lyric_val:
+        lyrics_list.append(lyric_val)
+
+    # 1. 自動帶入第一個 Tab (單元 1) 的套路名稱為「24式太極拳」
+    st.session_state.taiji_playlist_names[1] = "24式太極拳"
+
+    # 2. 自動帶入網址
+    if first_url:
+      st.session_state["taiji_yt_input_url_1"] = first_url
+
+    # 3. 將 CSV 裡的所有招式一次性用換行合併，填入文字框
+    if lyrics_list:
+      st.session_state["taiji_my_text_input_1"] = "\n".join(lyrics_list)
+
   except Exception as e:
     print(f"CSV 讀取錯誤: {e}")
 
