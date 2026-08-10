@@ -6,6 +6,7 @@ from gtts import gTTS
 import io
 import re
 import urllib.parse
+import csv
 import streamlit.components.v1 as components
 
 # 設定頁面為寬螢幕模式
@@ -187,15 +188,14 @@ default_24_taiji = """24式太極拳 - 1.起勢
 24式太極拳 - 23.十字手
 24式太極拳 - 24.收勢"""
 
-# 預設把第 1 單元填入 24 式
 if not st.session_state.get("taiji_my_text_input_1"):
     st.session_state["taiji_my_text_input_1"] = default_24_taiji
 
-# 讀取 taiji_recipes_太極學院.csv
+# 準確讀取 CSV，確保多行文字透過 quoting 正確還原
 TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
 if os.path.exists(TAIJI_CSV_FILE):
     try:
-        saved_df = pd.read_csv(TAIJI_CSV_FILE)
+        saved_df = pd.read_csv(TAIJI_CSV_FILE, quoting=csv.QUOTE_MINIMAL, encoding="utf-8-sig")
         for _, row in saved_df.iterrows():
             idx_val = int(row['id'])
             if 1 <= idx_val <= 50:
@@ -205,8 +205,7 @@ if os.path.exists(TAIJI_CSV_FILE):
                     st.session_state.taiji_playlist_names[idx_val] = str(row['title']).strip()
                 if 'lyrics' in saved_df.columns and pd.notna(row.get('lyrics')):
                     raw_lyrics = str(row['lyrics'])
-                    # 只有當 CSV 裡面有實質多行內容時才覆蓋，避免被舊的單行蓋掉
-                    if raw_lyrics != "nan" and len(raw_lyrics.strip()) > 15:
+                    if raw_lyrics != "nan" and len(raw_lyrics.strip()) > 0:
                         st.session_state[f"taiji_my_text_input_{idx_val}"] = raw_lyrics
     except Exception as e:
         st.error(f"讀取 CSV 發生錯誤: {e}")
@@ -226,8 +225,11 @@ def save_taiji_data_to_csv():
             "lyrics": st.session_state.get(f"taiji_my_text_input_{idx}", "")
         })
     df_export = pd.DataFrame(csv_data_list)
-    df_export.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig", quoting=1)
-    return df_export.to_csv(index=False, encoding="utf-8-sig", quoting=1)
+    # 採用跟句子練習完全一致的 csv.QUOTE_ALL，確保多行歌詞/招式完整包覆在雙引號內
+    csv_string = df_export.to_csv(index=False, encoding="utf-8-sig", quoting=csv.QUOTE_ALL)
+    with open(TAIJI_CSV_FILE, "w", encoding="utf-8-sig", newline="") as f:
+        f.write(csv_string)
+    return csv_string
 
 def auto_save_taiji():
     save_taiji_data_to_csv()
