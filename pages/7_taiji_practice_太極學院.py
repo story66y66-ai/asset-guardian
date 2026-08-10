@@ -161,7 +161,7 @@ for idx in range(1, 51):
     if f"taiji_my_text_input_{idx}" not in st.session_state:
         st.session_state[f"taiji_my_text_input_{idx}"] = ""
 
-# 從太極專屬 CSV 讀取並載入到 session_state 中
+# 從太極專屬 CSV 讀取並強制載入到 session_state 中
 TAIJI_CSV_FILE = "taiji_playlist_heart_太極結連庫.csv"
 if os.path.exists(TAIJI_CSV_FILE):
     try:
@@ -174,9 +174,10 @@ if os.path.exists(TAIJI_CSV_FILE):
                 if pd.notna(row.get('title')):
                     st.session_state.taiji_playlist_names[idx_val] = str(row['title'])
                 if 'lyrics' in saved_df.columns and pd.notna(row.get('lyrics')):
+                    # 確保正確寫入 session_state
                     st.session_state[f"taiji_my_text_input_{idx_val}"] = str(row['lyrics'])
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"CSV 讀取錯誤: {e}")
 
 if "taiji_current_page" not in st.session_state:
     st.session_state.taiji_current_page = 1
@@ -261,10 +262,9 @@ for tab_idx, tab in enumerate(tabs):
         left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
         with left_col:
-            # 直接綁定 session_state，點選分頁時自動帶入對應的網址
             user_yt_link = st.text_input(
                 f"請在此貼上 YouTube 或 Shorts 網址：",
-                value=st.session_state[url_key],
+                value=st.session_state.get(url_key, ""),
                 key=f"input_{url_key}",
                 on_change=auto_save_taiji
             )
@@ -311,24 +311,28 @@ for tab_idx, tab in enumerate(tabs):
                         st.warning("目前網址框是空的！")
 
         with right_col:
-            # 直接從 session_state 讀取對應的文字，點選分頁時自動帶入對應的招式文字
-            user_input_text = st.session_state[text_key]
+            # 確保文字框每次切換都能抓到 session_state 裡從 CSV 讀進來的值
+            current_lyrics_value = st.session_state.get(text_key, "")
             
             title_col, btn_col = st.columns([3, 1.4], vertical_alignment="center")
             with title_col:
                 st.subheader("✍️ 太極招式文字框與朗讀練習：")
             with btn_col:
-                encoded_text = urllib.parse.quote(user_input_text)
+                encoded_text = urllib.parse.quote(current_lyrics_value)
                 translate_url = f"https://translate.google.com/?hl=zh-TW&sl=zh-TW&tl=zh-TW&text={encoded_text}&op=translate"
                 st.markdown(f'<a href="{translate_url}" target="_blank" class="translate-button">🌐 Google 搜尋</a>', unsafe_allow_html=True)
 
+            # 移除 value 參數，直接讓 text_area 與 session_state 綁定，避免狀態衝突
             user_input_text = st.text_area(
                 "輸入太極招式：",
-                value=st.session_state[text_key],
+                value=current_lyrics_value,
                 key=f"textarea_taiji_{absolute_idx}",
                 on_change=auto_save_taiji
             )
-            st.session_state[text_key] = user_input_text
+            
+            # 即時同步更新 session_state
+            if user_input_text != current_lyrics_value:
+                st.session_state[text_key] = user_input_text
 
             col1, col2, col3 = st.columns([1.2, 1.2, 1])
             with col1:
