@@ -234,15 +234,16 @@ def auto_save_taiji():
   save_taiji_data_to_csv()
 
 
-# 工具函式：精準抓取 YouTube 11 位數的 Video ID
-def extract_youtube_id(url):
-  regex = r"(?:v=|\/([0-9A-Za-z_-]{11}).*|youtu\.be\/|\/embed\/|\/shorts\/)([0-9A-Za-z_-]{11})"
-  match = re.search(regex, url)
+# 工具函式：從各種 YouTube 網址格式中抓出乾淨的 11 位數 Video ID
+def get_clean_youtube_id(url):
+  if not url:
+    return ""
+  # 使用正規表達式過濾所有複雜的 query 參數
+  pattern = r"(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})"
+  match = re.search(pattern, url)
   if match:
-    for group in match.groups():
-      if group and len(group) == 11:
-        return group
-  return None
+    return match.group(1)
+  return ""
 
 
 csv_text_output = save_taiji_data_to_csv()
@@ -339,13 +340,19 @@ for tab_idx, tab in enumerate(tabs):
       )
 
       if user_yt_link.strip():
-        video_id = extract_youtube_id(user_yt_link.strip())
+        v_id = get_clean_youtube_id(user_yt_link.strip())
 
-        if video_id:
-          # 使用原生 st.video 以確保最高相容性與自動撥放支援
-          st.video(f"https://www.youtube.com/watch?v={video_id}")
+        if v_id:
+          embed_code = f"""
+                        <div style="display: flex; justify-content: center; margin-top: 15px; margin-bottom: 15px;">
+                            <iframe width="100%" height="450" src="https://www.youtube.com/embed/{v_id}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                        </div>
+                    """
+          components.html(embed_code, height=480)
         else:
-          st.warning("無法辨識此網址格式，請確認是否為正確的 YouTube 網址。")
+          st.warning(
+              "無法辨識此網址格式，請確認是否為正確的 YouTube 網址。"
+          )
       else:
         st.markdown(
             """
