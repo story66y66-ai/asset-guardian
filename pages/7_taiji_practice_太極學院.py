@@ -161,7 +161,37 @@ for idx in range(1, 51):
     if f"taiji_my_text_input_{idx}" not in st.session_state:
         st.session_state[f"taiji_my_text_input_{idx}"] = ""
 
-# 準確讀取 taiji_recipes_太極學院.csv 裡的完整資料
+# 24式太極拳完整預設招式內容
+default_24_taiji = """24式太極拳 - 1.起勢
+24式太極拳 - 2.左右野馬分鬃
+24式太極拳 - 3.白鶴亮翅
+24式太極拳 - 4.左右摟膝拗步
+24式太極拳 - 5.手揮琵琶
+24式太極拳 - 6.左右倒卷肱
+24式太極拳 - 7.左攬雀尾
+24式太極拳 - 8.右攬雀尾
+24式太極拳 - 9.單鞭
+24式太極拳 - 10.雲手
+24式太極拳 - 11.單鞭
+24式太極拳 - 12.高探馬
+24式太極拳 - 13.右蹬腳
+24式太極拳 - 14.雙峰貫耳
+24式太極拳 - 15.轉身左蹬腳
+24式太極拳 - 16.左下勢獨立
+24式太極拳 - 17.右下勢獨立
+24式太極拳 - 18.左右穿梭
+24式太極拳 - 19.海底針
+24式太極拳 - 20.閃通臂
+24式太極拳 - 21.轉身搬攔捶
+24式太極拳 - 22.如封似閉
+24式太極拳 - 23.十字手
+24式太極拳 - 24.收勢"""
+
+# 預設把第 1 單元填入 24 式
+if not st.session_state.get("taiji_my_text_input_1"):
+    st.session_state["taiji_my_text_input_1"] = default_24_taiji
+
+# 讀取 taiji_recipes_太極學院.csv
 TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
 if os.path.exists(TAIJI_CSV_FILE):
     try:
@@ -175,7 +205,8 @@ if os.path.exists(TAIJI_CSV_FILE):
                     st.session_state.taiji_playlist_names[idx_val] = str(row['title']).strip()
                 if 'lyrics' in saved_df.columns and pd.notna(row.get('lyrics')):
                     raw_lyrics = str(row['lyrics'])
-                    if raw_lyrics != "nan":
+                    # 只有當 CSV 裡面有實質多行內容時才覆蓋，避免被舊的單行蓋掉
+                    if raw_lyrics != "nan" and len(raw_lyrics.strip()) > 15:
                         st.session_state[f"taiji_my_text_input_{idx_val}"] = raw_lyrics
     except Exception as e:
         st.error(f"讀取 CSV 發生錯誤: {e}")
@@ -312,7 +343,6 @@ for tab_idx, tab in enumerate(tabs):
                         st.warning("目前網址框是空的！")
 
         with right_col:
-            # 關鍵修正：直接把 session_state 裡的歌詞帶入變數，如果畫面切換或重整，強制同步
             current_lyrics_value = st.session_state.get(text_key, "")
             
             title_col, btn_col = st.columns([3, 1.4], vertical_alignment="center")
@@ -323,7 +353,6 @@ for tab_idx, tab in enumerate(tabs):
                 translate_url = f"https://translate.google.com/?hl=zh-TW&sl=zh-TW&tl=zh-TW&text={encoded_text}&op=translate"
                 st.markdown(f'<a href="{translate_url}" target="_blank" class="translate-button">🌐 Google 搜尋</a>', unsafe_allow_html=True)
 
-            # 移除 key 參數，改用純 value 綁定與 callback，徹底避免 Streamlit 元件內部的狀態干擾
             def update_lyrics():
                 st.session_state[text_key] = st.session_state[f"raw_textarea_{absolute_idx}"]
                 save_taiji_data_to_csv()
@@ -335,7 +364,6 @@ for tab_idx, tab in enumerate(tabs):
                 on_change=update_lyrics
             )
             
-            # 同步更新 session_state 確保下方逐句測驗能即時抓到
             st.session_state[text_key] = user_input_text
 
             col1, col2, col3 = st.columns([1.2, 1.2, 1])
