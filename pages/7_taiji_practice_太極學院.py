@@ -11,8 +11,13 @@ st.markdown("""
     <style>
     /* 1. 放大上方 10 個切換按鈕的文字 */
     .stButton button {
+        height: 90px !important;
         border-radius: 12px !important;
         width: 100% !important;
+    }
+    .stButton button p {
+        font-size: 36px !important;
+        font-weight: bold !important;
     }
     
     /* 2. 左側文字輸入框字體放大到 40px */
@@ -61,22 +66,15 @@ st.markdown("""
         line-height: 1.2 !important;
     }
     
-    /* 8. 修正發音按鈕的高度與字體，讓它自動撐開、不再變螞蟻 */
-    div.row-widget.stButton > button, div[data-testid="column"] div.stButton > button {
-        height: auto !important;
-        min-height: 80px !important;
-        background-color: #ff8800 !important;
-        border: 3px solid #ffffff !important;
-        padding: 10px 20px !important;
+    /* 8. 強制全面放大所有按鈕（包含發音與清除按鈕）裡面的文字與高度 */
+    div.stButton button {
+        height: 75px !important;
+    }
+    div.stButton button p {
+        font-size: 35px !important;
+        font-weight: bold !important;
     }
     
-    div.row-widget.stButton > button p, div[data-testid="column"] div.stButton > button p {
-        font-size: 40px !important;
-        font-weight: bold !important;
-        color: #ffffff !important;
-        line-height: 1.2 !important;
-    }
-
     /* 9. 自定義超大對與錯結果顯示區 */
     .result-success {
         font-size: 50px !important;
@@ -174,7 +172,7 @@ with st.container():
             st.markdown(f"---")
             st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
             
-            # 發音按鈕
+            # 乾淨的按鈕文字，由 CSS 統一控制大小
             if st.button(f"🔊 聽第 {line_idx+1} 招發音", key=f"play_{idx}_{line_idx}"):
                 tts = gTTS(text=line, lang='zh-TW')
                 fp = io.BytesIO()
