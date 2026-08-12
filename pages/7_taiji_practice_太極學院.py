@@ -136,10 +136,6 @@ with st.container():
     with col2:
         st.subheader("✍️ 逐招練習與輸入測試區：")
         lines = [l.strip() for l in new_lyrics.split('\n') if l.strip()]
-        
-        cleared_target = st.session_state.get("focus_target", None)
-        if "focus_target" in st.session_state:
-            del st.session_state["focus_target"]
 
         for line_idx, line in enumerate(lines):
             st.markdown(f"---")
@@ -160,26 +156,21 @@ with st.container():
                 user_input = st.text_input(input_key, label_visibility="collapsed", key=input_key)
             
             with clear_col:
-                if st.button("🗑️ 清除", key=f"clear_{idx}_{line_idx}"):
-                    if input_key in st.session_state:
-                        st.session_state.pop(input_key)
-                    st.session_state["focus_target"] = input_key
-                    st.rerun()
+                # 這裡不走繁複的重新整理，直接透過前端 JS 點擊按鈕來瞬間清空並聚焦
+                clear_btn_key = f"clear_{idx}_{line_idx}"
+                if st.button("🗑️ 清除", key=clear_btn_key):
+                    components.html(f"""
+                        <script>
+                            const doc = window.parent.document;
+                            const inputs = doc.querySelectorAll('input[aria-label="{input_key}"]');
+                            if (inputs.length > 0) {{
+                                inputs[0].value = "";
+                                inputs[0].dispatchEvent(new Event('input', {{ bubbles: true }}));
+                                inputs[0].focus();
+                            }}
+                        </script>
+                    """, height=0)
             
-            # 透過 JavaScript 強制清空輸入框的值並將游標聚焦進去
-            if cleared_target == input_key:
-                components.html(f"""
-                    <script>
-                        const doc = window.parent.document;
-                        const inputs = doc.querySelectorAll('input[aria-label="{input_key}"]');
-                        if (inputs.length > 0) {{
-                            inputs[0].value = "";
-                            inputs[0].focus();
-                            inputs[0].dispatchEvent(new Event('input', {{ bubbles: true }}));
-                        }}
-                    </script>
-                """, height=0)
-
             if user_input:
                 clean_input = user_input.strip()
                 if clean_input == line:
