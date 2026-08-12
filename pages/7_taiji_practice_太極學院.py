@@ -6,7 +6,7 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：把輸入框外框撐開，讓 50px 的超大字體完美顯示
+# CSS 樣式設定：將輸入框上方提示文字直接放大 5 倍！
 st.markdown("""
     <style>
     /* 1. 放大上方 10 個切換按鈕的文字 */
@@ -23,30 +23,32 @@ st.markdown("""
     /* 2. 左側文字輸入框字體放大到 40px */
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
     
-    /* 3. 輸入框字體 50px，並解除高度限制，改用內距讓外框自動跟著變大！ */
+    /* 3. 輸入框字體 50px，外框自動延展 */
     .stTextInput input { 
         font-size: 50px !important; 
         height: auto !important; 
         padding: 15px 20px !important;
     }
     
-    /* 放大輸入框上方的提示標籤 */
+    /* 4. 將輸入框上方的提示標籤（請輸入第...招...）直接放大 5 倍（約 100px）！ */
     .stTextInput label {
-        font-size: 40px !important;
+        font-size: 100px !important;
         font-weight: bold !important;
+        color: #ffcc00 !important;
+        margin-bottom: 20px !important;
     }
     
-    /* 4. 頁面標題放大到 70px */
+    /* 5. 頁面標題放大到 70px */
     h1 { font-size: 70px !important; }
     
-    /* 5. 欄位標題放大到 40px */
+    /* 6. 欄位標題放大到 40px */
     h2, h3 { 
         font-size: 40px !important; 
         font-weight: bold !important; 
         margin-bottom: 15px !important;
     }
     
-    /* 6. 右側逐招練習區的招式標題字體放大到 80px */
+    /* 7. 右側逐招練習區的招式標題字體放大到 80px */
     .sentence-display { 
         font-size: 80px !important; 
         font-weight: bold !important; 
@@ -137,7 +139,7 @@ with st.container():
                 tts.write_to_fp(fp)
                 st.audio(fp, autoplay=True)
             
-            # 支援動態延展的超大輸入框
+            # 提示文字直接放大 5 倍的輸入框
             user_input = st.text_input(f"請輸入第 {line_idx+1} 招名稱進行測試：", key=f"input_{idx}_{line_idx}")
             if user_input:
                 if user_input.strip() == line:
