@@ -3,7 +3,6 @@ import pandas as pd
 import os
 from gtts import gTTS
 import io
-import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide")
 
@@ -149,30 +148,15 @@ with st.container():
             
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
-            input_col, clear_col = st.columns([4, 1])
-            input_key = f"input_{idx}_{line_idx}"
-            
-            with input_col:
-                user_input = st.text_input(input_key, label_visibility="collapsed", key=input_key)
-            
-            with clear_col:
-                # 透過前端 JS 直接尋找該輸入框並清空與聚焦，完美運作且不觸發後端報錯
-                if st.button("🗑️ 清除", key=f"clear_{idx}_{line_idx}"):
-                    components.html(f"""
-                        <script>
-                            const doc = window.parent.document;
-                            const inputs = doc.querySelectorAll('input[aria-label="{input_key}"]');
-                            if (inputs.length > 0) {{
-                                inputs[0].value = "";
-                                inputs[0].dispatchEvent(new Event('input', {{ bubbles: true }}));
-                                inputs[0].focus();
-                            }}
-                        </script>
-                    """, height=0)
-            
-            if user_input:
-                clean_input = user_input.strip()
-                if clean_input == line:
-                    st.success("🎉 太棒了！完全正確！")
-                else:
-                    st.error(f"❌ 答錯囉！您輸入的是「{clean_input}」，正確答案是「{line}」")
+            # 使用 form 表單包住輸入與送出，讓清除/送出機制完美交給 Streamlit 官方表單處理
+            form_key = f"form_{idx}_{line_idx}"
+            with st.form(key=form_key, clear_on_submit=True):
+                user_input = st.text_input("請輸入招式", label_visibility="collapsed", key=f"input_{idx}_{line_idx}")
+                submitted = st.form_submit_button("🚀 送出比對")
+                
+                if submitted:
+                    clean_input = user_input.strip()
+                    if clean_input == line:
+                        st.success("🎉 太棒了！完全正確！")
+                    else:
+                        st.error(f"❌ 答錯囉！您輸入的是「{clean_input}」，正確答案是「{line}」")
