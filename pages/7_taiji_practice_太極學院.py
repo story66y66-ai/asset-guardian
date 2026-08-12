@@ -137,9 +137,7 @@ with st.container():
         st.subheader("✍️ 逐招練習與輸入測試區：")
         lines = [l.strip() for l in new_lyrics.split('\n') if l.strip()]
         
-        # 記錄剛才被點擊清除的目標 index (如果有)
         cleared_target = st.session_state.get("focus_target", None)
-        # 用完後清除記錄
         if "focus_target" in st.session_state:
             del st.session_state["focus_target"]
 
@@ -147,19 +145,15 @@ with st.container():
             st.markdown(f"---")
             st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
             
-            # 聽發音按鈕
             if st.button(f"🔊 聽第 {line_idx+1} 招發音", key=f"play_{idx}_{line_idx}"):
                 tts = gTTS(text=line, lang='zh-TW')
                 fp = io.BytesIO()
                 tts.write_to_fp(fp)
                 st.audio(fp, autoplay=True)
             
-            # 自定義超大提示標籤
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
-            # 將輸入框與清除按鈕放在同一列
             input_col, clear_col = st.columns([4, 1])
-            
             input_key = f"input_{idx}_{line_idx}"
             
             with input_col:
@@ -169,18 +163,19 @@ with st.container():
                 if st.button("🗑️ 清除", key=f"clear_{idx}_{line_idx}"):
                     if input_key in st.session_state:
                         st.session_state.pop(input_key)
-                    # 記住這次是要對這個 input 聚焦
                     st.session_state["focus_target"] = input_key
                     st.rerun()
             
-            # 如果這一題剛剛被按了清除，透過 JavaScript 自動把游標放進這個輸入框
+            # 透過 JavaScript 強制清空輸入框的值並將游標聚焦進去
             if cleared_target == input_key:
                 components.html(f"""
                     <script>
                         const doc = window.parent.document;
                         const inputs = doc.querySelectorAll('input[aria-label="{input_key}"]');
                         if (inputs.length > 0) {{
+                            inputs[0].value = "";
                             inputs[0].focus();
+                            inputs[0].dispatchEvent(new Event('input', {{ bubbles: true }}));
                         }}
                     </script>
                 """, height=0)
