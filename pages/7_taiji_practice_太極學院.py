@@ -6,6 +6,7 @@ import io
 
 st.set_page_config(layout="wide")
 
+# CSS 樣式設定
 st.markdown("""
     <style>
     .stTextArea textarea { font-size: 20px !important; height: 300px !important; }
@@ -39,20 +40,24 @@ def save_to_csv():
     df_new = pd.DataFrame([{"id": i, **st.session_state.taiji_data[i]} for i in range(1, 11)])
     df_new.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig")
 
-tabs = st.tabs([f"曲目 {i}" for i in range(1, 11)])
+# 頁面架構：根據設定的名稱自動生成分頁標籤
+tab_titles = [st.session_state.taiji_data[i]["title"] for i in range(1, 11)]
+tabs = st.tabs(tab_titles)
 
 for i, tab in enumerate(tabs):
     idx = i + 1
     with tab:
         st.subheader(f"✏️ 編輯 {st.session_state.taiji_data[idx]['title']} 的內容")
-        new_title = st.text_input("設定曲目名稱：", value=st.session_state.taiji_data[idx]["title"], key=f"title_{idx}")
+        
+        # 輸入名稱與網址，輸入完按下 Enter 就會自動存檔並重整介面更新分頁名稱
+        new_title = st.text_input("設定套路名稱：", value=st.session_state.taiji_data[idx]["title"], key=f"title_{idx}")
         new_url = st.text_input("請貼上 YouTube 或 Shorts 網址：", value=st.session_state.taiji_data[idx]["video_url"], key=f"url_{idx}")
         
         if new_title != st.session_state.taiji_data[idx]["title"] or new_url != st.session_state.taiji_data[idx]["video_url"]:
             st.session_state.taiji_data[idx]["title"] = new_title
             st.session_state.taiji_data[idx]["video_url"] = new_url
             save_to_csv()
-            st.rerun()
+            st.rerun() 
 
         col1, col2 = st.columns(2)
         with col1:
@@ -68,7 +73,7 @@ for i, tab in enumerate(tabs):
             lines = [l.strip() for l in new_lyrics.split('\n') if l.strip()]
             for line_idx, line in enumerate(lines):
                 st.markdown(f"---")
-                st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_action='ignore', unsafe_allow_html=True)
                 if st.button(f"🔊 聽 {line_idx+1}", key=f"play_{idx}_{line_idx}"):
                     tts = gTTS(text=line, lang='zh-TW')
                     fp = io.BytesIO()
