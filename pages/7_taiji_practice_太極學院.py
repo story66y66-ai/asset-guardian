@@ -6,7 +6,7 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：將文字方塊內部的字體放大到 60px
+# CSS 樣式設定：將單行輸入框的框體與內部字體徹底撐大厚實
 st.markdown("""
     <style>
     /* 1. 放大上方 10 個切換按鈕的文字 */
@@ -23,24 +23,29 @@ st.markdown("""
     /* 2. 左側文字輸入框字體放大到 40px */
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
     
-    /* 3. 將右側逐招測試區的內部字體放大到 60px，讓輸入的字超大超清楚 */
-    [data-testid="stTextArea"] textarea {
-        font-size: 60px !important;
-        height: 130px !important;
-        padding: 15px !important;
+    /* 3. 將單行輸入框的文字放大到 50px */
+    .stTextInput input { 
+        font-size: 50px !important; 
     }
     
-    /* 4. 頁面標題放大到 70px */
+    /* 4. 將單行輸入框的外框底座（Baseweb container）撐高到 90px，厚實好點不遮字 */
+    div[data-baseweb="input"] {
+        min-height: 90px !important;
+        align-items: center !important;
+        padding: 5px 10px !important;
+    }
+    
+    /* 5. 頁面標題放大到 70px */
     h1 { font-size: 70px !important; }
     
-    /* 5. 欄位標題放大到 40px */
+    /* 6. 欄位標題放大到 40px */
     h2, h3 { 
         font-size: 40px !important; 
         font-weight: bold !important; 
         margin-bottom: 15px !important;
     }
     
-    /* 6. 右側逐招練習區的招式標題字體放大到 80px */
+    /* 7. 右側逐招練習區的招式標題字體放大到 80px */
     .sentence-display { 
         font-size: 80px !important; 
         font-weight: bold !important; 
@@ -49,7 +54,7 @@ st.markdown("""
         line-height: 1.4 !important;
     }
     
-    /* 7. 自定義超大提示文字樣式 */
+    /* 8. 自定義超大提示文字樣式 */
     .custom-input-label {
         font-size: 60px !important;
         font-weight: bold !important;
@@ -144,13 +149,12 @@ with st.container():
             # 自定義超大提示標籤
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
-            # 內部字體放大到 60px 的厚實大文字框
-            user_input = st.text_area(f"area_{idx}_{line_idx}", label_visibility="collapsed", key=f"input_{idx}_{line_idx}")
+            # 改回單行輸入框，按 Enter 或輸入時直接判定對錯，絕不換行！
+            user_input = st.text_input(f"input_{idx}_{line_idx}", label_visibility="collapsed", key=f"input_{idx}_{line_idx}")
             
-            if user_input is not None:
-                clean_input = user_input.replace("\n", "").strip()
-                if clean_input:
-                    if clean_input == line:
-                        st.success("🎉 太棒了！完全正確！")
-                    else:
-                        st.error(f"❌ 答錯囉！您輸入的是「{clean_input}」，正確答案是「{line}」")
+            if user_input:
+                clean_input = user_input.strip()
+                if clean_input == line:
+                    st.success("🎉 太棒了！完全正確！")
+                else:
+                    st.error(f"❌ 答錯囉！您輸入的是「{clean_input}」，正確答案是「{line}」")
