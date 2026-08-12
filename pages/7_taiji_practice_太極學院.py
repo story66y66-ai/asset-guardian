@@ -40,7 +40,7 @@ def save_to_csv():
     df_new = pd.DataFrame([{"id": i, **st.session_state.taiji_data[i]} for i in range(1, 11)])
     df_new.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig")
 
-# 頁面架構：根據設定的名稱自動生成分頁標籤
+# 頁面架構
 tab_titles = [st.session_state.taiji_data[i]["title"] for i in range(1, 11)]
 tabs = st.tabs(tab_titles)
 
@@ -49,7 +49,6 @@ for i, tab in enumerate(tabs):
     with tab:
         st.subheader(f"✏️ 編輯 {st.session_state.taiji_data[idx]['title']} 的內容")
         
-        # 輸入名稱與網址，輸入完按下 Enter 就會自動存檔並重整介面更新分頁名稱
         new_title = st.text_input("設定套路名稱：", value=st.session_state.taiji_data[idx]["title"], key=f"title_{idx}")
         new_url = st.text_input("請貼上 YouTube 或 Shorts 網址：", value=st.session_state.taiji_data[idx]["video_url"], key=f"url_{idx}")
         
@@ -73,7 +72,8 @@ for i, tab in enumerate(tabs):
             lines = [l.strip() for l in new_lyrics.split('\n') if l.strip()]
             for line_idx, line in enumerate(lines):
                 st.markdown(f"---")
-                st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_action='ignore', unsafe_allow_html=True)
+                # 修正：移除錯誤參數，改回標準寫法
+                st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
                 if st.button(f"🔊 聽 {line_idx+1}", key=f"play_{idx}_{line_idx}"):
                     tts = gTTS(text=line, lang='zh-TW')
                     fp = io.BytesIO()
