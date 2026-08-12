@@ -25,11 +25,11 @@ st.markdown("""
     
     /* 3. 徹底放大右側單行輸入框的外框高度、內部字體與顏色 */
     .stTextInput input {
-        font-size: 70px !important;        /* 字體 70px */
-        height: 95px !important;         /* 框高 */
+        font-size: 70px !important;
+        height: 95px !important;
         padding: 10px !important;
-        color: #ffffff !important;        /* 亮白色 */
-        font-weight: bold !important;     /* 加粗 */
+        color: #ffffff !important;
+        font-weight: bold !important;
     }
     
     .stTextInput > div > div {
@@ -66,7 +66,16 @@ st.markdown("""
         line-height: 1.2 !important;
     }
     
-    /* 8. 自定義超大對與錯結果顯示區 */
+    /* 8. 強制全面放大所有按鈕（包含發音與清除按鈕）裡面的文字與高度 */
+    div.stButton button {
+        height: 75px !important;
+    }
+    div.stButton button p {
+        font-size: 35px !important;
+        font-weight: bold !important;
+    }
+    
+    /* 9. 自定義超大對與錯結果顯示區 */
     .result-success {
         font-size: 50px !important;
         font-weight: bold !important;
@@ -163,9 +172,8 @@ with st.container():
             st.markdown(f"---")
             st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
             
-            # 使用 HTML 標籤直接放大發音按鈕的字體與調整按鈕高度
-            play_btn_label = f"🔊 <span style='font-size: 32px; font-weight: bold;'>聽第 {line_idx+1} 招發音</span>"
-            if st.button(play_btn_label, key=f"play_{idx}_{line_idx}"):
+            # 乾淨的按鈕文字，由 CSS 統一控制大小
+            if st.button(f"🔊 聽第 {line_idx+1} 招發音", key=f"play_{idx}_{line_idx}"):
                 tts = gTTS(text=line, lang='zh-TW')
                 fp = io.BytesIO()
                 tts.write_to_fp(fp)
@@ -186,8 +194,7 @@ with st.container():
                 user_input = st.text_input(actual_input_key, label_visibility="collapsed")
             
             with clear_col:
-                clear_btn_label = "🗑️ <span style='font-size: 26px; font-weight: bold;'>清除</span>"
-                if st.button(clear_btn_label, key=f"clear_{idx}_{line_idx}"):
+                if st.button("🗑️ 清除", key=f"clear_{idx}_{line_idx}"):
                     st.session_state[version_key] += 1
                     st.rerun()
             
