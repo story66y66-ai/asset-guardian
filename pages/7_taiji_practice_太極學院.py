@@ -144,12 +144,14 @@ with st.container():
             # 自定義超大提示標籤
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
-            # 改用高度 120px、超厚實的大文字框來取代原本會被壓扁的輸入框
+            # 超厚實的大文字框
             user_input = st.text_area(f"area_{idx}_{line_idx}", label_visibility="collapsed", key=f"input_{idx}_{line_idx}")
-            if user_input:
-                # 把換行符號清掉，方便比對單行招式
+            
+            # 加上完整的比對與提示邏輯
+            if user_input is not None:
                 clean_input = user_input.replace("\n", "").strip()
-                if clean_input == line:
-                    st.success("🎉 太棒了！完全正確！")
-                else:
-                    st.error(f"❌ 答錯囉！您輸入的是「{clean_input}」，正確答案是「{line}」")
+                if clean_input:
+                    if clean_input == line:
+                        st.success("🎉 太棒了！完全正確！")
+                    else:
+                        st.error(f"❌ 答錯囉！您輸入的是「{clean_input}」，正確答案是「{line}」")
