@@ -63,6 +63,12 @@ st.markdown("""
         margin-bottom: 10px !important;
         line-height: 1.2 !important;
     }
+    
+    /* 8. 放大正確與錯誤提示訊息的字體 */
+    div.stSuccess p, div.stError p {
+        font-size: 45px !important;
+        font-weight: bold !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -152,18 +158,15 @@ with st.container():
             input_key = f"input_{idx}_{line_idx}"
             version_key = f"version_{idx}_{line_idx}"
             
-            # 初始化版本計數器與內容狀態
             if version_key not in st.session_state:
                 st.session_state[version_key] = 0
             
             actual_input_key = f"{input_key}_v{st.session_state[version_key]}"
             
             with input_col:
-                # 這裡不使用 form，打完字按 Enter 或點其他地方，字都會穩穩停留在畫面上供澄玄比對
                 user_input = st.text_input(actual_input_key, label_visibility="collapsed")
             
             with clear_col:
-                # 專屬的清除按鈕：點擊後把版本號 +1，原先的輸入框就會因 key 改變而變成全新空白狀態！
                 if st.button("🗑️ 清除", key=f"clear_{idx}_{line_idx}"):
                     st.session_state[version_key] += 1
                     st.rerun()
