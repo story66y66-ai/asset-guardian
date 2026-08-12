@@ -6,7 +6,7 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：將文字方塊與按鈕徹底放大厚實
+# CSS 樣式設定：將文字方塊內部的字體放大到 60px
 st.markdown("""
     <style>
     /* 1. 放大上方 10 個切換按鈕的文字 */
@@ -23,10 +23,10 @@ st.markdown("""
     /* 2. 左側文字輸入框字體放大到 40px */
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
     
-    /* 3. 將右側逐招測試區改造成超級厚實的大文字方塊（高度 120px，字體 45px） */
+    /* 3. 將右側逐招測試區的內部字體放大到 60px，讓輸入的字超大超清楚 */
     [data-testid="stTextArea"] textarea {
-        font-size: 45px !important;
-        height: 120px !important;
+        font-size: 60px !important;
+        height: 130px !important;
         padding: 15px !important;
     }
     
@@ -144,10 +144,9 @@ with st.container():
             # 自定義超大提示標籤
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
-            # 超厚實的大文字框
+            # 內部字體放大到 60px 的厚實大文字框
             user_input = st.text_area(f"area_{idx}_{line_idx}", label_visibility="collapsed", key=f"input_{idx}_{line_idx}")
             
-            # 加上完整的比對與提示邏輯
             if user_input is not None:
                 clean_input = user_input.replace("\n", "").strip()
                 if clean_input:
