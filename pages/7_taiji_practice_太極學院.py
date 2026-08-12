@@ -6,16 +6,17 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：打造超大按鈕與超大字體版
+# CSS 樣式設定：全力放大上方按鈕與所有字體
 st.markdown("""
     <style>
-    /* 1. 讓套路切換按鈕變得超級大、超級好按 */
+    /* 1. 徹底把上方 10 個切換按鈕的字體放大到 36px，並加高按鈕讓它非常醒目 */
     .stButton button {
-        font-size: 30px !important;
+        font-size: 36px !important;
         font-weight: bold !important;
-        padding: 15px 25px !important;
+        height: 80px !important;
+        padding: 10px 15px !important;
         width: 100% !important;
-        border-radius: 10px !important;
+        border-radius: 12px !important;
     }
     
     /* 2. 左側文字輸入框字體放大到 40px */
@@ -74,7 +75,7 @@ def save_to_csv():
     df_new = pd.DataFrame([{"id": i, **st.session_state.taiji_data[i]} for i in range(1, 11)])
     df_new.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig")
 
-# 用大按鈕來取代下拉選單（分成兩排，一排 5 個按鈕，字體超大超清楚）
+# 上方 10 個大按鈕切換區（分成兩排，一排 5 個）
 st.markdown("### 🔍 請點選要練習的套路：")
 row1 = st.columns(5)
 row2 = st.columns(5)
