@@ -6,33 +6,33 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：針對選單框強制放大
+# CSS 樣式設定：打造超大按鈕與超大字體版
 st.markdown("""
     <style>
-    /* 1. 這是最關鍵的一步：強制放大選單框內的顯示文字 */
-    div[data-baseweb="select"] {
-        font-size: 50px !important;
+    /* 1. 讓套路切換按鈕變得超級大、超級好按 */
+    .stButton button {
+        font-size: 30px !important;
+        font-weight: bold !important;
+        padding: 15px 25px !important;
+        width: 100% !important;
+        border-radius: 10px !important;
     }
     
-    /* 強制放大下拉選單裡的文字 */
-    div[role="listbox"] {
-        font-size: 45px !important;
-    }
-
-    /* 2. 放大選單上方的標題文字 */
-    .stMarkdown h3 { 
-        font-size: 45px !important; 
-        font-weight: bold !important; 
-    }
-    
-    /* 3. 左側文字輸入框字體放大到 40px */
+    /* 2. 左側文字輸入框字體放大到 40px */
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
     
-    /* 4. 網址輸入框字體放大到 40px */
+    /* 3. 網址輸入框字體放大到 40px */
     .stTextInput input { font-size: 40px !important; height: 60px !important; }
     
-    /* 5. 頁面標題放大到 70px */
+    /* 4. 頁面標題放大到 70px */
     h1 { font-size: 70px !important; }
+    
+    /* 5. 欄位標題與提示文字放大到 40px */
+    h2, h3, label, .stTextInput label, .stTextArea label { 
+        font-size: 40px !important; 
+        font-weight: bold !important; 
+        margin-bottom: 15px !important;
+    }
     
     /* 6. 右側逐招練習區的招式字體放大到 80px */
     .sentence-display { 
@@ -42,12 +42,6 @@ st.markdown("""
         padding: 40px 0 !important;
         line-height: 1.4 !important;
     }
-    
-    /* 7. 按鈕字體放大到 35px */
-    .stButton button {
-        font-size: 35px !important;
-        padding: 15px 30px !important;
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -56,6 +50,9 @@ st.title("🥋 澄玄大學 - 太極學院")
 # 初始化狀態
 if "taiji_data" not in st.session_state:
     st.session_state.taiji_data = {i: {"title": f"套路 {i}", "lyrics": "", "video_url": ""} for i in range(1, 11)}
+
+if "selected_idx" not in st.session_state:
+    st.session_state.selected_idx = 1
 
 TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
 
@@ -77,11 +74,20 @@ def save_to_csv():
     df_new = pd.DataFrame([{"id": i, **st.session_state.taiji_data[i]} for i in range(1, 11)])
     df_new.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig")
 
-# 建立大字體下拉選單
-st.markdown("### 🔍 請選擇要練習的套路：")
-options = [f"{i}. {st.session_state.taiji_data[i]['title']}" for i in range(1, 11)]
-selected_option = st.selectbox("選擇套路", options, label_visibility="collapsed")
-idx = int(selected_option.split(".")[0])
+# 用大按鈕來取代下拉選單（分成兩排，一排 5 個按鈕，字體超大超清楚）
+st.markdown("### 🔍 請點選要練習的套路：")
+row1 = st.columns(5)
+row2 = st.columns(5)
+all_cols = row1 + row2
+
+for i in range(1, 11):
+    with all_cols[i-1]:
+        btn_label = f"{i}. {st.session_state.taiji_data[i]['title']}"
+        if st.button(btn_label, key=f"nav_btn_{i}"):
+            st.session_state.selected_idx = i
+
+idx = st.session_state.selected_idx
+st.markdown("---")
 
 # 顯示當前選中的套路編輯與練習區
 with st.container():
