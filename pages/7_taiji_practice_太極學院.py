@@ -6,32 +6,35 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：全面放大字體與選單
+# CSS 樣式設定：全面放大特大字體版
 st.markdown("""
     <style>
-    /* 強制放大選單（Selectbox）的文字 */
-    .stSelectbox div[data-baseweb="select"] span {
-        font-size: 36px !important;
-        font-weight: bold !important;
+    /* 1. 強制放大下拉選單的顯示文字與選項文字到 45px */
+    div[data-baseweb="select"] > div {
+        font-size: 45px !important;
+        height: 80px !important;
+    }
+    /* 調整選單打開後的清單字體 */
+    ul[role="listbox"] li {
+        font-size: 40px !important;
     }
     
-    /* 左側文字輸入框字體放大到 40px */
+    /* 2. 強制放大所有選單標題與提示文字到 45px */
+    .stMarkdown h3, label, .stTextInput label, .stTextArea label { 
+        font-size: 45px !important; 
+        font-weight: bold !important; 
+    }
+    
+    /* 3. 左側文字輸入框字體放大到 40px */
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
     
-    /* 網址輸入框字體放大到 36px */
-    .stTextInput input { font-size: 36px !important; }
+    /* 4. 網址輸入框字體放大到 40px */
+    .stTextInput input { font-size: 40px !important; height: 60px !important; }
     
-    /* 頁面標題放大到 64px */
-    h1 { font-size: 64px !important; }
+    /* 5. 頁面標題放大到 70px */
+    h1 { font-size: 70px !important; }
     
-    /* 欄位標題與提示文字放大到 36px */
-    h2, h3, label, .stTextInput label, .stTextArea label { 
-        font-size: 36px !important; 
-        font-weight: bold !important; 
-        margin-bottom: 15px !important;
-    }
-    
-    /* 右側逐招練習區的招式字體放大到 80px */
+    /* 6. 右側逐招練習區的招式字體放大到 80px */
     .sentence-display { 
         font-size: 80px !important; 
         font-weight: bold !important; 
@@ -40,10 +43,10 @@ st.markdown("""
         line-height: 1.4 !important;
     }
     
-    /* 按鈕字體放大 */
+    /* 7. 按鈕字體放大到 35px */
     .stButton button {
-        font-size: 30px !important;
-        padding: 10px 20px !important;
+        font-size: 35px !important;
+        padding: 15px 30px !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -74,7 +77,7 @@ def save_to_csv():
     df_new = pd.DataFrame([{"id": i, **st.session_state.taiji_data[i]} for i in range(1, 11)])
     df_new.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig")
 
-# 建立大字體下拉選單來取代原本的小分頁
+# 建立大字體下拉選單
 st.markdown("### 🔍 請選擇要練習的套路：")
 options = [f"{i}. {st.session_state.taiji_data[i]['title']}" for i in range(1, 11)]
 selected_option = st.selectbox("選擇套路", options, label_visibility="collapsed")
