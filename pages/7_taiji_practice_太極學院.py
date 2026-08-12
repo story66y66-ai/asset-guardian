@@ -148,10 +148,22 @@ with st.container():
             
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
+            input_col, clear_col = st.columns([4, 1])
             input_key = f"input_{idx}_{line_idx}"
             
-            # 澄玄只要直接在這裡打字即可！
-            user_input = st.text_input(input_key, label_visibility="collapsed", key=input_key)
+            # 確保 session_state 裡有初始化這個鍵
+            if input_key not in st.session_state:
+                st.session_state[input_key] = ""
+            
+            with input_col:
+                # 這裡直接綁定 session_state，讓 Streamlit 狀態與輸入框同步
+                user_input = st.text_input(input_key, label_visibility="collapsed", key=input_key)
+            
+            with clear_col:
+                if st.button("🗑️ 清除", key=f"clear_{idx}_{line_idx}"):
+                    # 直接把該狀態設為空字串並重新整理，就能完美清空！
+                    st.session_state[input_key] = ""
+                    st.rerun()
             
             if user_input:
                 clean_input = user_input.strip()
