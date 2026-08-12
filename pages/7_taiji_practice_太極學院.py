@@ -25,8 +25,8 @@ st.markdown("""
     
     /* 3. 徹底放大右側單行輸入框的外框高度、內部字體與顏色 */
     .stTextInput input {
-        font-size: 70px !important;        /* 字體加大到 70px */
-        height: 95px !important;         /* 框高對應加大 */
+        font-size: 70px !important;        /* 字體 70px */
+        height: 95px !important;         /* 框高 */
         padding: 10px !important;
         color: #ffffff !important;        /* 亮白色 */
         font-weight: bold !important;     /* 加粗 */
@@ -66,7 +66,12 @@ st.markdown("""
         line-height: 1.2 !important;
     }
     
-    /* 8. 自定義超大對與錯結果顯示區 */
+    /* 8. 放大發音按鈕內的文字 */
+    div.row-widget.stButton button p {
+        font-size: 35px !important;
+    }
+    
+    /* 9. 自定義超大對與錯結果顯示區 */
     .result-success {
         font-size: 50px !important;
         font-weight: bold !important;
