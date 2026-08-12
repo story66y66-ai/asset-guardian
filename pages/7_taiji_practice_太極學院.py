@@ -25,15 +25,15 @@ st.markdown("""
     
     /* 3. 徹底放大右側單行輸入框的外框高度、內部字體與顏色 */
     .stTextInput input {
-        font-size: 55px !important;
-        height: 80px !important;
+        font-size: 70px !important;        /* 字體加大到 70px */
+        height: 95px !important;         /* 框高對應加大 */
         padding: 10px !important;
-        color: #ffffff !important;        /* 讓輸入的文字變成亮白色 */
-        font-weight: bold !important;     /* 讓文字加粗更清晰 */
+        color: #ffffff !important;        /* 亮白色 */
+        font-weight: bold !important;     /* 加粗 */
     }
     
     .stTextInput > div > div {
-        min-height: 90px !important;
+        min-height: 100px !important;
         align-items: center !important;
     }
     
@@ -194,4 +194,3 @@ with st.container():
                     st.markdown(f"<div class='result-success'>🎉 太棒了！完全正確！</div>", unsafe_allow_html=True)
                 else:
                     st.markdown(f"<div class='result-error'>❌ 答錯囉！您輸入的是「{clean_input}」，正確答案是「{line}」</div>", unsafe_allow_html=True)
-                    
