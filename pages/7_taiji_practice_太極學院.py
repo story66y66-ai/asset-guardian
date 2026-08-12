@@ -149,17 +149,20 @@ with st.container():
             # 自定義超大提示標籤
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
-            # 將輸入框與清除按鈕放在同一列 (輸入框佔大部分，清除按鈕在右側)
+            # 將輸入框與清除按鈕放在同一列
             input_col, clear_col = st.columns([4, 1])
             
             input_key = f"input_{idx}_{line_idx}"
             
             with input_col:
-                user_input = st.text_input(input_key, label_visibility="collapsed", key=f"text_{input_key}")
+                user_input = st.text_input(input_key, label_visibility="collapsed", key=input_key)
             
             with clear_col:
+                # 使用簡單安全的點擊觸發
                 if st.button("🗑️ 清除", key=f"clear_{idx}_{line_idx}"):
-                    st.session_state[f"text_{input_key}"] = ""
+                    # 利用 pop 把該輸入框的記憶刪除，達到完美清空效果
+                    if input_key in st.session_state:
+                        st.session_state.pop(input_key)
                     st.rerun()
             
             if user_input:
