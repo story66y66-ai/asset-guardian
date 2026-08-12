@@ -61,17 +61,20 @@ st.markdown("""
         line-height: 1.2 !important;
     }
     
-    /* 8. 用最高權重強制把發音按鈕的字體與高度放大 */
+    /* 8. 修正發音按鈕的高度與字體，讓它自動撐開、不再變螞蟻 */
     div.row-widget.stButton > button, div[data-testid="column"] div.stButton > button {
-        height: 90px !important;
+        height: auto !important;
+        min-height: 80px !important;
         background-color: #ff8800 !important;
         border: 3px solid #ffffff !important;
+        padding: 10px 20px !important;
     }
     
     div.row-widget.stButton > button p, div[data-testid="column"] div.stButton > button p {
-        font-size: 45px !important;
+        font-size: 40px !important;
         font-weight: bold !important;
         color: #ffffff !important;
+        line-height: 1.2 !important;
     }
 
     /* 9. 自定義超大對與錯結果顯示區 */
@@ -171,7 +174,7 @@ with st.container():
             st.markdown(f"---")
             st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
             
-            # 超大發音按鈕
+            # 發音按鈕
             if st.button(f"🔊 聽第 {line_idx+1} 招發音", key=f"play_{idx}_{line_idx}"):
                 tts = gTTS(text=line, lang='zh-TW')
                 fp = io.BytesIO()
