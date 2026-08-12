@@ -148,15 +148,29 @@ with st.container():
             
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
-            # 使用 form 表單包住輸入與送出，讓清除/送出機制完美交給 Streamlit 官方表單處理
-            form_key = f"form_{idx}_{line_idx}"
-            with st.form(key=form_key, clear_on_submit=True):
-                user_input = st.text_input("請輸入招式", label_visibility="collapsed", key=f"input_{idx}_{line_idx}")
-                submitted = st.form_submit_button("🚀 送出比對")
-                
-                if submitted:
-                    clean_input = user_input.strip()
-                    if clean_input == line:
-                        st.success("🎉 太棒了！完全正確！")
-                    else:
-                        st.error(f"❌ 答錯囉！您輸入的是「{clean_input}」，正確答案是「{line}」")
+            input_col, clear_col = st.columns([4, 1])
+            input_key = f"input_{idx}_{line_idx}"
+            version_key = f"version_{idx}_{line_idx}"
+            
+            # 初始化版本計數器與內容狀態
+            if version_key not in st.session_state:
+                st.session_state[version_key] = 0
+            
+            actual_input_key = f"{input_key}_v{st.session_state[version_key]}"
+            
+            with input_col:
+                # 這裡不使用 form，打完字按 Enter 或點其他地方，字都會穩穩停留在畫面上供澄玄比對
+                user_input = st.text_input(actual_input_key, label_visibility="collapsed")
+            
+            with clear_col:
+                # 專屬的清除按鈕：點擊後把版本號 +1，原先的輸入框就會因 key 改變而變成全新空白狀態！
+                if st.button("🗑️ 清除", key=f"clear_{idx}_{line_idx}"):
+                    st.session_state[version_key] += 1
+                    st.rerun()
+            
+            if user_input:
+                clean_input = user_input.strip()
+                if clean_input == line:
+                    st.success("🎉 太棒了！完全正確！")
+                else:
+                    st.error(f"❌ 答錯囉！您輸入的是「{clean_input}」，正確答案是「{line}」")
