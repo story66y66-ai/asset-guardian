@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from gtts import gTTS
 import io
+import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide")
 
@@ -151,21 +152,23 @@ with st.container():
             input_col, clear_col = st.columns([4, 1])
             input_key = f"input_{idx}_{line_idx}"
             
-            # 檢查是否有被要求清除的標記，如果有，就直接把該 input 的 session 刪除
-            clear_flag_key = f"clear_flag_{idx}_{line_idx}"
-            if st.session_state.get(clear_flag_key, False):
-                if input_key in st.session_state:
-                    del st.session_state[input_key]
-                st.session_state[clear_flag_key] = False
-            
             with input_col:
                 user_input = st.text_input(input_key, label_visibility="collapsed", key=input_key)
             
             with clear_col:
+                # 透過前端 JS 直接尋找該輸入框並清空與聚焦，完美運作且不觸發後端報錯
                 if st.button("🗑️ 清除", key=f"clear_{idx}_{line_idx}"):
-                    # 設定清除標記並重新整理，安全不報錯！
-                    st.session_state[clear_flag_key] = True
-                    st.rerun()
+                    components.html(f"""
+                        <script>
+                            const doc = window.parent.document;
+                            const inputs = doc.querySelectorAll('input[aria-label="{input_key}"]');
+                            if (inputs.length > 0) {{
+                                inputs[0].value = "";
+                                inputs[0].dispatchEvent(new Event('input', {{ bubbles: true }}));
+                                inputs[0].focus();
+                            }}
+                        </script>
+                    """, height=0)
             
             if user_input:
                 clean_input = user_input.strip()
