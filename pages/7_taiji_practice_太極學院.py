@@ -6,7 +6,7 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定
+# CSS 樣式設定：全面放大輸入框與提示字
 st.markdown("""
     <style>
     /* 1. 放大上方 10 個切換按鈕的文字 */
@@ -23,14 +23,23 @@ st.markdown("""
     /* 2. 左側文字輸入框字體放大到 40px */
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
     
-    /* 3. 網址輸入框與逐招練習輸入框字體放大到 36px */
-    .stTextInput input { font-size: 36px !important; height: 60px !important; }
+    /* 3. 徹底放大所有文字輸入框（包括輸入框內的字體與提示字）到 36px */
+    .stTextInput input { 
+        font-size: 36px !important; 
+        height: 70px !important; 
+    }
+    
+    /* 放大輸入框的上方標籤（Label） */
+    .stTextInput label {
+        font-size: 36px !important;
+        font-weight: bold !important;
+    }
     
     /* 4. 頁面標題放大到 70px */
     h1 { font-size: 70px !important; }
     
-    /* 5. 欄位標題與提示文字放大到 40px */
-    h2, h3, label, .stTextInput label, .stTextArea label { 
+    /* 5. 欄位標題放大到 40px */
+    h2, h3 { 
         font-size: 40px !important; 
         font-weight: bold !important; 
         margin-bottom: 15px !important;
@@ -127,7 +136,7 @@ with st.container():
                 tts.write_to_fp(fp)
                 st.audio(fp, autoplay=True)
             
-            # 增加輸入框讓澄玄輸入並按 Enter 檢查對錯
+            # 輸入框與提示文字已透過 CSS 放大
             user_input = st.text_input(f"請輸入第 {line_idx+1} 招名稱進行測試：", key=f"input_{idx}_{line_idx}")
             if user_input:
                 if user_input.strip() == line:
