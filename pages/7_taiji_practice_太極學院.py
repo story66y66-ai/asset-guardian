@@ -137,7 +137,6 @@ st.markdown("""
 
 st.title("🥋 澄玄大學 - 太極學院（拳、劍、扇招式記憶與朗讀工坊）")
 
-# 最上方的兩個專屬按鈕
 col_btn1, col_btn2 = st.columns([1, 1])
 with col_btn1:
     yt_url_top = "https://www.youtube.com/"
@@ -191,7 +190,7 @@ default_24_taiji = """24式太極拳 - 1.起勢
 if not st.session_state.get("taiji_my_text_input_1"):
     st.session_state["taiji_my_text_input_1"] = default_24_taiji
 
-# 準確讀取 CSV，確保多行文字透過 quoting 正確還原
+# 準確讀取 CSV，加入容錯處理避免空值或 nan 導致讀取失敗
 TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
 if os.path.exists(TAIJI_CSV_FILE):
     try:
@@ -203,8 +202,9 @@ if os.path.exists(TAIJI_CSV_FILE):
                     st.session_state[f"taiji_yt_input_url_{idx_val}"] = str(row['url']).strip()
                 if 'title' in saved_df.columns and pd.notna(row.get('title')):
                     st.session_state.taiji_playlist_names[idx_val] = str(row['title']).strip()
-                if 'lyrics' in saved_df.columns and pd.notna(row.get('lyrics')):
-                    raw_lyrics = str(row['lyrics'])
+                if 'lyrics' in saved_df.columns:
+                    lyrics_val = row.get('lyrics')
+                    raw_lyrics = "" if pd.isna(lyrics_val) else str(lyrics_val)
                     if raw_lyrics != "nan" and len(raw_lyrics.strip()) > 0:
                         st.session_state[f"taiji_my_text_input_{idx_val}"] = raw_lyrics
     except Exception as e:
@@ -225,7 +225,6 @@ def save_taiji_data_to_csv():
             "lyrics": st.session_state.get(f"taiji_my_text_input_{idx}", "")
         })
     df_export = pd.DataFrame(csv_data_list)
-    # 採用跟句子練習完全一致的 csv.QUOTE_ALL，確保多行歌詞/招式完整包覆在雙引號內
     csv_string = df_export.to_csv(index=False, encoding="utf-8-sig", quoting=csv.QUOTE_ALL)
     with open(TAIJI_CSV_FILE, "w", encoding="utf-8-sig", newline="") as f:
         f.write(csv_string)
@@ -238,7 +237,6 @@ csv_text_output = save_taiji_data_to_csv()
 
 with st.expander("📥 產生並下載包含完整太極招式的 CSV 庫（支援 Excel 直接開啟與 GitHub）"):
     st.markdown("<span style='font-size: 20px; font-weight: bold;'>系統已成功串接 taiji_recipes_太極學院.csv，點擊選項即可自動帶入網址與文字！</span>", unsafe_allow_html=True)
-    
     st.download_button(
         label="📥 點我直接下載 taiji_recipes_太極學院.csv 檔案",
         data=csv_text_output,
@@ -248,7 +246,6 @@ with st.expander("📥 產生並下載包含完整太極招式的 CSV 庫（支�
     )
 
 st.write("")
-
 st.markdown("<h3 style='font-size: 26px; color: #ffffff;'>📚 選擇太極練習冊（翻書頁面）：</h3>", unsafe_allow_html=True)
 
 page_cols = st.columns(5)
@@ -308,7 +305,6 @@ for tab_idx, tab in enumerate(tabs):
                 try:
                     raw_url = user_yt_link.strip()
                     video_id = ""
-                    
                     if "shorts/" in raw_url:
                         video_id = raw_url.split("shorts/")[-1].split("?")[0].split("/")[0]
                     elif "watch?v=" in raw_url:
@@ -400,7 +396,6 @@ for tab_idx, tab in enumerate(tabs):
 
         st.divider()
 
-        # 逐句互動輸入測驗區
         st.subheader("✍️ 逐招太極輸入測驗與朗讀練習：")
         
         all_lines = user_input_text.split('\n')
@@ -424,7 +419,7 @@ for tab_idx, tab in enumerate(tabs):
                         except Exception as e:
                             st.error(f"語音錯誤：{e}")
                             
-                with cols[1]:
+                 with cols[1]:
                     safe_sentence_js = taiji_sentence.replace("'", "\\'")
                     components.html(f"""
                         <button onclick="
