@@ -61,19 +61,17 @@ st.markdown("""
         line-height: 1.2 !important;
     }
     
-    /* 8. 讓發音按鈕這欄的按鈕變得非常巨大 */
-    .speak-btn-container button {
-        height: 85px !important;
-        background-color: #ff9900 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 15px !important;
-        width: 100% !important;
+    /* 8. 用最高權重強制把發音按鈕的字體與高度放大 */
+    div.row-widget.stButton > button, div[data-testid="column"] div.stButton > button {
+        height: 90px !important;
+        background-color: #ff8800 !important;
+        border: 3px solid #ffffff !important;
     }
-    .speak-btn-container button p {
-        font-size: 40px !important;
+    
+    div.row-widget.stButton > button p, div[data-testid="column"] div.stButton > button p {
+        font-size: 45px !important;
         font-weight: bold !important;
-        color: white !important;
+        color: #ffffff !important;
     }
 
     /* 9. 自定義超大對與錯結果顯示區 */
@@ -173,14 +171,12 @@ with st.container():
             st.markdown(f"---")
             st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
             
-            # 讓發音按鈕擁有獨立的超大區塊與樣式
-            st.markdown('<div class="speak-btn-container">', unsafe_allow_html=True)
-            if st.button(f"🔊 點我聽第 {line_idx+1} 招發音", key=f"play_{idx}_{line_idx}"):
+            # 超大發音按鈕
+            if st.button(f"🔊 聽第 {line_idx+1} 招發音", key=f"play_{idx}_{line_idx}"):
                 tts = gTTS(text=line, lang='zh-TW')
                 fp = io.BytesIO()
                 tts.write_to_fp(fp)
                 st.audio(fp, autoplay=True)
-            st.markdown('</div>', unsafe_allow_html=True)
             
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
