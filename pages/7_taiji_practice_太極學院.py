@@ -6,11 +6,18 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定
+# CSS 樣式設定：將字體放大到 50px
 st.markdown("""
     <style>
     .stTextArea textarea { font-size: 20px !important; height: 300px !important; }
-    .sentence-display { font-size: 22px !important; font-weight: bold !important; color: #ffffff !important; }
+    /* 調整字體為 50px，增加行高確保閱讀舒適 */
+    .sentence-display { 
+        font-size: 50px !important; 
+        font-weight: bold !important; 
+        color: #ffffff !important; 
+        padding: 20px 0 !important;
+        line-height: 1.4 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -72,7 +79,6 @@ for i, tab in enumerate(tabs):
             lines = [l.strip() for l in new_lyrics.split('\n') if l.strip()]
             for line_idx, line in enumerate(lines):
                 st.markdown(f"---")
-                # 修正：移除錯誤參數，改回標準寫法
                 st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
                 if st.button(f"🔊 聽 {line_idx+1}", key=f"play_{idx}_{line_idx}"):
                     tts = gTTS(text=line, lang='zh-TW')
