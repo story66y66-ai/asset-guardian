@@ -6,17 +6,15 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：精準放大 Streamlit 按鈕內部的文字
+# CSS 樣式設定：放大按鈕文字、輸入框與對錯提示字體
 st.markdown("""
     <style>
-    /* 1. 放大按鈕整體與內部的文字到 36px */
+    /* 1. 放大上方 10 個切換按鈕的文字 */
     .stButton button {
         height: 90px !important;
         border-radius: 12px !important;
         width: 100% !important;
     }
-    
-    /* 強制鎖定按鈕裡面的文字層讓它變巨大 */
     .stButton button p {
         font-size: 36px !important;
         font-weight: bold !important;
@@ -25,8 +23,8 @@ st.markdown("""
     /* 2. 左側文字輸入框字體放大到 40px */
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
     
-    /* 3. 網址輸入框字體放大到 40px */
-    .stTextInput input { font-size: 40px !important; height: 60px !important; }
+    /* 3. 網址輸入框與逐招練習輸入框字體放大到 36px */
+    .stTextInput input { font-size: 36px !important; height: 60px !important; }
     
     /* 4. 頁面標題放大到 70px */
     h1 { font-size: 70px !important; }
@@ -38,12 +36,12 @@ st.markdown("""
         margin-bottom: 15px !important;
     }
     
-    /* 6. 右側逐招練習區的招式字體放大到 80px */
+    /* 6. 右側逐招練習區的招式標題字體放大到 80px */
     .sentence-display { 
         font-size: 80px !important; 
         font-weight: bold !important; 
         color: #ffffff !important; 
-        padding: 40px 0 !important;
+        padding: 20px 0 !important;
         line-height: 1.4 !important;
     }
     </style>
@@ -75,10 +73,10 @@ if os.path.exists(TAIJI_CSV_FILE):
     except: pass
 
 def save_to_csv():
-    df_new = pd.DataFrame([{"id": i, **st.session_state.taiji_data[i]} for i in range(1, 11)])
+    df_new = pd.DataFrame([{"id": i, **st.session_state.taiji_data[i]} for i in range(1, 11)})
     df_new.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig")
 
-# 上方 10 個大按鈕切換區（維持原本好用的排版）
+# 上方 10 個大按鈕切換區
 st.markdown("### 🔍 請點選要練習的套路：")
 row1 = st.columns(5)
 row2 = st.columns(5)
@@ -116,13 +114,24 @@ with st.container():
             st.video(new_url)
     
     with col2:
-        st.subheader("✍️ 逐招練習區：")
+        st.subheader("✍️ 逐招練習與輸入測試區：")
         lines = [l.strip() for l in new_lyrics.split('\n') if l.strip()]
         for line_idx, line in enumerate(lines):
             st.markdown(f"---")
             st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
-            if st.button(f"🔊 聽 {line_idx+1}", key=f"play_{idx}_{line_idx}"):
+            
+            # 聽發音按鈕
+            if st.button(f"🔊 聽第 {line_idx+1} 招發音", key=f"play_{idx}_{line_idx}"):
                 tts = gTTS(text=line, lang='zh-TW')
                 fp = io.BytesIO()
                 tts.write_to_fp(fp)
                 st.audio(fp, autoplay=True)
+            
+            # 增加輸入框讓澄玄輸入並按 Enter 檢查對錯
+            user_input = st.text_input(f"請輸入第 {line_idx+1} 招名稱進行測試：", key=f"input_{idx}_{line_idx}")
+            if user_input:
+                # 移除前後空白進行比對
+                if user_input.strip() == line:
+                    st.success("🎉 太棒了！完全正確！")
+                else:
+                    st.error(f"❌ 答錯囉！您輸入的是「{user_input}」，正確答案是「{line}」")
