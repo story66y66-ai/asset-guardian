@@ -6,7 +6,7 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：將 st.text_input 的 label（提示標籤）放大 5 倍！
+# CSS 樣式設定
 st.markdown("""
     <style>
     /* 1. 放大上方 10 個切換按鈕的文字 */
@@ -30,31 +30,33 @@ st.markdown("""
         padding: 15px 20px !important;
     }
     
-    /* 4. 將 st.text_input 的 label（提示標籤）放大 5 倍！ */
-    .stTextInput label {
-        font-size: 100px !important;
-        font-weight: bold !important;
-        color: #ffcc00 !important;
-        margin-bottom: 20px !important;
-    }
-    
-    /* 5. 頁面標題放大到 70px */
+    /* 4. 頁面標題放大到 70px */
     h1 { font-size: 70px !important; }
     
-    /* 6. 欄位標題放大到 40px */
+    /* 5. 欄位標題放大到 40px */
     h2, h3 { 
         font-size: 40px !important; 
         font-weight: bold !important; 
         margin-bottom: 15px !important;
     }
     
-    /* 7. 右側逐招練習區的招式標題字體放大到 80px */
+    /* 6. 右側逐招練習區的招式標題字體放大到 80px */
     .sentence-display { 
         font-size: 80px !important; 
         font-weight: bold !important; 
         color: #ffffff !important; 
         padding: 20px 0 !important;
         line-height: 1.4 !important;
+    }
+    
+    /* 7. 自定義超大提示文字樣式（放大 5 倍、亮黃色） */
+    .custom-input-label {
+        font-size: 60px !important;
+        font-weight: bold !important;
+        color: #ffcc00 !important;
+        margin-top: 20px !important;
+        margin-bottom: 10px !important;
+        line-height: 1.2 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -139,8 +141,11 @@ with st.container():
                 tts.write_to_fp(fp)
                 st.audio(fp, autoplay=True)
             
-            # 提示標籤已放大 5 倍的輸入框
-            user_input = st.text_input(f"請輸入第 {line_idx+1} 招名稱進行測試：", key=f"input_{idx}_{line_idx}")
+            # 用 HTML 自定義超大標題，完全掌控字體大小！
+            st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
+            
+            # 隱藏原生 label，直接放超大輸入框
+            user_input = st.text_input(f"input_{idx}_{line_idx}", label_visibility="collapsed", key=f"input_{idx}_{line_idx}")
             if user_input:
                 if user_input.strip() == line:
                     st.success("🎉 太棒了！完全正確！")
