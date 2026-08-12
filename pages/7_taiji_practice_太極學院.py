@@ -151,18 +151,20 @@ with st.container():
             input_col, clear_col = st.columns([4, 1])
             input_key = f"input_{idx}_{line_idx}"
             
-            # 確保 session_state 裡有初始化這個鍵
-            if input_key not in st.session_state:
-                st.session_state[input_key] = ""
+            # 檢查是否有被要求清除的標記，如果有，就直接把該 input 的 session 刪除
+            clear_flag_key = f"clear_flag_{idx}_{line_idx}"
+            if st.session_state.get(clear_flag_key, False):
+                if input_key in st.session_state:
+                    del st.session_state[input_key]
+                st.session_state[clear_flag_key] = False
             
             with input_col:
-                # 這裡直接綁定 session_state，讓 Streamlit 狀態與輸入框同步
                 user_input = st.text_input(input_key, label_visibility="collapsed", key=input_key)
             
             with clear_col:
                 if st.button("🗑️ 清除", key=f"clear_{idx}_{line_idx}"):
-                    # 直接把該狀態設為空字串並重新整理，就能完美清空！
-                    st.session_state[input_key] = ""
+                    # 設定清除標記並重新整理，安全不報錯！
+                    st.session_state[clear_flag_key] = True
                     st.rerun()
             
             if user_input:
