@@ -3,7 +3,6 @@ import pandas as pd
 import os
 from gtts import gTTS
 import io
-import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide")
 
@@ -149,27 +148,10 @@ with st.container():
             
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
-            input_col, clear_col = st.columns([4, 1])
             input_key = f"input_{idx}_{line_idx}"
             
-            with input_col:
-                user_input = st.text_input(input_key, label_visibility="collapsed", key=input_key)
-            
-            with clear_col:
-                # 這裡不走繁複的重新整理，直接透過前端 JS 點擊按鈕來瞬間清空並聚焦
-                clear_btn_key = f"clear_{idx}_{line_idx}"
-                if st.button("🗑️ 清除", key=clear_btn_key):
-                    components.html(f"""
-                        <script>
-                            const doc = window.parent.document;
-                            const inputs = doc.querySelectorAll('input[aria-label="{input_key}"]');
-                            if (inputs.length > 0) {{
-                                inputs[0].value = "";
-                                inputs[0].dispatchEvent(new Event('input', {{ bubbles: true }}));
-                                inputs[0].focus();
-                            }}
-                        </script>
-                    """, height=0)
+            # 澄玄只要直接在這裡打字即可！
+            user_input = st.text_input(input_key, label_visibility="collapsed", key=input_key)
             
             if user_input:
                 clean_input = user_input.strip()
