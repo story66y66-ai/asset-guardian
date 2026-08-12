@@ -64,10 +64,25 @@ st.markdown("""
         line-height: 1.2 !important;
     }
     
-    /* 8. 放大正確與錯誤提示訊息的字體 */
-    div.stSuccess p, div.stError p {
+    /* 8. 自定義超大對與錯結果顯示區 */
+    .result-success {
+        font-size: 50px !important;
+        font-weight: bold !important;
+        color: #00ff66 !important;
+        background-color: rgba(0, 255, 102, 0.1);
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 15px;
+    }
+    .result-error {
         font-size: 45px !important;
         font-weight: bold !important;
+        color: #ff3333 !important;
+        background-color: rgba(255, 51, 51, 0.1);
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 15px;
+        line-height: 1.3;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -174,6 +189,6 @@ with st.container():
             if user_input:
                 clean_input = user_input.strip()
                 if clean_input == line:
-                    st.success("🎉 太棒了！完全正確！")
+                    st.markdown(f"<div class='result-success'>🎉 太棒了！完全正確！</div>", unsafe_allow_html=True)
                 else:
-                    st.error(f"❌ 答錯囉！您輸入的是「{clean_input}」，正確答案是「{line}」")
+                    st.markdown(f"<div class='result-error'>❌ 答錯囉！您輸入的是「{clean_input}」，正確答案是「{line}」</div>", unsafe_allow_html=True)
