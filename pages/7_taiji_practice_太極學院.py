@@ -6,7 +6,7 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定
+# CSS 樣式設定：強制全面撐開輸入框的內部與外部容器高度
 st.markdown("""
     <style>
     /* 1. 放大上方 10 個切換按鈕的文字 */
@@ -23,11 +23,17 @@ st.markdown("""
     /* 2. 左側文字輸入框字體放大到 40px */
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
     
-    /* 3. 將右側逐招測試的輸入框「框」徹底放大：字體 50px，上下內距加大到 25px */
+    /* 3. 強制撐大右側輸入框的框體與字體 */
     .stTextInput input { 
         font-size: 50px !important; 
-        height: auto !important; 
-        padding: 25px 20px !important;
+        height: 70px !important; 
+        padding: 10px 20px !important;
+    }
+    
+    /* 同時把輸入框的底座容器（Baseweb container）高度撐開，防止框被壓扁 */
+    div[data-baseweb="input"] {
+        min-height: 85px !important;
+        align-items: center !important;
     }
     
     /* 4. 頁面標題放大到 70px */
@@ -144,7 +150,7 @@ with st.container():
             # 自定義超大提示標籤
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
-            # 放大後的輸入框
+            # 徹底撐大外框的輸入框
             user_input = st.text_input(f"input_{idx}_{line_idx}", label_visibility="collapsed", key=f"input_{idx}_{line_idx}")
             if user_input:
                 if user_input.strip() == line:
