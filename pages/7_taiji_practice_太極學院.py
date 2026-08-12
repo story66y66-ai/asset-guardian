@@ -6,33 +6,37 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：將標題、文字框、分頁與內文全部放大，保護澄玄的眼睛
+# CSS 樣式設定：全面特大字體版
 st.markdown("""
     <style>
-    /* 放大左側大文字框的字體與高度 */
-    .stTextArea textarea { font-size: 24px !important; height: 350px !important; }
+    /* 放大左側大文字框的字體與高度，設定為 28px */
+    .stTextArea textarea { font-size: 28px !important; height: 400px !important; }
     
-    /* 放大頁面標題 */
-    h1 { font-size: 40px !important; }
+    /* 放大所有輸入框的文字（包含網址輸入框），設定為 24px */
+    .stTextInput input { font-size: 24px !important; }
     
-    /* 放大副標題與欄位說明文字（如「編輯 24式太極拳的內容」、「設定套路名稱」等） */
+    /* 放大頁面標題 (h1)，設定為 48px */
+    h1 { font-size: 48px !important; }
+    
+    /* 放大副標題 (h2, h3) 與所有欄位說明文字 (label)，設定為 28px */
     h2, h3, label, .stTextInput label, .stTextArea label { 
-        font-size: 22px !important; 
+        font-size: 28px !important; 
         font-weight: bold !important; 
+        margin-bottom: 10px !important;
     }
     
-    /* 放大分頁標籤（Tab）的文字 */
+    /* 放大分頁標籤 (Tab) 的文字，設定為 24px */
     .stTabs [data-baseweb="tab"] p { 
-        font-size: 20px !important; 
+        font-size: 24px !important; 
         font-weight: bold !important; 
     }
     
-    /* 右側逐招練習區的招式字體（50px） */
+    /* 右側逐招練習區的招式字體維持 50px，並增加間距 */
     .sentence-display { 
         font-size: 50px !important; 
         font-weight: bold !important; 
         color: #ffffff !important; 
-        padding: 20px 0 !important;
+        padding: 30px 0 !important;
         line-height: 1.4 !important;
     }
     </style>
