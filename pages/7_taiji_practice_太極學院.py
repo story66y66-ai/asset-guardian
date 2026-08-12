@@ -11,13 +11,8 @@ st.markdown("""
     <style>
     /* 1. 放大上方 10 個切換按鈕的文字 */
     .stButton button {
-        height: 90px !important;
         border-radius: 12px !important;
         width: 100% !important;
-    }
-    .stButton button p {
-        font-size: 36px !important;
-        font-weight: bold !important;
     }
     
     /* 2. 左側文字輸入框字體放大到 40px */
@@ -66,15 +61,21 @@ st.markdown("""
         line-height: 1.2 !important;
     }
     
-    /* 8. 強制全面放大所有按鈕（包含發音與清除按鈕）裡面的文字與高度 */
-    div.stButton button {
-        height: 75px !important;
+    /* 8. 讓發音按鈕這欄的按鈕變得非常巨大 */
+    .speak-btn-container button {
+        height: 85px !important;
+        background-color: #ff9900 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 15px !important;
+        width: 100% !important;
     }
-    div.stButton button p {
-        font-size: 35px !important;
+    .speak-btn-container button p {
+        font-size: 40px !important;
         font-weight: bold !important;
+        color: white !important;
     }
-    
+
     /* 9. 自定義超大對與錯結果顯示區 */
     .result-success {
         font-size: 50px !important;
@@ -172,12 +173,14 @@ with st.container():
             st.markdown(f"---")
             st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
             
-            # 乾淨的按鈕文字，由 CSS 統一控制大小
-            if st.button(f"🔊 聽第 {line_idx+1} 招發音", key=f"play_{idx}_{line_idx}"):
+            # 讓發音按鈕擁有獨立的超大區塊與樣式
+            st.markdown('<div class="speak-btn-container">', unsafe_allow_html=True)
+            if st.button(f"🔊 點我聽第 {line_idx+1} 招發音", key=f"play_{idx}_{line_idx}"):
                 tts = gTTS(text=line, lang='zh-TW')
                 fp = io.BytesIO()
                 tts.write_to_fp(fp)
                 st.audio(fp, autoplay=True)
+            st.markdown('</div>', unsafe_allow_html=True)
             
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
