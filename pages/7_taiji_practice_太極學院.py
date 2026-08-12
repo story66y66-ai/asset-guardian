@@ -23,11 +23,11 @@ st.markdown("""
     /* 2. 左側文字輸入框字體放大到 40px */
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
     
-    /* 3. 輸入框字體 50px，外框自動延展 */
+    /* 3. 將右側逐招測試的輸入框「框」徹底放大：字體 50px，上下內距加大到 25px */
     .stTextInput input { 
         font-size: 50px !important; 
         height: auto !important; 
-        padding: 15px 20px !important;
+        padding: 25px 20px !important;
     }
     
     /* 4. 頁面標題放大到 70px */
@@ -49,7 +49,7 @@ st.markdown("""
         line-height: 1.4 !important;
     }
     
-    /* 7. 自定義超大提示文字樣式（放大 5 倍、亮黃色） */
+    /* 7. 自定義超大提示文字樣式 */
     .custom-input-label {
         font-size: 60px !important;
         font-weight: bold !important;
@@ -141,10 +141,10 @@ with st.container():
                 tts.write_to_fp(fp)
                 st.audio(fp, autoplay=True)
             
-            # 用 HTML 自定義超大標題，完全掌控字體大小！
+            # 自定義超大提示標籤
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
-            # 隱藏原生 label，直接放超大輸入框
+            # 放大後的輸入框
             user_input = st.text_input(f"input_{idx}_{line_idx}", label_visibility="collapsed", key=f"input_{idx}_{line_idx}")
             if user_input:
                 if user_input.strip() == line:
