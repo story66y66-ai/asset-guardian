@@ -6,43 +6,28 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：全力放大上方按鈕與所有字體
+# CSS 樣式設定
 st.markdown("""
     <style>
-    /* 1. 徹底把上方 10 個切換按鈕的字體放大到 36px，並加高按鈕讓它非常醒目 */
+    /* 讓按鈕的內部樣式允許我們自由調整文字 */
     .stButton button {
-        font-size: 36px !important;
-        font-weight: bold !important;
-        height: 80px !important;
-        padding: 10px 15px !important;
-        width: 100% !important;
+        height: 100px !important;
         border-radius: 12px !important;
+        width: 100% !important;
     }
     
-    /* 2. 左側文字輸入框字體放大到 40px */
+    /* 自定義的超大字體類別 */
+    .big-button-text {
+        font-size: 40px !important;
+        font-weight: bold !important;
+    }
+    
+    /* 其他區塊的字體放大 */
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
-    
-    /* 3. 網址輸入框字體放大到 40px */
     .stTextInput input { font-size: 40px !important; height: 60px !important; }
-    
-    /* 4. 頁面標題放大到 70px */
     h1 { font-size: 70px !important; }
-    
-    /* 5. 欄位標題與提示文字放大到 40px */
-    h2, h3, label, .stTextInput label, .stTextArea label { 
-        font-size: 40px !important; 
-        font-weight: bold !important; 
-        margin-bottom: 15px !important;
-    }
-    
-    /* 6. 右側逐招練習區的招式字體放大到 80px */
-    .sentence-display { 
-        font-size: 80px !important; 
-        font-weight: bold !important; 
-        color: #ffffff !important; 
-        padding: 40px 0 !important;
-        line-height: 1.4 !important;
-    }
+    h2, h3, label, .stTextInput label, .stTextArea label { font-size: 40px !important; font-weight: bold !important; }
+    .sentence-display { font-size: 80px !important; font-weight: bold !important; color: #ffffff !important; padding: 40px 0 !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -75,7 +60,7 @@ def save_to_csv():
     df_new = pd.DataFrame([{"id": i, **st.session_state.taiji_data[i]} for i in range(1, 11)])
     df_new.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig")
 
-# 上方 10 個大按鈕切換區（分成兩排，一排 5 個）
+# 這裡改用 HTML 標籤來強制放大按鈕內部的字
 st.markdown("### 🔍 請點選要練習的套路：")
 row1 = st.columns(5)
 row2 = st.columns(5)
@@ -83,20 +68,19 @@ all_cols = row1 + row2
 
 for i in range(1, 11):
     with all_cols[i-1]:
-        btn_label = f"{i}. {st.session_state.taiji_data[i]['title']}"
+        # 強制用 HTML 渲染大字體
+        btn_label = f"<span class='big-button-text'>{i}. {st.session_state.taiji_data[i]['title']}</span>"
         if st.button(btn_label, key=f"nav_btn_{i}"):
             st.session_state.selected_idx = i
 
 idx = st.session_state.selected_idx
 st.markdown("---")
 
-# 顯示當前選中的套路編輯與練習區
+# 以下編輯區維持不變
 with st.container():
     st.subheader(f"✏️ 編輯 {st.session_state.taiji_data[idx]['title']} 的內容")
-    
     new_title = st.text_input("設定套路名稱：", value=st.session_state.taiji_data[idx]["title"], key=f"title_{idx}")
     new_url = st.text_input("請貼上 YouTube 或 Shorts 網址：", value=st.session_state.taiji_data[idx]["video_url"], key=f"url_{idx}")
-    
     if new_title != st.session_state.taiji_data[idx]["title"] or new_url != st.session_state.taiji_data[idx]["video_url"]:
         st.session_state.taiji_data[idx]["title"] = new_title
         st.session_state.taiji_data[idx]["video_url"] = new_url
@@ -109,8 +93,7 @@ with st.container():
         if new_lyrics != st.session_state.taiji_data[idx]["lyrics"]:
             st.session_state.taiji_data[idx]["lyrics"] = new_lyrics
             save_to_csv()
-        if new_url:
-            st.video(new_url)
+        if new_url: st.video(new_url)
     
     with col2:
         st.subheader("✍️ 逐招練習區：")
