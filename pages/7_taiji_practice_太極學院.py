@@ -6,7 +6,7 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：直接把輸入框放大 3 倍，字體開到最大！
+# CSS 樣式設定：把輸入框外框撐開，讓 50px 的超大字體完美顯示
 st.markdown("""
     <style>
     /* 1. 放大上方 10 個切換按鈕的文字 */
@@ -23,10 +23,11 @@ st.markdown("""
     /* 2. 左側文字輸入框字體放大到 40px */
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
     
-    /* 3. 輸入框與輸入文字放大到 50px（放大 3 倍！） */
+    /* 3. 輸入框字體 50px，並解除高度限制，改用內距讓外框自動跟著變大！ */
     .stTextInput input { 
         font-size: 50px !important; 
-        height: 90px !important; 
+        height: auto !important; 
+        padding: 15px 20px !important;
     }
     
     /* 放大輸入框上方的提示標籤 */
@@ -136,7 +137,7 @@ with st.container():
                 tts.write_to_fp(fp)
                 st.audio(fp, autoplay=True)
             
-            # 超大輸入框
+            # 支援動態延展的超大輸入框
             user_input = st.text_input(f"請輸入第 {line_idx+1} 招名稱進行測試：", key=f"input_{idx}_{line_idx}")
             if user_input:
                 if user_input.strip() == line:
