@@ -66,12 +66,7 @@ st.markdown("""
         line-height: 1.2 !important;
     }
     
-    /* 8. 放大發音按鈕內的文字 */
-    div.row-widget.stButton button p {
-        font-size: 35px !important;
-    }
-    
-    /* 9. 自定義超大對與錯結果顯示區 */
+    /* 8. 自定義超大對與錯結果顯示區 */
     .result-success {
         font-size: 50px !important;
         font-weight: bold !important;
@@ -168,7 +163,9 @@ with st.container():
             st.markdown(f"---")
             st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
             
-            if st.button(f"🔊 聽第 {line_idx+1} 招發音", key=f"play_{idx}_{line_idx}"):
+            # 使用 HTML 標籤直接放大發音按鈕的字體與調整按鈕高度
+            play_btn_label = f"🔊 <span style='font-size: 32px; font-weight: bold;'>聽第 {line_idx+1} 招發音</span>"
+            if st.button(play_btn_label, key=f"play_{idx}_{line_idx}"):
                 tts = gTTS(text=line, lang='zh-TW')
                 fp = io.BytesIO()
                 tts.write_to_fp(fp)
@@ -189,7 +186,8 @@ with st.container():
                 user_input = st.text_input(actual_input_key, label_visibility="collapsed")
             
             with clear_col:
-                if st.button("🗑️ 清除", key=f"clear_{idx}_{line_idx}"):
+                clear_btn_label = "🗑️ <span style='font-size: 26px; font-weight: bold;'>清除</span>"
+                if st.button(clear_btn_label, key=f"clear_{idx}_{line_idx}"):
                     st.session_state[version_key] += 1
                     st.rerun()
             
