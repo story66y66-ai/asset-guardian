@@ -419,7 +419,7 @@ for tab_idx, tab in enumerate(tabs):
                         except Exception as e:
                             st.error(f"語音錯誤：{e}")
                             
-                 with cols[1]:
+                with cols[1]:
                     safe_sentence_js = taiji_sentence.replace("'", "\\'")
                     components.html(f"""
                         <button onclick="
