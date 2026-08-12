@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from gtts import gTTS
 import io
+import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide")
 
@@ -135,6 +136,13 @@ with st.container():
     with col2:
         st.subheader("✍️ 逐招練習與輸入測試區：")
         lines = [l.strip() for l in new_lyrics.split('\n') if l.strip()]
+        
+        # 記錄剛才被點擊清除的目標 index (如果有)
+        cleared_target = st.session_state.get("focus_target", None)
+        # 用完後清除記錄
+        if "focus_target" in st.session_state:
+            del st.session_state["focus_target"]
+
         for line_idx, line in enumerate(lines):
             st.markdown(f"---")
             st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
@@ -158,13 +166,25 @@ with st.container():
                 user_input = st.text_input(input_key, label_visibility="collapsed", key=input_key)
             
             with clear_col:
-                # 使用簡單安全的點擊觸發
                 if st.button("🗑️ 清除", key=f"clear_{idx}_{line_idx}"):
-                    # 利用 pop 把該輸入框的記憶刪除，達到完美清空效果
                     if input_key in st.session_state:
                         st.session_state.pop(input_key)
+                    # 記住這次是要對這個 input 聚焦
+                    st.session_state["focus_target"] = input_key
                     st.rerun()
             
+            # 如果這一題剛剛被按了清除，透過 JavaScript 自動把游標放進這個輸入框
+            if cleared_target == input_key:
+                components.html(f"""
+                    <script>
+                        const doc = window.parent.document;
+                        const inputs = doc.querySelectorAll('input[aria-label="{input_key}"]');
+                        if (inputs.length > 0) {{
+                            inputs[0].focus();
+                        }}
+                    </script>
+                """, height=0)
+
             if user_input:
                 clean_input = user_input.strip()
                 if clean_input == line:
