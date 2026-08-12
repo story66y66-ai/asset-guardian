@@ -6,11 +6,28 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：將字體放大到 50px
+# CSS 樣式設定：將標題、文字框、分頁與內文全部放大，保護澄玄的眼睛
 st.markdown("""
     <style>
-    .stTextArea textarea { font-size: 20px !important; height: 300px !important; }
-    /* 調整字體為 50px，增加行高確保閱讀舒適 */
+    /* 放大左側大文字框的字體與高度 */
+    .stTextArea textarea { font-size: 24px !important; height: 350px !important; }
+    
+    /* 放大頁面標題 */
+    h1 { font-size: 40px !important; }
+    
+    /* 放大副標題與欄位說明文字（如「編輯 24式太極拳的內容」、「設定套路名稱」等） */
+    h2, h3, label, .stTextInput label, .stTextArea label { 
+        font-size: 22px !important; 
+        font-weight: bold !important; 
+    }
+    
+    /* 放大分頁標籤（Tab）的文字 */
+    .stTabs [data-baseweb="tab"] p { 
+        font-size: 20px !important; 
+        font-weight: bold !important; 
+    }
+    
+    /* 右側逐招練習區的招式字體（50px） */
     .sentence-display { 
         font-size: 50px !important; 
         font-weight: bold !important; 
