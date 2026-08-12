@@ -6,7 +6,7 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：放大按鈕文字、輸入框與對錯提示字體
+# CSS 樣式設定
 st.markdown("""
     <style>
     /* 1. 放大上方 10 個切換按鈕的文字 */
@@ -73,7 +73,7 @@ if os.path.exists(TAIJI_CSV_FILE):
     except: pass
 
 def save_to_csv():
-    df_new = pd.DataFrame([{"id": i, **st.session_state.taiji_data[i]} for i in range(1, 11)})
+    df_new = pd.DataFrame([{"id": i, **st.session_state.taiji_data[i]} for i in range(1, 11)])
     df_new.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig")
 
 # 上方 10 個大按鈕切換區
@@ -130,7 +130,6 @@ with st.container():
             # 增加輸入框讓澄玄輸入並按 Enter 檢查對錯
             user_input = st.text_input(f"請輸入第 {line_idx+1} 招名稱進行測試：", key=f"input_{idx}_{line_idx}")
             if user_input:
-                # 移除前後空白進行比對
                 if user_input.strip() == line:
                     st.success("🎉 太棒了！完全正確！")
                 else:
