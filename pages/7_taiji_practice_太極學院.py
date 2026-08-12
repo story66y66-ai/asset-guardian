@@ -6,21 +6,21 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：全面放大特大字體版
+# CSS 樣式設定：針對選單框強制放大
 st.markdown("""
     <style>
-    /* 1. 強制放大下拉選單的顯示文字與選項文字到 45px */
-    div[data-baseweb="select"] > div {
-        font-size: 45px !important;
-        height: 80px !important;
-    }
-    /* 調整選單打開後的清單字體 */
-    ul[role="listbox"] li {
-        font-size: 40px !important;
+    /* 1. 這是最關鍵的一步：強制放大選單框內的顯示文字 */
+    div[data-baseweb="select"] {
+        font-size: 50px !important;
     }
     
-    /* 2. 強制放大所有選單標題與提示文字到 45px */
-    .stMarkdown h3, label, .stTextInput label, .stTextArea label { 
+    /* 強制放大下拉選單裡的文字 */
+    div[role="listbox"] {
+        font-size: 45px !important;
+    }
+
+    /* 2. 放大選單上方的標題文字 */
+    .stMarkdown h3 { 
         font-size: 45px !important; 
         font-weight: bold !important; 
     }
