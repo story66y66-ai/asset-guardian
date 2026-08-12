@@ -6,7 +6,7 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：將單行輸入框的框體與內部字體徹底撐大厚實
+# CSS 樣式設定：強效鎖定單行輸入框與內部字體
 st.markdown("""
     <style>
     /* 1. 放大上方 10 個切換按鈕的文字 */
@@ -23,16 +23,18 @@ st.markdown("""
     /* 2. 左側文字輸入框字體放大到 40px */
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
     
-    /* 3. 將單行輸入框的文字放大到 50px */
-    .stTextInput input { 
-        font-size: 50px !important; 
+    /* 3. 徹底放大右側單行輸入框的本體高度與內部字體 */
+    .stTextInput input {
+        font-size: 55px !important;
+        height: 80px !important;
     }
     
-    /* 4. 將單行輸入框的外框底座（Baseweb container）撐高到 90px，厚實好點不遮字 */
-    div[data-baseweb="input"] {
-        min-height: 90px !important;
+    /* 4. 將單行輸入框外層容器全面撐開 */
+    .stTextInput div[data-baseweb="input"] {
+        min-height: 85px !important;
+        background-color: #262730 !important;
+        border-radius: 8px !important;
         align-items: center !important;
-        padding: 5px 10px !important;
     }
     
     /* 5. 頁面標題放大到 70px */
@@ -149,7 +151,7 @@ with st.container():
             # 自定義超大提示標籤
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
-            # 改回單行輸入框，按 Enter 或輸入時直接判定對錯，絕不換行！
+            # 單行輸入框，不換行、直接判定對錯
             user_input = st.text_input(f"input_{idx}_{line_idx}", label_visibility="collapsed", key=f"input_{idx}_{line_idx}")
             
             if user_input:
