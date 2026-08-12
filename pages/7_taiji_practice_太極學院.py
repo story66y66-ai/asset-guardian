@@ -6,7 +6,7 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：將輸入框上方提示文字直接放大 5 倍！
+# CSS 樣式設定：將 st.text_input 的 label（提示標籤）放大 5 倍！
 st.markdown("""
     <style>
     /* 1. 放大上方 10 個切換按鈕的文字 */
@@ -30,7 +30,7 @@ st.markdown("""
         padding: 15px 20px !important;
     }
     
-    /* 4. 將輸入框上方的提示標籤（請輸入第...招...）直接放大 5 倍（約 100px）！ */
+    /* 4. 將 st.text_input 的 label（提示標籤）放大 5 倍！ */
     .stTextInput label {
         font-size: 100px !important;
         font-weight: bold !important;
@@ -139,7 +139,7 @@ with st.container():
                 tts.write_to_fp(fp)
                 st.audio(fp, autoplay=True)
             
-            # 提示文字直接放大 5 倍的輸入框
+            # 提示標籤已放大 5 倍的輸入框
             user_input = st.text_input(f"請輸入第 {line_idx+1} 招名稱進行測試：", key=f"input_{idx}_{line_idx}")
             if user_input:
                 if user_input.strip() == line:
