@@ -9,9 +9,9 @@ st.set_page_config(layout="wide")
 # CSS 樣式設定：強制全面放大上方分頁與提示文字
 st.markdown("""
     <style>
-    /* 1. 強制放大上方所有分頁標籤（Tab）裡面的文字到 32px */
-    .stTabs button p {
-        font-size: 32px !important;
+    /* 1. 強制全面放大分頁按鈕裡的所有文字、標籤與容器（設定為 36px） */
+    button[data-baseweb="tab"], [data-baseweb="tab"] p, [data-baseweb="tab"] span, div[role="tab"] {
+        font-size: 36px !important;
         font-weight: bold !important;
     }
     
