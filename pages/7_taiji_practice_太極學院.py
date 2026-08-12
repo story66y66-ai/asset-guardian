@@ -3,18 +3,13 @@ import pandas as pd
 import os
 from gtts import gTTS
 import io
-import urllib.parse
-import csv
-import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide")
 
-# 樣式設定
 st.markdown("""
     <style>
-    .stTextArea textarea { font-size: 20px !important; height: 500px !important; }
+    .stTextArea textarea { font-size: 20px !important; height: 300px !important; }
     .sentence-display { font-size: 22px !important; font-weight: bold !important; color: #ffffff !important; }
-    .translate-button { background-color: #1a73e8; color: white !important; padding: 10px; border-radius: 6px; text-align: center; display: block; text-decoration: none; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -22,45 +17,51 @@ st.title("🥋 澄玄大學 - 太極學院")
 
 # 初始化狀態
 if "taiji_data" not in st.session_state:
-    st.session_state.taiji_data = {i: {"title": f"套路 {i}", "lyrics": ""} for i in range(1, 11)}
+    st.session_state.taiji_data = {i: {"title": f"套路 {i}", "lyrics": "", "video_url": ""} for i in range(1, 11)}
+
+TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
 
 # 讀取 CSV
-TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
 if os.path.exists(TAIJI_CSV_FILE):
     try:
         df = pd.read_csv(TAIJI_CSV_FILE, encoding="utf-8-sig")
         for _, row in df.iterrows():
             idx = int(row['id'])
             if 1 <= idx <= 10:
-                st.session_state.taiji_data[idx] = {"title": row['title'], "lyrics": str(row['lyrics']) if pd.notna(row['lyrics']) else ""}
+                st.session_state.taiji_data[idx] = {
+                    "title": row['title'], 
+                    "lyrics": str(row['lyrics']) if pd.notna(row['lyrics']) else "",
+                    "video_url": str(row['video_url']) if pd.notna(row['video_url']) else ""
+                }
     except: pass
 
 def save_to_csv():
-    df_new = pd.DataFrame([{"id": i, "title": st.session_state.taiji_data[i]["title"], "lyrics": st.session_state.taiji_data[i]["lyrics"]} for i in range(1, 11)])
+    df_new = pd.DataFrame([{"id": i, **st.session_state.taiji_data[i]} for i in range(1, 11)])
     df_new.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig")
 
-# 頁面架構
 tabs = st.tabs([f"曲目 {i}" for i in range(1, 11)])
 
 for i, tab in enumerate(tabs):
     idx = i + 1
     with tab:
         st.subheader(f"✏️ 編輯 {st.session_state.taiji_data[idx]['title']} 的內容")
+        new_title = st.text_input("設定曲目名稱：", value=st.session_state.taiji_data[idx]["title"], key=f"title_{idx}")
+        new_url = st.text_input("請貼上 YouTube 或 Shorts 網址：", value=st.session_state.taiji_data[idx]["video_url"], key=f"url_{idx}")
         
-        # 修改標題
-        new_title = st.text_input(f"設定曲目 {idx} 名稱：", value=st.session_state.taiji_data[idx]["title"], key=f"title_{idx}")
-        if new_title != st.session_state.taiji_data[idx]["title"]:
+        if new_title != st.session_state.taiji_data[idx]["title"] or new_url != st.session_state.taiji_data[idx]["video_url"]:
             st.session_state.taiji_data[idx]["title"] = new_title
+            st.session_state.taiji_data[idx]["video_url"] = new_url
             save_to_csv()
             st.rerun()
 
         col1, col2 = st.columns(2)
         with col1:
-            # 歌詞編輯框
             new_lyrics = st.text_area("輸入完整套路內容（一行一招）：", value=st.session_state.taiji_data[idx]["lyrics"], key=f"lyrics_{idx}")
             if new_lyrics != st.session_state.taiji_data[idx]["lyrics"]:
                 st.session_state.taiji_data[idx]["lyrics"] = new_lyrics
                 save_to_csv()
+            if new_url:
+                st.video(new_url)
         
         with col2:
             st.subheader("✍️ 逐招練習區：")
