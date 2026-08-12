@@ -6,7 +6,7 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：全面撐開單行輸入框
+# CSS 樣式設定
 st.markdown("""
     <style>
     /* 1. 放大上方 10 個切換按鈕的文字 */
@@ -24,33 +24,28 @@ st.markdown("""
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
     
     /* 3. 徹底放大右側單行輸入框的外框高度與內部字體 */
-    .stTextInput div.st-key-input_ {
-        min-height: 90px !important;
-    }
-    
     .stTextInput input {
         font-size: 55px !important;
         height: 80px !important;
         padding: 10px !important;
     }
     
-    /* 4. 直接強制指定所有 stTextInput 內部輸入框容器的高度 */
     .stTextInput > div > div {
         min-height: 90px !important;
         align-items: center !important;
     }
     
-    /* 5. 頁面標題放大到 70px */
+    /* 4. 頁面標題放大到 70px */
     h1 { font-size: 70px !important; }
     
-    /* 6. 欄位標題放大到 40px */
+    /* 5. 欄位標題放大到 40px */
     h2, h3 { 
         font-size: 40px !important; 
         font-weight: bold !important; 
         margin-bottom: 15px !important;
     }
     
-    /* 7. 右側逐招練習區的招式標題字體放大到 80px */
+    /* 6. 右側逐招練習區的招式標題字體放大到 80px */
     .sentence-display { 
         font-size: 80px !important; 
         font-weight: bold !important; 
@@ -59,7 +54,7 @@ st.markdown("""
         line-height: 1.4 !important;
     }
     
-    /* 8. 自定義超大提示文字樣式 */
+    /* 7. 自定義超大提示文字樣式 */
     .custom-input-label {
         font-size: 60px !important;
         font-weight: bold !important;
@@ -154,8 +149,18 @@ with st.container():
             # 自定義超大提示標籤
             st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
             
-            # 單行輸入框
-            user_input = st.text_input(f"input_{idx}_{line_idx}", label_visibility="collapsed", key=f"input_{idx}_{line_idx}")
+            # 將輸入框與清除按鈕放在同一列 (輸入框佔大部分，清除按鈕在右側)
+            input_col, clear_col = st.columns([4, 1])
+            
+            input_key = f"input_{idx}_{line_idx}"
+            
+            with input_col:
+                user_input = st.text_input(input_key, label_visibility="collapsed", key=f"text_{input_key}")
+            
+            with clear_col:
+                if st.button("🗑️ 清除", key=f"clear_{idx}_{line_idx}"):
+                    st.session_state[f"text_{input_key}"] = ""
+                    st.rerun()
             
             if user_input:
                 clean_input = user_input.strip()
