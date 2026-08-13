@@ -41,12 +41,11 @@ if os.path.exists(TAIJI_CSV_FILE):
     try:
         df = pd.read_csv(TAIJI_CSV_FILE, encoding="utf-8-sig")
         for _, row in df.iterrows():
-            idx = int(row['id'])
-            if 1 <= idx <= 10:
-                # 把原本的單一字串網址，拆解成 5 個網址清單
+            idx_val = int(row['id'])
+            if 1 <= idx_val <= 10:
                 raw_urls = str(row['video_url']).split(',') if pd.notna(row['video_url']) else []
                 urls = [raw_urls[i].strip() if i < len(raw_urls) else "" for i in range(5)]
-                st.session_state.taiji_data[idx] = {
+                st.session_state.taiji_data[idx_val] = {
                     "title": row['title'], 
                     "lyrics": str(row['lyrics']) if pd.notna(row['lyrics']) else "",
                     "video_urls": urls
@@ -54,13 +53,15 @@ if os.path.exists(TAIJI_CSV_FILE):
     except: pass
 
 def save_to_csv():
-    # 儲存時將 5 個網址合併回一個逗號分隔的字串
-    df_new = pd.DataFrame([{"id": i, "title": st.session_state.taiji_data[i]['title'], 
-                            "lyrics": st.session_state.taiji_data[i]['lyrics'], 
-                            "video_url": ",".join(st.session_state.taiji_data[i]['video_urls'])} for i in range(1, 11)])
+    df_new = pd.DataFrame([{
+        "id": i, 
+        "title": st.session_state.taiji_data[i]['title'], 
+        "lyrics": st.session_state.taiji_data[i]['lyrics'], 
+        "video_url": ",".join(st.session_state.taiji_data[i]['video_urls'])
+    } for i in range(1, 11)])
     df_new.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig")
 
-# 介面渲染
+# 介面渲染：選擇套路
 st.markdown("### 🔍 請點選要練習的套路：")
 row1, row2 = st.columns(5), st.columns(5)
 for i in range(1, 11):
@@ -74,38 +75,42 @@ st.markdown("---")
 with st.container():
     st.subheader(f"✏️ 編輯 {st.session_state.taiji_data[idx]['title']} 的內容")
     
-    # 標題編輯
-    new_title = st.text_input("設定套路名稱：", value=st.session_state.taiji_data[idx]["title"], key=f"title_{idx}")
-    
-    # 5 個網址輸入框
-    new_urls = []
-    for i in range(5):
-        url = st.text_input(f"影片網址 {i+1}：", value=st.session_state.taiji_data[idx]["video_urls"][i], key=f"url_{idx}_{i}")
-        new_urls.append(url)
-    
-    # 更新與儲存邏輯
-    if new_title != st.session_state.taiji_data[idx]["title"] or new_urls != st.session_state.taiji_data[idx]["video_urls"]:
-        st.session_state.taiji_data[idx]["title"] = new_title
-        st.session_state.taiji_data[idx]["video_urls"] = new_urls
-        save_to_csv()
-        st.rerun() 
+    # 建立表單，確保有明確的儲存按鈕
+    with st.form(f"taiji_form_{idx}"):
+        new_title = st.text_input("設定套路名稱：", value=st.session_state.taiji_data[idx]["title"])
+        
+        st.markdown("🎥 參考影片（最多 5 部）")
+        cols_vid = st.columns(5)
+        new_urls = []
+        for i in range(5):
+            with cols_vid[i]:
+                current_val = st.session_state.taiji_data[idx]["video_urls"][i] if i < len(st.session_state.taiji_data[idx]["video_urls"]) else ""
+                new_urls.append(st.text_input(f"影片 {i+1}", value=current_val, key=f"form_url_{idx}_{i}"))
+        
+        new_lyrics = st.text_area("輸入完整套路內容（一行一招）：", value=st.session_state.taiji_data[idx]["lyrics"], height=300)
+        
+        # 明確的儲存按鈕
+        submit_btn = st.form_submit_button("💾 儲存太極套路")
+        if submit_btn:
+            st.session_state.taiji_data[idx]["title"] = new_title
+            st.session_state.taiji_data[idx]["video_urls"] = new_urls
+            st.session_state.taiji_data[idx]["lyrics"] = new_lyrics
+            save_to_csv()
+            st.success("儲存成功！")
+            st.rerun()
 
     col1, col2 = st.columns(2)
     with col1:
-        new_lyrics = st.text_area("輸入完整套路內容（一行一招）：", value=st.session_state.taiji_data[idx]["lyrics"], key=f"lyrics_{idx}")
-        if new_lyrics != st.session_state.taiji_data[idx]["lyrics"]:
-            st.session_state.taiji_data[idx]["lyrics"] = new_lyrics
-            save_to_csv()
-        
-        # 顯示所有影片
-        for url in new_urls:
+        st.subheader("📺 影片預覽區")
+        for url in st.session_state.taiji_data[idx]["video_urls"]:
             if url.strip():
                 st.video(url.strip())
     
     with col2:
-        # 練習區邏輯保持不變
+        # 練習區邏輯
         st.subheader("✍️ 逐招練習與輸入測試區：")
-        lines = [l.strip() for l in new_lyrics.split('\n') if l.strip()]
+        current_lyrics = st.session_state.taiji_data[idx]["lyrics"]
+        lines = [l.strip() for l in current_lyrics.split('\n') if l.strip()]
         for line_idx, line in enumerate(lines):
             st.markdown("---")
             st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
