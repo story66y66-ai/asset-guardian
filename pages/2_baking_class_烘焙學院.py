@@ -4,7 +4,7 @@ import os
 
 st.set_page_config(page_title="烘焙教室 - 澄玄大學", layout="wide", page_icon="🍞")
 
-# --- 修正版：確保所有 session_state 一開始就存在 ---
+# 初始化 session_state
 if "input_name" not in st.session_state:
     st.session_state.update({
         "input_name": "", "input_ingredients": "", "input_steps": "", 
@@ -32,7 +32,7 @@ def load_recipes():
     except:
         return pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement", "video_urls"])
 
-# 智慧排版函數 (略)
+# 智慧排版函數
 def smart_format_ingredients(text):
     if not pd.notna(text) or not str(text).strip(): return ""
     t = str(text).replace("• ", "").replace("\n", " ").strip()
@@ -54,7 +54,7 @@ def smart_format_notes(text):
     if not pd.notna(text) or not str(text).strip(): return ""
     return "• " + str(text).replace("• ", "").replace("\n", "").replace("。", "。\n• ").strip()
 
-# 頁面顯示邏輯
+# 頁面顯示
 tab_options = ["✍️ 新增與修改配方", "🔍 搜尋與瀏覽配方"]
 tab_selection = st.radio("功能", tab_options, index=st.session_state["active_tab"], horizontal=True, label_visibility="collapsed")
 st.session_state["active_tab"] = tab_options.index(tab_selection)
@@ -69,14 +69,14 @@ if st.session_state["active_tab"] == 0:
         new_vids = []
         for i in range(5):
             with cols_vid[i]:
-                # 這裡增加了一個安全存取方式，防止 KeyError
                 val = st.session_state["input_videos"][i] if i < len(st.session_state["input_videos"]) else ""
                 new_vids.append(st.text_input(f"影片 {i+1}", value=val, key=f"vid_{i}"))
         
-        st.session_state["input_ingredients"] = st.text_area("⚖️ 材料", value=st.session_state["input_ingredients"])
-        st.session_state["input_steps"] = st.text_area("👩‍🍳 步驟", value=st.session_state["input_steps"])
-        st.session_state["input_notes"] = st.text_area("📌 注意事項", value=st.session_state["input_notes"])
-        st.session_state["input_improvement"] = st.text_area("💡 改良做法", value=st.session_state["input_improvement"])
+        # 放大後的輸入框
+        st.session_state["input_ingredients"] = st.text_area("⚖️ 材料", value=st.session_state["input_ingredients"], height=200)
+        st.session_state["input_steps"] = st.text_area("👩‍🍳 步驟", value=st.session_state["input_steps"], height=300)
+        st.session_state["input_notes"] = st.text_area("📌 注意事項", value=st.session_state["input_notes"], height=200)
+        st.session_state["input_improvement"] = st.text_area("💡 改良做法", value=st.session_state["input_improvement"], height=200)
         
         if st.form_submit_button("✨ 一鍵自動排版"):
             st.session_state.update({
