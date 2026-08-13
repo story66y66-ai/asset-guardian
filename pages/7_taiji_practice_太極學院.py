@@ -9,92 +9,19 @@ st.set_page_config(layout="wide")
 # CSS 樣式設定
 st.markdown("""
     <style>
-    /* 1. 放大上方 10 個切換按鈕的文字 */
-    .stButton button {
-        height: 90px !important;
-        border-radius: 12px !important;
-        width: 100% !important;
-    }
-    .stButton button p {
-        font-size: 36px !important;
-        font-weight: bold !important;
-    }
-    
-    /* 2. 左側文字輸入框字體放大到 40px */
+    .stButton button { height: 90px !important; border-radius: 12px !important; width: 100% !important; }
+    .stButton button p { font-size: 36px !important; font-weight: bold !important; }
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
-    
-    /* 3. 徹底放大右側單行輸入框的外框高度、內部字體與顏色 */
-    .stTextInput input {
-        font-size: 70px !important;
-        height: 95px !important;
-        padding: 10px !important;
-        color: #ffffff !important;
-        font-weight: bold !important;
-    }
-    
-    .stTextInput > div > div {
-        min-height: 100px !important;
-        align-items: center !important;
-    }
-    
-    /* 4. 頁面標題放大到 70px */
+    .stTextInput input { font-size: 70px !important; height: 95px !important; padding: 10px !important; color: #ffffff !important; font-weight: bold !important; }
+    .stTextInput > div > div { min-height: 100px !important; align-items: center !important; }
     h1 { font-size: 70px !important; }
-    
-    /* 5. 欄位標題放大到 40px */
-    h2, h3 { 
-        font-size: 40px !important; 
-        font-weight: bold !important; 
-        margin-bottom: 15px !important;
-    }
-    
-    /* 6. 右側逐招練習區的招式標題字體放大到 80px */
-    .sentence-display { 
-        font-size: 80px !important; 
-        font-weight: bold !important; 
-        color: #ffffff !important; 
-        padding: 20px 0 !important;
-        line-height: 1.4 !important;
-    }
-    
-    /* 7. 自定義超大提示文字樣式 */
-    .custom-input-label {
-        font-size: 60px !important;
-        font-weight: bold !important;
-        color: #ffcc00 !important;
-        margin-top: 20px !important;
-        margin-bottom: 10px !important;
-        line-height: 1.2 !important;
-    }
-    
-    /* 8. 強制全面放大所有按鈕（包含發音與清除按鈕）裡面的文字與高度 */
-    div.stButton button {
-        height: 75px !important;
-    }
-    div.stButton button p {
-        font-size: 35px !important;
-        font-weight: bold !important;
-    }
-    
-    /* 9. 自定義超大對與錯結果顯示區 */
-    .result-success {
-        font-size: 50px !important;
-        font-weight: bold !important;
-        color: #00ff66 !important;
-        background-color: rgba(0, 255, 102, 0.1);
-        padding: 15px;
-        border-radius: 10px;
-        margin-top: 15px;
-    }
-    .result-error {
-        font-size: 45px !important;
-        font-weight: bold !important;
-        color: #ff3333 !important;
-        background-color: rgba(255, 51, 51, 0.1);
-        padding: 15px;
-        border-radius: 10px;
-        margin-top: 15px;
-        line-height: 1.3;
-    }
+    h2, h3 { font-size: 40px !important; font-weight: bold !important; margin-bottom: 15px !important; }
+    .sentence-display { font-size: 80px !important; font-weight: bold !important; color: #ffffff !important; padding: 20px 0 !important; line-height: 1.4 !important; }
+    .custom-input-label { font-size: 60px !important; font-weight: bold !important; color: #ffcc00 !important; margin-top: 20px !important; margin-bottom: 10px !important; line-height: 1.2 !important; }
+    div.stButton button { height: 75px !important; }
+    div.stButton button p { font-size: 35px !important; font-weight: bold !important; }
+    .result-success { font-size: 50px !important; font-weight: bold !important; color: #00ff66 !important; background-color: rgba(0, 255, 102, 0.1); padding: 15px; border-radius: 10px; margin-top: 15px; }
+    .result-error { font-size: 45px !important; font-weight: bold !important; color: #ff3333 !important; background-color: rgba(255, 51, 51, 0.1); padding: 15px; border-radius: 10px; margin-top: 15px; line-height: 1.3; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -102,7 +29,7 @@ st.title("🥋 澄玄大學 - 太極學院")
 
 # 初始化狀態
 if "taiji_data" not in st.session_state:
-    st.session_state.taiji_data = {i: {"title": f"套路 {i}", "lyrics": "", "video_url": ""} for i in range(1, 11)}
+    st.session_state.taiji_data = {i: {"title": f"套路 {i}", "lyrics": "", "video_urls": ["", "", "", "", ""]} for i in range(1, 11)}
 
 if "selected_idx" not in st.session_state:
     st.session_state.selected_idx = 1
@@ -116,42 +43,50 @@ if os.path.exists(TAIJI_CSV_FILE):
         for _, row in df.iterrows():
             idx = int(row['id'])
             if 1 <= idx <= 10:
+                # 把原本的單一字串網址，拆解成 5 個網址清單
+                raw_urls = str(row['video_url']).split(',') if pd.notna(row['video_url']) else []
+                urls = [raw_urls[i].strip() if i < len(raw_urls) else "" for i in range(5)]
                 st.session_state.taiji_data[idx] = {
                     "title": row['title'], 
                     "lyrics": str(row['lyrics']) if pd.notna(row['lyrics']) else "",
-                    "video_url": str(row['video_url']) if pd.notna(row['video_url']) else ""
+                    "video_urls": urls
                 }
     except: pass
 
 def save_to_csv():
-    df_new = pd.DataFrame([{"id": i, **st.session_state.taiji_data[i]} for i in range(1, 11)])
+    # 儲存時將 5 個網址合併回一個逗號分隔的字串
+    df_new = pd.DataFrame([{"id": i, "title": st.session_state.taiji_data[i]['title'], 
+                            "lyrics": st.session_state.taiji_data[i]['lyrics'], 
+                            "video_url": ",".join(st.session_state.taiji_data[i]['video_urls'])} for i in range(1, 11)])
     df_new.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig")
 
-# 上方 10 個大按鈕切換區
+# 介面渲染
 st.markdown("### 🔍 請點選要練習的套路：")
-row1 = st.columns(5)
-row2 = st.columns(5)
-all_cols = row1 + row2
-
+row1, row2 = st.columns(5), st.columns(5)
 for i in range(1, 11):
-    with all_cols[i-1]:
-        btn_label = f"{i}. {st.session_state.taiji_data[i]['title']}"
-        if st.button(btn_label, key=f"nav_btn_{i}"):
+    with (row1 + row2)[i-1]:
+        if st.button(f"{i}. {st.session_state.taiji_data[i]['title']}", key=f"nav_btn_{i}"):
             st.session_state.selected_idx = i
 
 idx = st.session_state.selected_idx
 st.markdown("---")
 
-# 顯示當前選中的套路編輯與練習區
 with st.container():
     st.subheader(f"✏️ 編輯 {st.session_state.taiji_data[idx]['title']} 的內容")
     
+    # 標題編輯
     new_title = st.text_input("設定套路名稱：", value=st.session_state.taiji_data[idx]["title"], key=f"title_{idx}")
-    new_url = st.text_input("請貼上 YouTube 或 Shorts 網址（多個網址請用逗號或換行隔開）：", value=st.session_state.taiji_data[idx]["video_url"], key=f"url_{idx}")
     
-    if new_title != st.session_state.taiji_data[idx]["title"] or new_url != st.session_state.taiji_data[idx]["video_url"]:
+    # 5 個網址輸入框
+    new_urls = []
+    for i in range(5):
+        url = st.text_input(f"影片網址 {i+1}：", value=st.session_state.taiji_data[idx]["video_urls"][i], key=f"url_{idx}_{i}")
+        new_urls.append(url)
+    
+    # 更新與儲存邏輯
+    if new_title != st.session_state.taiji_data[idx]["title"] or new_urls != st.session_state.taiji_data[idx]["video_urls"]:
         st.session_state.taiji_data[idx]["title"] = new_title
-        st.session_state.taiji_data[idx]["video_url"] = new_url
+        st.session_state.taiji_data[idx]["video_urls"] = new_urls
         save_to_csv()
         st.rerun() 
 
@@ -162,54 +97,38 @@ with st.container():
             st.session_state.taiji_data[idx]["lyrics"] = new_lyrics
             save_to_csv()
         
-        # 多網址自動解析播放
-        if new_url:
-            urls = [url.strip() for url in new_url.replace(',', '\n').split('\n') if url.strip()]
-            for url in urls:
-                st.video(url)
+        # 顯示所有影片
+        for url in new_urls:
+            if url.strip():
+                st.video(url.strip())
     
     with col2:
+        # 練習區邏輯保持不變
         st.subheader("✍️ 逐招練習與輸入測試區：")
         lines = [l.strip() for l in new_lyrics.split('\n') if l.strip()]
-
         for line_idx, line in enumerate(lines):
-            st.markdown(f"---")
+            st.markdown("---")
             st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
-            
-            if st.button(f"🔊 聽第 {line_idx+1} 招發音", key=f"play_{idx}_{line_idx}"):
-                tts = gTTS(text=line, lang='zh-TW')
+            if st.button(f"🔊 聽發音", key=f"play_{idx}_{line_idx}"):
                 fp = io.BytesIO()
-                tts.write_to_fp(fp)
+                gTTS(text=line, lang='zh-TW').write_to_fp(fp)
                 st.audio(fp, autoplay=True)
-            
-            st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱進行測試：</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='custom-input-label'>請輸入第 {line_idx+1} 招名稱：</div>", unsafe_allow_html=True)
             
             input_col, clear_col = st.columns([4, 1])
-            input_key = f"input_{idx}_{line_idx}"
-            version_key = f"version_{idx}_{line_idx}"
-            
-            if version_key not in st.session_state:
-                st.session_state[version_key] = 0
-            
-            actual_input_key = f"{input_key}_v{st.session_state[version_key]}"
+            v_key = f"version_{idx}_{line_idx}"
+            if v_key not in st.session_state: st.session_state[v_key] = 0
             
             with input_col:
-                user_input = st.text_input(actual_input_key, label_visibility="collapsed")
-            
+                user_input = st.text_input(f"in_{idx}_{line_idx}_{st.session_state[v_key]}", label_visibility="collapsed")
             with clear_col:
-                if st.button("🗑️ 清除", key=f"clear_{idx}_{line_idx}"):
-                    st.session_state[version_key] += 1
+                if st.button("🗑️", key=f"clear_{idx}_{line_idx}"):
+                    st.session_state[v_key] += 1
                     st.rerun()
             
             if user_input:
-                # 寬鬆判定邏輯
-                def normalize(text):
-                    return text.strip().replace(" ", "").replace(" ", "").replace("．", ".").replace("，", ",")
-                
-                clean_input = normalize(user_input)
-                clean_target = normalize(line)
-                
-                if clean_input == clean_target:
-                    st.markdown(f"<div class='result-success'>🎉 太棒了！完全正確！</div>", unsafe_allow_html=True)
+                def norm(t): return t.strip().replace(" ", "").replace(" ", "").replace("．", ".").replace("，", ",")
+                if norm(user_input) == norm(line):
+                    st.markdown(f"<div class='result-success'>🎉 正確！</div>", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"<div class='result-error'>❌ 答錯囉！您輸入的是「{user_input.strip()}」，正確答案是「{line}」</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='result-error'>❌ 答錯了！答案是「{line}」</div>", unsafe_allow_html=True)
