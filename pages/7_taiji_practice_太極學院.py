@@ -9,7 +9,6 @@ st.set_page_config(layout="wide")
 # CSS 樣式設定
 st.markdown("""
     <style>
-    /* 基礎按鈕樣式 */
     .stButton button { 
         height: 90px !important; 
         border-radius: 12px !important; 
@@ -60,28 +59,36 @@ if "selected_idx" not in st.session_state:
 
 TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
 
-# 讀取 CSV
+# 讀取 CSV（精準修復 5 個影片網址的對應與還原）
 if os.path.exists(TAIJI_CSV_FILE):
     try:
         df = pd.read_csv(TAIJI_CSV_FILE, encoding="utf-8-sig")
         for _, row in df.iterrows():
             idx_val = int(row['id'])
             if 1 <= idx_val <= 10:
+                # 確保即便有空值也能完整解析出 5 個欄位
                 raw_urls = str(row['video_url']).split(',') if pd.notna(row['video_url']) else []
-                urls = [raw_urls[i].strip() if i < len(raw_urls) else "" for i in range(5)]
+                urls = []
+                for i in range(5):
+                    if i < len(raw_urls):
+                        urls.append(raw_urls[i].strip())
+                    else:
+                        urls.append("")
+                
                 st.session_state.taiji_data[idx_val] = {
                     "title": row['title'], 
                     "lyrics": str(row['lyrics']) if pd.notna(row['lyrics']) else "",
                     "video_urls": urls
                 }
-    except: pass
+    except Exception as e:
+        st.error(f"讀取存檔時發生錯誤: {e}")
 
 def save_to_csv():
     df_new = pd.DataFrame([{
         "id": i, 
         "title": st.session_state.taiji_data[i]['title'], 
         "lyrics": st.session_state.taiji_data[i]['lyrics'], 
-        "video_url": ",".join(st.session_state.taiji_data[i]['video_urls'])
+        "video_url": ",".join([url.strip() for url in st.session_state.taiji_data[i]['video_urls']])
     } for i in range(1, 11)])
     df_new.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig")
 
