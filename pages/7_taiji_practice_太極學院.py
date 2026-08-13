@@ -172,7 +172,6 @@ with st.container():
             st.markdown(f"---")
             st.markdown(f"<div class='sentence-display'>第 {line_idx+1} 招：{line}</div>", unsafe_allow_html=True)
             
-            # 乾淨的按鈕文字，由 CSS 統一控制大小
             if st.button(f"🔊 聽第 {line_idx+1} 招發音", key=f"play_{idx}_{line_idx}"):
                 tts = gTTS(text=line, lang='zh-TW')
                 fp = io.BytesIO()
@@ -199,8 +198,14 @@ with st.container():
                     st.rerun()
             
             if user_input:
-                clean_input = user_input.strip()
-                if clean_input == line:
+                # 寬鬆判定邏輯
+                def normalize(text):
+                    return text.strip().replace(" ", "").replace(" ", "").replace("．", ".").replace("，", ",")
+                
+                clean_input = normalize(user_input)
+                clean_target = normalize(line)
+                
+                if clean_input == clean_target:
                     st.markdown(f"<div class='result-success'>🎉 太棒了！完全正確！</div>", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"<div class='result-error'>❌ 答錯囉！您輸入的是「{clean_input}」，正確答案是「{line}」</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='result-error'>❌ 答錯囉！您輸入的是「{user_input.strip()}」，正確答案是「{line}」</div>", unsafe_allow_html=True)
