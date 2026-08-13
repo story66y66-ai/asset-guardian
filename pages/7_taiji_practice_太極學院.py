@@ -20,16 +20,21 @@ st.markdown("""
         font-weight: bold !important; 
     }
 
-    /* 專屬儲存按鈕：加粗綠色邊框與文字顏色 */
+    /* 專屬儲存按鈕：螢光綠文字與發光邊框 */
     div.save-btn-wrapper button {
-        border: 4px solid #00c853 !important;
-        color: #00e676 !important;
-        height: 100px !important;
-        box-shadow: 0px 4px 8px rgba(0, 200, 83, 0.2) !important;
+        border: 5px solid #00ff66 !important;
+        background-color: rgba(0, 255, 102, 0.05) !important;
+        height: 110px !important;
+        box-shadow: 0px 0px 15px rgba(0, 255, 102, 0.3) !important;
     }
     div.save-btn-wrapper button p {
-        font-size: 40px !important;
+        font-size: 45px !important;
         font-weight: 900 !important;
+        color: #00ff66 !important;
+        text-shadow: 0px 0px 10px rgba(0, 255, 102, 0.5) !important;
+    }
+    div.save-btn-wrapper button:hover {
+        background-color: rgba(0, 255, 102, 0.15) !important;
     }
 
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
