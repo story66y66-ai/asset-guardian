@@ -6,13 +6,25 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定（特別將按鈕字體放大到 40px、高度拉高到 100px）
+# CSS 樣式設定（精準強制讓表單送出按鈕變超級大）
 st.markdown("""
     <style>
     .stButton button { height: 90px !important; border-radius: 12px !important; width: 100% !important; }
     .stButton button p { font-size: 36px !important; font-weight: bold !important; }
-    .save-btn button { height: 100px !important; background-color: #ff4b4b !important; color: white !important; }
-    .save-btn button p { font-size: 40px !important; font-weight: bold !important; color: white !important; }
+    
+    /* 強制放大表單內的送出按鈕 */
+    div[data-testid="stFormSubmitButton"] button {
+        height: 100px !important;
+        background-color: #ff4b4b !important;
+        width: 100% !important;
+        border-radius: 12px !important;
+    }
+    div[data-testid="stFormSubmitButton"] button p {
+        font-size: 40px !important;
+        font-weight: bold !important;
+        color: white !important;
+    }
+
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
     .stTextInput input { font-size: 70px !important; height: 95px !important; padding: 10px !important; color: #ffffff !important; font-weight: bold !important; }
     .stTextInput > div > div { min-height: 100px !important; align-items: center !important; }
@@ -20,8 +32,6 @@ st.markdown("""
     h2, h3 { font-size: 40px !important; font-weight: bold !important; margin-bottom: 15px !important; }
     .sentence-display { font-size: 80px !important; font-weight: bold !important; color: #ffffff !important; padding: 20px 0 !important; line-height: 1.4 !important; }
     .custom-input-label { font-size: 60px !important; font-weight: bold !important; color: #ffcc00 !important; margin-top: 20px !important; margin-bottom: 10px !important; line-height: 1.2 !important; }
-    div.stButton button { height: 75px !important; }
-    div.stButton button p { font-size: 35px !important; font-weight: bold !important; }
     .result-success { font-size: 50px !important; font-weight: bold !important; color: #00ff66 !important; background-color: rgba(0, 255, 102, 0.1); padding: 15px; border-radius: 10px; margin-top: 15px; }
     .result-error { font-size: 45px !important; font-weight: bold !important; color: #ff3333 !important; background-color: rgba(255, 51, 51, 0.1); padding: 15px; border-radius: 10px; margin-top: 15px; line-height: 1.3; }
     </style>
@@ -90,10 +100,8 @@ with st.container():
         
         new_lyrics = st.text_area("輸入完整套路內容（一行一招）：", value=st.session_state.taiji_data[idx]["lyrics"], height=300)
         
-        # 超大醒目儲存按鈕
-        st.markdown('<div class="save-btn">', unsafe_allow_html=True)
+        # 巨大紅色儲存按鈕
         submit_btn = st.form_submit_button("💾 儲存太極套路")
-        st.markdown('</div>', unsafe_allow_html=True)
 
         if submit_btn:
             st.session_state.taiji_data[idx]["title"] = new_title
