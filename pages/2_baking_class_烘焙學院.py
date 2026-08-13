@@ -72,11 +72,11 @@ if st.session_state["active_tab"] == 0:
                 val = st.session_state["input_videos"][i] if i < len(st.session_state["input_videos"]) else ""
                 new_vids.append(st.text_input(f"影片 {i+1}", value=val, key=f"vid_{i}"))
         
-        # 放大後的輸入框
-        st.session_state["input_ingredients"] = st.text_area("⚖️ 材料", value=st.session_state["input_ingredients"], height=200)
-        st.session_state["input_steps"] = st.text_area("👩‍🍳 步驟", value=st.session_state["input_steps"], height=300)
-        st.session_state["input_notes"] = st.text_area("📌 注意事項", value=st.session_state["input_notes"], height=200)
-        st.session_state["input_improvement"] = st.text_area("💡 改良做法", value=st.session_state["input_improvement"], height=200)
+        # 再次加倍高度的輸入框（材料 400、步驟 600、注意事項 400、改良做法 400）
+        st.session_state["input_ingredients"] = st.text_area("⚖️ 材料", value=st.session_state["input_ingredients"], height=400)
+        st.session_state["input_steps"] = st.text_area("👩‍🍳 步驟", value=st.session_state["input_steps"], height=600)
+        st.session_state["input_notes"] = st.text_area("📌 注意事項", value=st.session_state["input_notes"], height=400)
+        st.session_state["input_improvement"] = st.text_area("💡 改良做法", value=st.session_state["input_improvement"], height=400)
         
         if st.form_submit_button("✨ 一鍵自動排版"):
             st.session_state.update({
