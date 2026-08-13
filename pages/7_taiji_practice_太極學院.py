@@ -147,7 +147,7 @@ with st.container():
     st.subheader(f"✏️ 編輯 {st.session_state.taiji_data[idx]['title']} 的內容")
     
     new_title = st.text_input("設定套路名稱：", value=st.session_state.taiji_data[idx]["title"], key=f"title_{idx}")
-    new_url = st.text_input("請貼上 YouTube 或 Shorts 網址：", value=st.session_state.taiji_data[idx]["video_url"], key=f"url_{idx}")
+    new_url = st.text_input("請貼上 YouTube 或 Shorts 網址（多個網址請用逗號或換行隔開）：", value=st.session_state.taiji_data[idx]["video_url"], key=f"url_{idx}")
     
     if new_title != st.session_state.taiji_data[idx]["title"] or new_url != st.session_state.taiji_data[idx]["video_url"]:
         st.session_state.taiji_data[idx]["title"] = new_title
@@ -161,8 +161,12 @@ with st.container():
         if new_lyrics != st.session_state.taiji_data[idx]["lyrics"]:
             st.session_state.taiji_data[idx]["lyrics"] = new_lyrics
             save_to_csv()
+        
+        # 多網址自動解析播放
         if new_url:
-            st.video(new_url)
+            urls = [url.strip() for url in new_url.replace(',', '\n').split('\n') if url.strip()]
+            for url in urls:
+                st.video(url)
     
     with col2:
         st.subheader("✍️ 逐招練習與輸入測試區：")
