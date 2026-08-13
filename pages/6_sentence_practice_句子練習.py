@@ -62,7 +62,7 @@ st.markdown("""
         font-size: 22px !important; 
         color: #000000 !important; 
         font-weight: bold !important; 
-        height: 580px !important;
+        height: 650px !important;
         resize: vertical !important; 
     }
     
@@ -362,7 +362,7 @@ for tab_idx, tab in enumerate(tabs):
                 "輸入文字或歌詞：",
                 value=st.session_state[text_key],
                 key=f"textarea_{absolute_idx}",
-                height=580
+                height=650
             )
             st.session_state[text_key] = user_input_text
 
