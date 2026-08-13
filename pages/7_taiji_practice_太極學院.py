@@ -6,23 +6,24 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定（將獨立按鈕打造成醒目的綠色大按鈕）
+# CSS 樣式設定（將獨立按鈕改為超醒目的鮮綠色並加上陰影）
 st.markdown("""
     <style>
     .stButton button { height: 90px !important; border-radius: 12px !important; width: 100% !important; }
     .stButton button p { font-size: 36px !important; font-weight: bold !important; }
     
-    /* 專屬綠色儲存按鈕樣式 */
+    /* 鮮綠色專屬儲存按鈕樣式 */
     div.stButton.save-btn-container button {
-        height: 100px !important;
-        background-color: #28a745 !important; 
+        height: 110px !important;
+        background-color: #00c853 !important; 
         color: white !important;
         width: 100% !important;
-        border-radius: 12px !important;
-        border: none !important;
+        border-radius: 15px !important;
+        border: 3px solid #00e676 !important;
+        box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3) !important;
     }
     div.stButton.save-btn-container button p {
-        font-size: 40px !important;
+        font-size: 45px !important;
         font-weight: bold !important;
         color: white !important;
     }
@@ -89,7 +90,6 @@ st.markdown("---")
 with st.container():
     st.subheader(f"✏️ 編輯 {st.session_state.taiji_data[idx]['title']} 的內容")
     
-    # 移除 form，改用直接綁定變數與獨立按鈕
     new_title = st.text_input("設定套路名稱：", value=st.session_state.taiji_data[idx]["title"], key=f"input_title_{idx}")
     
     st.markdown("🎥 參考影片（最多 5 部）")
@@ -102,7 +102,7 @@ with st.container():
     
     new_lyrics = st.text_area("輸入完整套路內容（一行一招）：", value=st.session_state.taiji_data[idx]["lyrics"], height=300, key=f"input_lyrics_{idx}")
     
-    # 獨立的綠色儲存按鈕（加上 class 讓 CSS 專屬放大）
+    # 鮮綠色大按鈕容器
     st.markdown('<div class="save-btn-container">', unsafe_allow_html=True)
     if st.button("💾 儲存太極套路", key=f"save_btn_{idx}"):
         st.session_state.taiji_data[idx]["title"] = new_title
