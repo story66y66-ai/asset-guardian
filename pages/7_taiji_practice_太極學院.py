@@ -6,22 +6,30 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：直接全面把按鈕（特別是帶有儲存字眼的或是我們指定的）改成強眼綠色
+# CSS 樣式設定：利用外層容器針對儲存按鈕上色，其餘按鈕保持預設
 st.markdown("""
     <style>
-    /* 讓頁面上所有的主要按鈕直接變成超大、翠綠色、帶陰影 */
     .stButton button { 
-        height: 100px !important; 
-        border-radius: 15px !important; 
+        height: 90px !important; 
+        border-radius: 12px !important; 
         width: 100% !important; 
+    }
+    .stButton button p { 
+        font-size: 36px !important; 
+        font-weight: bold !important; 
+    }
+
+    /* 專屬包裹儲存按鈕的容器樣式 */
+    div.save-btn-wrapper button {
         background-color: #00c853 !important;
         color: white !important;
+        height: 110px !important;
         border: 3px solid #00e676 !important;
         box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3) !important;
     }
-    .stButton button p { 
-        font-size: 40px !important; 
-        font-weight: bold !important; 
+    div.save-btn-wrapper button p {
+        font-size: 45px !important;
+        font-weight: bold !important;
         color: white !important;
     }
 
@@ -99,7 +107,8 @@ with st.container():
     
     new_lyrics = st.text_area("輸入完整套路內容（一行一招）：", value=st.session_state.taiji_data[idx]["lyrics"], height=300, key=f"input_lyrics_{idx}")
     
-    # 儲存按鈕（全域 CSS 會自動把它變成超大翠綠色）
+    # 透過專屬容器精準讓儲存按鈕變成漂亮的綠色
+    st.markdown('<div class="save-btn-wrapper">', unsafe_allow_html=True)
     if st.button("💾 儲存太極套路", key=f"save_btn_{idx}"):
         st.session_state.taiji_data[idx]["title"] = new_title
         st.session_state.taiji_data[idx]["video_urls"] = new_urls
@@ -107,6 +116,7 @@ with st.container():
         save_to_csv()
         st.success("儲存成功！")
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
