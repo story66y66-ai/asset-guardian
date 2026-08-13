@@ -6,18 +6,20 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定（精準強制讓表單送出按鈕變超級大）
+# CSS 樣式設定（將按鈕改為充滿朝氣的翠綠色）
 st.markdown("""
     <style>
     .stButton button { height: 90px !important; border-radius: 12px !important; width: 100% !important; }
     .stButton button p { font-size: 36px !important; font-weight: bold !important; }
     
-    /* 強制放大表單內的送出按鈕 */
+    /* 強制放大表單內的送出按鈕，改為綠色 */
     div[data-testid="stFormSubmitButton"] button {
         height: 100px !important;
-        background-color: #ff4b4b !important;
+        background-color: #28a745 !important; 
+        color: white !important;
         width: 100% !important;
         border-radius: 12px !important;
+        border: none !important;
     }
     div[data-testid="stFormSubmitButton"] button p {
         font-size: 40px !important;
@@ -100,7 +102,7 @@ with st.container():
         
         new_lyrics = st.text_area("輸入完整套路內容（一行一招）：", value=st.session_state.taiji_data[idx]["lyrics"], height=300)
         
-        # 巨大紅色儲存按鈕
+        # 翠綠色巨大儲存按鈕
         submit_btn = st.form_submit_button("💾 儲存太極套路")
 
         if submit_btn:
@@ -147,4 +149,4 @@ with st.container():
                 if norm(user_input) == norm(line):
                     st.markdown(f"<div class='result-success'>🎉 正確！</div>", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"<div class='result-error'>❌ 答錯了！答案是「{line}」</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='result-error'>❌ 答錯了！答案是「{line}】</div>", unsafe_allow_html=True)
