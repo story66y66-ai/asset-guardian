@@ -6,14 +6,14 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定（將按鈕改為充滿朝氣的翠綠色）
+# CSS 樣式設定（將獨立按鈕打造成醒目的綠色大按鈕）
 st.markdown("""
     <style>
     .stButton button { height: 90px !important; border-radius: 12px !important; width: 100% !important; }
     .stButton button p { font-size: 36px !important; font-weight: bold !important; }
     
-    /* 強制放大表單內的送出按鈕，改為綠色 */
-    div[data-testid="stFormSubmitButton"] button {
+    /* 專屬綠色儲存按鈕樣式 */
+    div.stButton.save-btn-container button {
         height: 100px !important;
         background-color: #28a745 !important; 
         color: white !important;
@@ -21,7 +21,7 @@ st.markdown("""
         border-radius: 12px !important;
         border: none !important;
     }
-    div[data-testid="stFormSubmitButton"] button p {
+    div.stButton.save-btn-container button p {
         font-size: 40px !important;
         font-weight: bold !important;
         color: white !important;
@@ -89,29 +89,29 @@ st.markdown("---")
 with st.container():
     st.subheader(f"✏️ 編輯 {st.session_state.taiji_data[idx]['title']} 的內容")
     
-    with st.form(f"taiji_form_{idx}"):
-        new_title = st.text_input("設定套路名稱：", value=st.session_state.taiji_data[idx]["title"])
-        
-        st.markdown("🎥 參考影片（最多 5 部）")
-        cols_vid = st.columns(5)
-        new_urls = []
-        for i in range(5):
-            with cols_vid[i]:
-                current_val = st.session_state.taiji_data[idx]["video_urls"][i] if i < len(st.session_state.taiji_data[idx]["video_urls"]) else ""
-                new_urls.append(st.text_input(f"影片 {i+1}", value=current_val, key=f"form_url_{idx}_{i}"))
-        
-        new_lyrics = st.text_area("輸入完整套路內容（一行一招）：", value=st.session_state.taiji_data[idx]["lyrics"], height=300)
-        
-        # 翠綠色巨大儲存按鈕
-        submit_btn = st.form_submit_button("💾 儲存太極套路")
-
-        if submit_btn:
-            st.session_state.taiji_data[idx]["title"] = new_title
-            st.session_state.taiji_data[idx]["video_urls"] = new_urls
-            st.session_state.taiji_data[idx]["lyrics"] = new_lyrics
-            save_to_csv()
-            st.success("儲存成功！")
-            st.rerun()
+    # 移除 form，改用直接綁定變數與獨立按鈕
+    new_title = st.text_input("設定套路名稱：", value=st.session_state.taiji_data[idx]["title"], key=f"input_title_{idx}")
+    
+    st.markdown("🎥 參考影片（最多 5 部）")
+    cols_vid = st.columns(5)
+    new_urls = []
+    for i in range(5):
+        with cols_vid[i]:
+            current_val = st.session_state.taiji_data[idx]["video_urls"][i] if i < len(st.session_state.taiji_data[idx]["video_urls"]) else ""
+            new_urls.append(st.text_input(f"影片 {i+1}", value=current_val, key=f"ind_url_{idx}_{i}"))
+    
+    new_lyrics = st.text_area("輸入完整套路內容（一行一招）：", value=st.session_state.taiji_data[idx]["lyrics"], height=300, key=f"input_lyrics_{idx}")
+    
+    # 獨立的綠色儲存按鈕（加上 class 讓 CSS 專屬放大）
+    st.markdown('<div class="save-btn-container">', unsafe_allow_html=True)
+    if st.button("💾 儲存太極套路", key=f"save_btn_{idx}"):
+        st.session_state.taiji_data[idx]["title"] = new_title
+        st.session_state.taiji_data[idx]["video_urls"] = new_urls
+        st.session_state.taiji_data[idx]["lyrics"] = new_lyrics
+        save_to_csv()
+        st.success("儲存成功！")
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -149,4 +149,4 @@ with st.container():
                 if norm(user_input) == norm(line):
                     st.markdown(f"<div class='result-success'>🎉 正確！</div>", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"<div class='result-error'>❌ 答錯了！答案是「{line}】</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='result-error'>❌ 答錯了！答案是「{line}」</div>", unsafe_allow_html=True)
