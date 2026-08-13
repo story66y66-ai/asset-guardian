@@ -6,9 +6,10 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定：利用外層容器針對儲存按鈕上色，其餘按鈕保持預設
+# CSS 樣式設定
 st.markdown("""
     <style>
+    /* 基礎按鈕樣式 */
     .stButton button { 
         height: 90px !important; 
         border-radius: 12px !important; 
@@ -19,18 +20,16 @@ st.markdown("""
         font-weight: bold !important; 
     }
 
-    /* 專屬包裹儲存按鈕的容器樣式 */
+    /* 專屬儲存按鈕：加粗綠色邊框與文字顏色 */
     div.save-btn-wrapper button {
-        background-color: #00c853 !important;
-        color: white !important;
-        height: 110px !important;
-        border: 3px solid #00e676 !important;
-        box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3) !important;
+        border: 4px solid #00c853 !important;
+        color: #00e676 !important;
+        height: 100px !important;
+        box-shadow: 0px 4px 8px rgba(0, 200, 83, 0.2) !important;
     }
     div.save-btn-wrapper button p {
-        font-size: 45px !important;
-        font-weight: bold !important;
-        color: white !important;
+        font-size: 40px !important;
+        font-weight: 900 !important;
     }
 
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
@@ -107,9 +106,9 @@ with st.container():
     
     new_lyrics = st.text_area("輸入完整套路內容（一行一招）：", value=st.session_state.taiji_data[idx]["lyrics"], height=300, key=f"input_lyrics_{idx}")
     
-    # 透過專屬容器精準讓儲存按鈕變成漂亮的綠色
+    # 儲存按鈕
     st.markdown('<div class="save-btn-wrapper">', unsafe_allow_html=True)
-    if st.button("💾 儲存太極套路", key=f"save_btn_{idx}"):
+    if st.button("💾 【 點我立刻儲存太極套路 】", key=f"save_btn_{idx}"):
         st.session_state.taiji_data[idx]["title"] = new_title
         st.session_state.taiji_data[idx]["video_urls"] = new_urls
         st.session_state.taiji_data[idx]["lyrics"] = new_lyrics
