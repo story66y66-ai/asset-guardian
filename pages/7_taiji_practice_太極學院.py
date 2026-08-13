@@ -6,11 +6,13 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定
+# CSS 樣式設定（特別將按鈕字體放大到 40px、高度拉高到 100px）
 st.markdown("""
     <style>
     .stButton button { height: 90px !important; border-radius: 12px !important; width: 100% !important; }
     .stButton button p { font-size: 36px !important; font-weight: bold !important; }
+    .save-btn button { height: 100px !important; background-color: #ff4b4b !important; color: white !important; }
+    .save-btn button p { font-size: 40px !important; font-weight: bold !important; color: white !important; }
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
     .stTextInput input { font-size: 70px !important; height: 95px !important; padding: 10px !important; color: #ffffff !important; font-weight: bold !important; }
     .stTextInput > div > div { min-height: 100px !important; align-items: center !important; }
@@ -75,7 +77,6 @@ st.markdown("---")
 with st.container():
     st.subheader(f"✏️ 編輯 {st.session_state.taiji_data[idx]['title']} 的內容")
     
-    # 建立表單，確保有明確的儲存按鈕
     with st.form(f"taiji_form_{idx}"):
         new_title = st.text_input("設定套路名稱：", value=st.session_state.taiji_data[idx]["title"])
         
@@ -89,8 +90,11 @@ with st.container():
         
         new_lyrics = st.text_area("輸入完整套路內容（一行一招）：", value=st.session_state.taiji_data[idx]["lyrics"], height=300)
         
-        # 明確的儲存按鈕
+        # 超大醒目儲存按鈕
+        st.markdown('<div class="save-btn">', unsafe_allow_html=True)
         submit_btn = st.form_submit_button("💾 儲存太極套路")
+        st.markdown('</div>', unsafe_allow_html=True)
+
         if submit_btn:
             st.session_state.taiji_data[idx]["title"] = new_title
             st.session_state.taiji_data[idx]["video_urls"] = new_urls
@@ -107,7 +111,6 @@ with st.container():
                 st.video(url.strip())
     
     with col2:
-        # 練習區邏輯
         st.subheader("✍️ 逐招練習與輸入測試區：")
         current_lyrics = st.session_state.taiji_data[idx]["lyrics"]
         lines = [l.strip() for l in current_lyrics.split('\n') if l.strip()]
