@@ -37,8 +37,8 @@ st.markdown("""
     }
 
     .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
-    .stTextInput input { font-size: 70px !important; height: 95px !important; padding: 10px !important; color: #ffffff !important; font-weight: bold !important; }
-    .stTextInput > div > div { min-height: 100px !important; align-items: center !important; }
+    .stTextInput input { font-size: 50px !important; height: 85px !important; padding: 10px !important; color: #ffffff !important; font-weight: bold !important; }
+    .stTextInput > div > div { min-height: 90px !important; align-items: center !important; }
     h1 { font-size: 70px !important; }
     h2, h3 { font-size: 40px !important; font-weight: bold !important; margin-bottom: 15px !important; }
     .sentence-display { font-size: 80px !important; font-weight: bold !important; color: #ffffff !important; padding: 20px 0 !important; line-height: 1.4 !important; }
@@ -59,14 +59,13 @@ if "selected_idx" not in st.session_state:
 
 TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
 
-# 讀取 CSV（精準修復 5 個影片網址的對應與還原）
+# 讀取 CSV
 if os.path.exists(TAIJI_CSV_FILE):
     try:
         df = pd.read_csv(TAIJI_CSV_FILE, encoding="utf-8-sig")
         for _, row in df.iterrows():
             idx_val = int(row['id'])
             if 1 <= idx_val <= 10:
-                # 確保即便有空值也能完整解析出 5 個欄位
                 raw_urls = str(row['video_url']).split(',') if pd.notna(row['video_url']) else []
                 urls = []
                 for i in range(5):
@@ -108,13 +107,13 @@ with st.container():
     
     new_title = st.text_input("設定套路名稱：", value=st.session_state.taiji_data[idx]["title"], key=f"input_title_{idx}")
     
-    st.markdown("🎥 參考影片（最多 5 部）")
-    cols_vid = st.columns(5)
+    st.markdown("🎥 參考影片（最多 5 部，請直接貼上網址）：")
     new_urls = []
+    # 改為上下獨立一列一列排列，寬度拉滿，網址再長也不怕擠壓
     for i in range(5):
-        with cols_vid[i]:
-            current_val = st.session_state.taiji_data[idx]["video_urls"][i] if i < len(st.session_state.taiji_data[idx]["video_urls"]) else ""
-            new_urls.append(st.text_input(f"影片 {i+1}", value=current_val, key=f"ind_url_{idx}_{i}"))
+        current_val = st.session_state.taiji_data[idx]["video_urls"][i] if i < len(st.session_state.taiji_data[idx]["video_urls"]) else ""
+        url_input = st.text_input(f"影片網址 {i+1}", value=current_val, key=f"ind_url_{idx}_{i}")
+        new_urls.append(url_input)
     
     new_lyrics = st.text_area("輸入完整套路內容（一行一招）：", value=st.session_state.taiji_data[idx]["lyrics"], height=300, key=f"input_lyrics_{idx}")
     
