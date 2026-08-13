@@ -148,43 +148,61 @@ with col_btn2:
 
 st.write("")
 
+# === [核心修正區] 全覆蓋讀取詞庫函式 ===
 @st.cache_data
 def load_and_merge_data():
-    universal_df = pd.DataFrame(columns=["word", "trans", "kk", "level"])
-    if os.path.exists("words_universal_通用庫.csv"):
-        universal_df = pd.read_csv("words_universal_通用庫.csv")
+    """
+    全覆蓋讀取模式：
+    1. 自動搜尋所有 words_*.csv 檔案。
+    2. 強制處理 UTF-8-SIG 編碼，解決亂碼與讀取不到的問題。
+    3. 清除欄位空白、確保欄位存在、並去除重複。
+    """
+    expected_cols = ["word", "trans", "kk", "level"]
+    all_data = []
     
-    all_level_files = glob.glob("words_level*.csv")
-    df_list = []
+    # 搜尋所有 words_ 開頭的檔案
+    all_files = glob.glob("words_*.csv")
     
-    for f in all_level_files:
+    for f in all_files:
         try:
-            df_list.append(pd.read_csv(f))
-        except:
-            pass
+            # 加入 encoding='utf-8-sig' 處理 BOM 檔頭問題
+            df = pd.read_csv(f, encoding='utf-8-sig')
             
-    if df_list:
-        combined_df = pd.concat(df_list, ignore_index=True)
-    else:
-        combined_df = pd.DataFrame(columns=["word", "trans", "kk", "level"])
-        
-    final_df = pd.concat([combined_df, universal_df], ignore_index=True)
-    
-    if not final_df.empty and "word" in final_df.columns:
+            # 清除標題列的前後空白
+            df.columns = df.columns.str.strip()
+            
+            # 確保欄位存在，若檔案缺欄位則補空值
+            for col in expected_cols:
+                if col not in df.columns:
+                    df[col] = ""
+            
+            all_data.append(df[expected_cols])
+        except Exception as e:
+            st.warning(f"無法讀取檔案 {f}: {e}")
+            
+    if all_data:
+        final_df = pd.concat(all_data, ignore_index=True)
+        # 關鍵：這裡確保讀進來的單字庫是乾淨的
+        final_df = final_df.dropna(subset=["word"])
         final_df = final_df.drop_duplicates(subset=["word"], keep='last')
-        
-    return final_df
+        return final_df
+    else:
+        return pd.DataFrame(columns=expected_cols)
 
+# 執行載入
 df = load_and_merge_data()
 
+# 建立字典供查詢使用
 word_dict = {}
 if not df.empty and "word" in df.columns:
     for _, row in df.iterrows():
+        # 清除單字的前後空白並轉小寫，確保比對精準
         w_str = str(row['word']).strip().lower()
-        trans_str = str(row['trans']) if 'trans' in df.columns and pd.notna(row['trans']) else ""
-        kk_str = str(row['kk']) if 'kk' in df.columns and pd.notna(row['kk']) else ""
+        trans_str = str(row['trans']) if pd.notna(row['trans']) else ""
+        kk_str = str(row['kk']) if pd.notna(row['kk']) else ""
         word_dict[w_str] = {"trans": trans_str, "kk": kk_str}
 
+# === [頁面邏輯] ===
 if "page_names" not in st.session_state:
     st.session_state.page_names = {
         p: f"第 {p} 頁 (曲目 {(p-1)*10 + 1} ~ {p*10})" for p in range(1, 6)
