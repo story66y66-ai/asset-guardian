@@ -361,7 +361,8 @@ for tab_idx, tab in enumerate(tabs):
             user_input_text = st.text_area(
                 "輸入文字或歌詞：",
                 value=st.session_state[text_key],
-                key=f"textarea_{absolute_idx}"
+                key=f"textarea_{absolute_idx}",
+                height=580
             )
             st.session_state[text_key] = user_input_text
 
@@ -427,7 +428,6 @@ for tab_idx, tab in enumerate(tabs):
                 st.markdown(f"---")
                 st.markdown(f"<div class='sentence-display'>第 {line_idx + 1} 句原句：<br>✨ {eng_sentence}</div>", unsafe_allow_html=True)
                 
-                # 調整欄位比例：加入正常語音、0.4倍超慢速、輸入框、清除按鈕
                 cols = st.columns([1.1, 1.4, 3.5, 1])
                 with cols[0]:
                     if st.button(f"🔊 聽發音", key=f"line_audio_{absolute_idx}_{line_idx}"):
@@ -440,7 +440,6 @@ for tab_idx, tab in enumerate(tabs):
                             st.error(f"語音錯誤：{e}")
                             
                 with cols[1]:
-                    # 0.4倍超慢速按鈕（透過瀏覽器語音合成技術支援精確 0.4 倍速）
                     clean_sentence = re.sub(r'[\(\（].*?[\)\）]', '', eng_sentence).strip()
                     safe_sentence_js = clean_sentence.replace("'", "\\'")
                     
