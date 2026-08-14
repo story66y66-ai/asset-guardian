@@ -15,7 +15,6 @@ st.markdown("""
     <style>
     [data-testid="stSidebar"] { font-size: 28px !important; }
     [data-testid="stSidebar"] div, [data-testid="stSidebar"] a { font-size: 28px !important; }
-    .red-word { color: #ff2b2b !important; font-weight: bold !important; }
     
     .stTextInput input { 
         font-size: 22px !important; 
@@ -46,46 +45,19 @@ st.markdown("""
     }
 
     .yt-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #28a745;
-        color: white !important;
-        padding: 10px 20px;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: bold;
-        font-size: 20px;
-        border: none;
-        width: 100%;
+        display: inline-flex; align-items: center; justify-content: center;
+        background-color: #28a745; color: white !important; padding: 10px 20px;
+        border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 20px; border: none; width: 100%;
     }
     .notebook-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #4285F4;
-        color: white !important;
-        padding: 10px 20px;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: bold;
-        font-size: 20px;
-        border: none;
-        width: 100%;
+        display: inline-flex; align-items: center; justify-content: center;
+        background-color: #4285F4; color: white !important; padding: 10px 20px;
+        border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 20px; border: none; width: 100%;
     }
     .translate-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #1a73e8;
-        color: white !important;
-        padding: 6px 14px;
-        border-radius: 6px;
-        text-decoration: none;
-        font-weight: bold;
-        font-size: 16px;
-        border: none;
-        width: 100%;
+        display: inline-flex; align-items: center; justify-content: center;
+        background-color: #1a73e8; color: white !important; padding: 6px 14px;
+        border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 16px; border: none; width: 100%;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -118,8 +90,8 @@ def load_and_merge_data():
                 if col not in df.columns:
                     df[col] = ""
             all_data.append(df[expected_cols])
-        except Exception as e:
-            st.warning(f"無法讀取檔案 {f}: {e}")
+        except Exception:
+            continue
             
     if all_data:
         final_df = pd.concat(all_data, ignore_index=True)
@@ -141,9 +113,7 @@ if not df.empty and "word" in df.columns:
 
 # === 頁面與曲目狀態初始化 ===
 if "page_names" not in st.session_state:
-    st.session_state.page_names = {
-        p: f"第 {p} 頁 (曲目 {(p-1)*10 + 1} ~ {p*10})" for p in range(1, 6)
-    }
+    st.session_state.page_names = {p: f"第 {p} 頁 (曲目 {(p-1)*10 + 1} ~ {p*10})" for p in range(1, 6)}
 
 if "playlist_names" not in st.session_state:
     st.session_state.playlist_names = {idx: f"曲目 {idx}" for idx in range(1, 51)}
@@ -154,9 +124,10 @@ for idx in range(1, 51):
     if f"my_text_input_{idx}" not in st.session_state:
         st.session_state[f"my_text_input_{idx}"] = ""
 
+# 修正：精準從 CSV 讀回歌詞與標題
 if os.path.exists("playlist_heart_歌曲結連庫.csv"):
     try:
-        saved_df = pd.read_csv("playlist_heart_歌曲結連庫.csv")
+        saved_df = pd.read_csv("playlist_heart_歌曲結連庫.csv", encoding='utf-8-sig')
         for _, row in saved_df.iterrows():
             idx_val = int(row['id'])
             if 1 <= idx_val <= 50:
@@ -164,7 +135,7 @@ if os.path.exists("playlist_heart_歌曲結連庫.csv"):
                     st.session_state[f"yt_input_url_{idx_val}"] = str(row['url'])
                 if pd.notna(row.get('title')):
                     st.session_state.playlist_names[idx_val] = str(row['title'])
-                if 'lyrics' in saved_df.columns and pd.notna(row.get('lyrics')):
+                if pd.notna(row.get('lyrics')):
                     st.session_state[f"my_text_input_{idx_val}"] = str(row['lyrics'])
     except Exception:
         pass
@@ -268,16 +239,15 @@ for tab_idx, tab in enumerate(tabs):
 
         # 右側：歌詞文字框與朗讀區
         with right_col:
-            user_input_text = st.session_state[text_key]
-            
             title_col, btn_col = st.columns([3, 1.4], vertical_alignment="center")
             with title_col:
                 st.subheader("✍️ 歌詞文字框與朗讀練習：")
             with btn_col:
-                encoded_text = urllib.parse.quote(user_input_text)
+                encoded_text = urllib.parse.quote(st.session_state[text_key])
                 translate_url = f"https://translate.google.com/?hl=zh-TW&sl=en&tl=zh-TW&text={encoded_text}&op=translate"
                 st.markdown(f'<a href="{translate_url}" target="_blank" class="translate-button">🌐 Google 翻譯</a>', unsafe_allow_html=True)
 
+            # 修正：讓文字框穩定繫結 session_state
             user_input_text = st.text_area(
                 "輸入文字或歌詞：",
                 value=st.session_state[text_key],
@@ -332,7 +302,6 @@ for tab_idx, tab in enumerate(tabs):
         
         lines = [line.strip() for line in user_input_text.split('\n') if line.strip()]
         
-        # 自動配對英文句與下方中文句
         pairs = []
         i = 0
         while i < len(lines):
