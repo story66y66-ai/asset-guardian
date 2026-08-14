@@ -6,28 +6,28 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定
+# CSS 樣式設定 (已將套路相關字體大小改為原本的一半)
 st.markdown("""
     <style>
     .stButton button { 
-        height: 90px !important; 
+        height: 70px !important; 
         border-radius: 12px !important; 
         width: 100% !important; 
     }
     .stButton button p { 
-        font-size: 36px !important; 
+        font-size: 24px !important; 
         font-weight: bold !important; 
     }
 
     /* 專屬儲存按鈕：螢光綠文字與發光邊框 */
     div.save-btn-wrapper button {
-        border: 5px solid #00ff66 !important;
+        border: 4px solid #00ff66 !important;
         background-color: rgba(0, 255, 102, 0.05) !important;
-        height: 110px !important;
+        height: 90px !important;
         box-shadow: 0px 0px 15px rgba(0, 255, 102, 0.3) !important;
     }
     div.save-btn-wrapper button p {
-        font-size: 45px !important;
+        font-size: 32px !important;
         font-weight: 900 !important;
         color: #00ff66 !important;
         text-shadow: 0px 0px 10px rgba(0, 255, 102, 0.5) !important;
@@ -36,15 +36,18 @@ st.markdown("""
         background-color: rgba(0, 255, 102, 0.15) !important;
     }
 
-    .stTextArea textarea { font-size: 40px !important; height: 450px !important; }
-    .stTextInput input { font-size: 50px !important; height: 85px !important; padding: 10px !important; color: #ffffff !important; font-weight: bold !important; }
-    .stTextInput > div > div { min-height: 90px !important; align-items: center !important; }
-    h1 { font-size: 70px !important; }
-    h2, h3 { font-size: 40px !important; font-weight: bold !important; margin-bottom: 15px !important; }
-    .sentence-display { font-size: 80px !important; font-weight: bold !important; color: #ffffff !important; padding: 20px 0 !important; line-height: 1.4 !important; }
-    .custom-input-label { font-size: 60px !important; font-weight: bold !important; color: #ffcc00 !important; margin-top: 20px !important; margin-bottom: 10px !important; line-height: 1.2 !important; }
-    .result-success { font-size: 50px !important; font-weight: bold !important; color: #00ff66 !important; background-color: rgba(0, 255, 102, 0.1); padding: 15px; border-radius: 10px; margin-top: 15px; }
-    .result-error { font-size: 45px !important; font-weight: bold !important; color: #ff3333 !important; background-color: rgba(255, 51, 51, 0.1); padding: 15px; border-radius: 10px; margin-top: 15px; line-height: 1.3; }
+    .stTextArea textarea { font-size: 24px !important; height: 400px !important; }
+    .stTextInput input { font-size: 28px !important; height: 60px !important; padding: 10px !important; color: #ffffff !important; font-weight: bold !important; }
+    .stTextInput > div > div { min-height: 65px !important; align-items: center !important; }
+    h1 { font-size: 50px !important; }
+    h2, h3 { font-size: 30px !important; font-weight: bold !important; margin-bottom: 15px !important; }
+    
+    /* 縮小一倍的套路顯示與標籤字體 */
+    .sentence-display { font-size: 40px !important; font-weight: bold !important; color: #ffffff !important; padding: 15px 0 !important; line-height: 1.4 !important; }
+    .custom-input-label { font-size: 30px !important; font-weight: bold !important; color: #ffcc00 !important; margin-top: 15px !important; margin-bottom: 8px !important; line-height: 1.2 !important; }
+    
+    .result-success { font-size: 28px !important; font-weight: bold !important; color: #00ff66 !important; background-color: rgba(0, 255, 102, 0.1); padding: 12px; border-radius: 10px; margin-top: 12px; }
+    .result-error { font-size: 26px !important; font-weight: bold !important; color: #ff3333 !important; background-color: rgba(255, 51, 51, 0.1); padding: 12px; border-radius: 10px; margin-top: 12px; line-height: 1.3; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -109,7 +112,6 @@ with st.container():
     
     st.markdown("🎥 參考影片（最多 5 部，請直接貼上網址）：")
     new_urls = []
-    # 改為上下獨立一列一列排列，寬度拉滿，網址再長也不怕擠壓
     for i in range(5):
         current_val = st.session_state.taiji_data[idx]["video_urls"][i] if i < len(st.session_state.taiji_data[idx]["video_urls"]) else ""
         url_input = st.text_input(f"影片網址 {i+1}", value=current_val, key=f"ind_url_{idx}_{i}")
