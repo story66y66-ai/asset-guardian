@@ -37,12 +37,14 @@ st.markdown("""
     }
 
     .stTextArea textarea { font-size: 24px !important; height: 400px !important; }
-    .stTextInput input { font-size: 28px !important; height: 60px !important; padding: 10px !important; color: #ffffff !important; font-weight: bold !important; }
-    .stTextInput > div > div { min-height: 65px !important; align-items: center !important; }
+    
+    /* 調整輸入框高度與字體大小相符，減少上下空白 */
+    .stTextInput input { font-size: 28px !important; height: 42px !important; padding: 4px 10px !important; color: #ffffff !important; font-weight: bold !important; }
+    .stTextInput > div > div { min-height: 45px !important; align-items: center !important; }
+    
     h1 { font-size: 50px !important; }
     h2, h3 { font-size: 30px !important; font-weight: bold !important; margin-bottom: 15px !important; }
     
-    /* 縮小招式間距與對應文字 */
     .sentence-display { font-size: 27px !important; font-weight: bold !important; color: #ffffff !important; padding: 4px 0 !important; line-height: 1.3 !important; }
     .custom-input-label { font-size: 20px !important; font-weight: bold !important; color: #ffcc00 !important; margin-top: 4px !important; margin-bottom: 2px !important; line-height: 1.2 !important; }
     
@@ -105,7 +107,7 @@ st.markdown("### 🔍 請點選要練習的套路：")
 row1, row2 = st.columns(5), st.columns(5)
 for i in range(1, 11):
     with (row1 + row2)[i-1]:
-        if st.button(f"{i}. {st.session_state.taiji_data[i]['title']}", key=f"nav_btn_{i} wanita"):
+        if st.button(f"{i}. {st.session_state.taiji_data[i]['title']}", key=f"nav_btn_{i}"):
             st.session_state.selected_idx = i
 
 idx = st.session_state.selected_idx
