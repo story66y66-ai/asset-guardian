@@ -6,7 +6,7 @@ import io
 
 st.set_page_config(layout="wide")
 
-# CSS 樣式設定 (已將套路相關字體大小改為原本的一半)
+# CSS 樣式設定
 st.markdown("""
     <style>
     .stButton button { 
@@ -42,12 +42,12 @@ st.markdown("""
     h1 { font-size: 50px !important; }
     h2, h3 { font-size: 30px !important; font-weight: bold !important; margin-bottom: 15px !important; }
     
-    /* 縮小一倍的套路顯示與標籤字體 */
-    .sentence-display { font-size: 40px !important; font-weight: bold !important; color: #ffffff !important; padding: 15px 0 !important; line-height: 1.4 !important; }
-    .custom-input-label { font-size: 30px !important; font-weight: bold !important; color: #ffcc00 !important; margin-top: 15px !important; margin-bottom: 8px !important; line-height: 1.2 !important; }
+    /* 調整後縮小約 1/3 的區塊字體 */
+    .sentence-display { font-size: 27px !important; font-weight: bold !important; color: #ffffff !important; padding: 10px 0 !important; line-height: 1.4 !important; }
+    .custom-input-label { font-size: 20px !important; font-weight: bold !important; color: #ffcc00 !important; margin-top: 10px !important; margin-bottom: 5px !important; line-height: 1.2 !important; }
     
-    .result-success { font-size: 28px !important; font-weight: bold !important; color: #00ff66 !important; background-color: rgba(0, 255, 102, 0.1); padding: 12px; border-radius: 10px; margin-top: 12px; }
-    .result-error { font-size: 26px !important; font-weight: bold !important; color: #ff3333 !important; background-color: rgba(255, 51, 51, 0.1); padding: 12px; border-radius: 10px; margin-top: 12px; line-height: 1.3; }
+    .result-success { font-size: 20px !important; font-weight: bold !important; color: #00ff66 !important; background-color: rgba(0, 255, 102, 0.1); padding: 8px; border-radius: 6px; margin-top: 8px; }
+    .result-error { font-size: 20px !important; font-weight: bold !important; color: #ff3333 !important; background-color: rgba(255, 51, 51, 0.1); padding: 8px; border-radius: 6px; margin-top: 8px; line-height: 1.3; }
     </style>
     """, unsafe_allow_html=True)
 
