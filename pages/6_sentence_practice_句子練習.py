@@ -16,6 +16,7 @@ st.markdown("""
     [data-testid="stSidebar"] { font-size: 28px !important; }
     [data-testid="stSidebar"] div, [data-testid="stSidebar"] a { font-size: 28px !important; }
     
+    /* 調整文字輸入框 (st.text_input) 的字體 */
     .stTextInput input { 
         font-size: 22px !important; 
         color: #000000 !important; 
@@ -28,6 +29,21 @@ st.markdown("""
         color: #000000 !important;
         font-weight: bold !important;
         height: 50px !important;
+    }
+
+    /* 調整多行文字框 (st.text_area) 內文字的大小與粗細 */
+    .stTextArea textarea {
+        font-size: 22px !important;
+        color: #ffffff !important;
+        font-weight: bold !important;
+        line-height: 1.5 !important;
+    }
+
+    div[data-baseweb="base-input"] textarea {
+        font-size: 22px !important;
+        color: #ffffff !important;
+        font-weight: bold !important;
+        line-height: 1.5 !important;
     }
     
     .sentence-display {
@@ -124,7 +140,6 @@ for idx in range(1, 51):
     if f"my_text_input_{idx}" not in st.session_state:
         st.session_state[f"my_text_input_{idx}"] = ""
 
-# 修正：精準從 CSV 讀回歌詞與標題
 if os.path.exists("playlist_heart_歌曲結連庫.csv"):
     try:
         saved_df = pd.read_csv("playlist_heart_歌曲結連庫.csv", encoding='utf-8-sig')
@@ -247,7 +262,6 @@ for tab_idx, tab in enumerate(tabs):
                 translate_url = f"https://translate.google.com/?hl=zh-TW&sl=en&tl=zh-TW&text={encoded_text}&op=translate"
                 st.markdown(f'<a href="{translate_url}" target="_blank" class="translate-button">🌐 Google 翻譯</a>', unsafe_allow_html=True)
 
-            # 修正：讓文字框穩定繫結 session_state
             user_input_text = st.text_area(
                 "輸入文字或歌詞：",
                 value=st.session_state[text_key],
@@ -335,7 +349,7 @@ for tab_idx, tab in enumerate(tabs):
                             st.error(f"語音錯誤：{e}")
                             
                 with cols[1]:
-                    clean_sentence = re.sub(r'[\(\（].*?[\)\）]', '', eng_sentence).strip()
+                    clean_sentence = re.sub(r'[\(\„\“\“\”\‘\’\(\（].*?[\)\）\”\‘\’]', '', eng_sentence).strip()
                     safe_sentence_js = clean_sentence.replace("'", "\\'")
                     components.html(f"""
                         <button onclick="
