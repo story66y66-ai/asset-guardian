@@ -42,12 +42,18 @@ st.markdown("""
     h1 { font-size: 50px !important; }
     h2, h3 { font-size: 30px !important; font-weight: bold !important; margin-bottom: 15px !important; }
     
-    /* 調整後縮小約 1/3 的區塊字體 */
-    .sentence-display { font-size: 27px !important; font-weight: bold !important; color: #ffffff !important; padding: 10px 0 !important; line-height: 1.4 !important; }
-    .custom-input-label { font-size: 20px !important; font-weight: bold !important; color: #ffcc00 !important; margin-top: 10px !important; margin-bottom: 5px !important; line-height: 1.2 !important; }
+    /* 縮小招式間距與對應文字 */
+    .sentence-display { font-size: 27px !important; font-weight: bold !important; color: #ffffff !important; padding: 4px 0 !important; line-height: 1.3 !important; }
+    .custom-input-label { font-size: 20px !important; font-weight: bold !important; color: #ffcc00 !important; margin-top: 4px !important; margin-bottom: 2px !important; line-height: 1.2 !important; }
     
-    .result-success { font-size: 20px !important; font-weight: bold !important; color: #00ff66 !important; background-color: rgba(0, 255, 102, 0.1); padding: 8px; border-radius: 6px; margin-top: 8px; }
-    .result-error { font-size: 20px !important; font-weight: bold !important; color: #ff3333 !important; background-color: rgba(255, 51, 51, 0.1); padding: 8px; border-radius: 6px; margin-top: 8px; line-height: 1.3; }
+    .result-success { font-size: 20px !important; font-weight: bold !important; color: #00ff66 !important; background-color: rgba(0, 255, 102, 0.1); padding: 6px; border-radius: 6px; margin-top: 4px; }
+    .result-error { font-size: 20px !important; font-weight: bold !important; color: #ff3333 !important; background-color: rgba(255, 51, 51, 0.1); padding: 6px; border-radius: 6px; margin-top: 4px; line-height: 1.3; }
+    
+    /* 縮小分隔線上下留白 */
+    hr {
+        margin-top: 10px !important;
+        margin-bottom: 10px !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -99,7 +105,7 @@ st.markdown("### 🔍 請點選要練習的套路：")
 row1, row2 = st.columns(5), st.columns(5)
 for i in range(1, 11):
     with (row1 + row2)[i-1]:
-        if st.button(f"{i}. {st.session_state.taiji_data[i]['title']}", key=f"nav_btn_{i}"):
+        if st.button(f"{i}. {st.session_state.taiji_data[i]['title']}", key=f"nav_btn_{i} wanita"):
             st.session_state.selected_idx = i
 
 idx = st.session_state.selected_idx
