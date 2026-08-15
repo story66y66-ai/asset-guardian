@@ -384,16 +384,16 @@ for tab_idx, tab in enumerate(tabs):
                     st.button(f"🗑️ 清除", key=f"clear_line_{absolute_idx}_{line_idx}", on_click=make_clear_callback(ans_key))
                 
                 if user_answer.strip():
-                    bracket_matches = re.findall(r'[\(\（](.*?)[\)\）]', eng_sentence)
-                    compare_target = bracket_matches[0] if bracket_matches else clean_sentence
+                    # 直接拿掉整句中的括號與中文，只保留純英文單字與空格
+                    clean_target = re.sub(r'[\(\（].*?[\)\）]', '', eng_sentence).strip()
                     
-                    target_letters = "".join(re.findall(r'[A-Za-z0-9]', compare_target)).lower()
-                    user_letters = "".join(re.findall(r'[A-Za-z0-9]', user_answer)).lower()
+                    target_letters = "".join(re.findall(r'[A-Za-z ]', clean_target)).lower()
+                    user_letters = "".join(re.findall(r'[A-Za-z ]', user_answer)).lower()
                     
                     if user_letters and user_letters == target_letters:
                         st.markdown(f"<span style='font-size: 22px; color: #28a745; font-weight: bold;'>🎉 答對了！英文拼寫正確！</span>", unsafe_allow_html=True)
                     else:
-                        st.markdown(f"<span style='font-size: 22px; color: #ff4b4b; font-weight: bold;'>❌ 拼寫有誤，再試一次！💡 提示：{compare_target}</span>", unsafe_allow_html=True)
+                        st.markdown(f"<span style='font-size: 22px; color: #ff4b4b; font-weight: bold;'>❌ 拼寫有誤，再試一次！💡 提示：{clean_target}</span>", unsafe_allow_html=True)
         else:
             st.info("💡 請在上方歌詞框輸入內容（英文與中文交替換行），下方就會自動產生對應的測驗與中文提示囉！")
 
@@ -421,3 +421,5 @@ for tab_idx, tab in enumerate(tabs):
                             w_fp = io.BytesIO()
                             w_tts.write_to_fp(w_fp)
                             st.audio(w_fp, autoplay=True)
+
+                    
