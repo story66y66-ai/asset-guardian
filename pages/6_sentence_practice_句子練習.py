@@ -410,11 +410,15 @@ for tab_idx, tab in enumerate(tabs):
 
         st.divider()
 
-        # 單字解析區
+        # 單字解析區 - 修正處
         if user_input_text.strip():
             st.subheader("🔍 歌詞單字解析、KK音標與個別發音：")
-            words_in_text = re.findall(r'\b[A-Za-z]+\b', user_input_text)
-            unique_words = sorted(list(set(words_in_text)), key=lambda x: words_in_text.index(x))
+            # 修正解析邏輯，改用非字母符號拆分，避免抓不到特殊符號旁的單字
+            words_in_text = re.findall(r"[a-zA-Z]+(?:'[a-zA-Z]+)?", user_input_text)
+            unique_words = []
+            for w in words_in_text:
+                if w.lower() not in [x.lower() for x in unique_words]:
+                    unique_words.append(w)
             
             if unique_words:
                 for w_idx, w in enumerate(unique_words):
