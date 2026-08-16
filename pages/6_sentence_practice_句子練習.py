@@ -228,7 +228,7 @@ for tab_idx, tab in enumerate(tabs):
             )
             st.session_state[url_key] = user_yt_link
 
-            # 💾 儲存按鈕（明確加入點擊觸發與狀態儲存）
+            # 💾 儲存按鈕
             if st.button(f"💾 儲存【曲目 {absolute_idx}】的資料", key=f"save_url_{absolute_idx}", use_container_width=True):
                 update_list_all = []
                 for idx_sub in range(1, 51):
@@ -324,7 +324,7 @@ for tab_idx, tab in enumerate(tabs):
 
         st.divider()
 
-        # === 逐句英文輸入測驗區（含中文自動提示與清除鍵） ===
+        # === 逐句英文輸入測驗區（恢復上下分隔線與寬鬆間距） ===
         st.subheader("✍️ 逐句英文輸入測驗與朗讀練習：")
         
         lines = [line.strip() for line in user_input_text.split('\n') if line.strip()]
@@ -344,7 +344,8 @@ for tab_idx, tab in enumerate(tabs):
         
         if pairs:
             for line_idx, (eng_sentence, zh_hint) in enumerate(pairs):
-                st.markdown(f"---")
+                # 恢復每個句子之間的清晰分隔線與留白
+                st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown(f"<div class='sentence-display'>第 {line_idx + 1} 句原句：<br>✨ {eng_sentence}</div>", unsafe_allow_html=True)
                 
                 if zh_hint:
@@ -405,15 +406,16 @@ for tab_idx, tab in enumerate(tabs):
                         st.markdown(f"<span style='font-size: 22px; color: #28a745; font-weight: bold;'>🎉 答對了！英文拼寫正確！</span>", unsafe_allow_html=True)
                     else:
                         st.markdown(f"<span style='font-size: 22px; color: #ff4b4b; font-weight: bold;'>❌ 拼寫有誤，再試一次！💡 提示：{clean_target}</span>", unsafe_allow_html=True)
+                
+                st.markdown(f"---")
         else:
             st.info("💡 請在上方歌詞框輸入內容（英文與中文交替換行），下方就會自動產生對應的測驗與中文提示囉！")
 
         st.divider()
 
-        # 單字解析區 - 修正處
+        # 單字解析區
         if user_input_text.strip():
             st.subheader("🔍 歌詞單字解析、KK音標與個別發音：")
-            # 修正解析邏輯，改用非字母符號拆分，避免抓不到特殊符號旁的單字
             words_in_text = re.findall(r"[a-zA-Z]+(?:'[a-zA-Z]+)?", user_input_text)
             unique_words = []
             for w in words_in_text:
