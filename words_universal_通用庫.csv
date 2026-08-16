@@ -1,15 +1,21 @@
-word, trans, kk, level
-is, 是, /ɪz/, universal
-are, 是, /ɑr/, universal
-does, 做, /dʌz/, universal
-dreams, 夢想, /drimz/, universal
-spaces, 空間, /ˈspesɪz/, universal
-Scarborough, 史卡波羅 (地名), /ˈskɑr.bə.roʊ/, universal
-going, 進行中 / 去 / 離開, /ˈɡoʊ.ɪŋ/, universal
-Parsley, 洋香菜 / 巴西里, /ˈpɑr.sli/, universal
-sage, 鼠尾草 / 聖人, /seɪdʒ/, universal
-rosemary, 迷迭香, /ˈroʊz.mer.i/, universal
-thyme, 百里香, /taɪm/, universal
-lives, 生活 / 居住, /lɪvz/, universal
-was, 是 (am/is 的過去式), /wʌz/, universal
-a, 一個 (不定冠詞), /ə/, universal
+"word","trans","kk","level"
+"is","是","/ɪz/","universal"
+"are","是","/ɑr/","universal"
+"does","做","/dʌz/","universal"
+"dreams","夢想","/drimz/","universal"
+"spaces","空間","/ˈspesɪz/","universal"
+"Scarborough","史卡波羅 (地名)","/ˈskɑr.bə.roʊ/","universal"
+"going","進行中 / 去 / 離開","/ˈɡoʊ.ɪŋ/","universal"
+"Parsley","洋香菜 / 巴西里","/ˈpɑr.sli/","universal"
+"sage","鼠尾草 / 聖人","/seɪdʒ/","universal"
+"rosemary","迷迭香","/ˈroʊz.mer.i/","universal"
+"thyme","百里香","/taɪm/","universal"
+"lives","生活 / 居住","/lɪvz/","universal"
+"was","是 (am/is 的過去式)","/wʌz/","universal"
+"a","一個 (不定冠詞)","/ə/","universal"
+"were","是 (are 的過去式)","/wɜr/","universal"
+"times","次數 / 時光 / 時代","/taɪmz/","universal"
+"wondered","想知道 / 驚嘆 (wonder 的過去式)","/ˈwʌn.dərd/","universal"
+"gone","去過 / 離去 (go 的過去分詞)","/ɡɔn/","universal"
+"lost","迷失的 / 遺失的 (lose 的過去式與過去分詞)","/lɔst/","universal"
+"songs","歌曲 (song 的複數)","/sɔŋz/","universal"
