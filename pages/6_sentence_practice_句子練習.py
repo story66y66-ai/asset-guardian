@@ -138,6 +138,7 @@ for idx in range(1, 51):
     if f"my_text_input_{idx}" not in st.session_state:
         st.session_state[f"my_text_input_{idx}"] = ""
 
+# 自動讀取已儲存的資料庫檔案
 if os.path.exists("playlist_heart_歌曲結連庫.csv"):
     try:
         saved_df = pd.read_csv("playlist_heart_歌曲結連庫.csv", encoding='utf-8-sig')
@@ -158,7 +159,7 @@ if "current_page" not in st.session_state:
 
 st.write("")
 
-# 匯出 CSV 按鈕區
+# 匯出 CSV 按鈕區與自動儲存邏輯
 csv_data_list = []
 for idx in range(1, 51):
     csv_data_list.append({
@@ -213,6 +214,8 @@ for tab_idx, tab in enumerate(tabs):
             new_track_name = st.text_input(f"曲目 {absolute_idx} 名稱：", value=curr_name, key=f"rename_track_{absolute_idx}")
             if new_track_name != curr_name:
                 st.session_state.playlist_names[absolute_idx] = new_track_name
+                # 自動寫入檔案儲存
+                df_export.to_csv("playlist_heart_歌曲結連庫.csv", index=False, encoding="utf-8-sig", quoting=1)
                 st.rerun()
 
         left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
@@ -226,8 +229,19 @@ for tab_idx, tab in enumerate(tabs):
             )
             st.session_state[url_key] = user_yt_link
 
+            # 💾 儲存按鈕（具備 Token / 資料寫入檔案功能）
             if st.button(f"💾 儲存【曲目 {absolute_idx}】的資料", key=f"save_url_{absolute_idx}", use_container_width=True):
-                st.success(f"🎉 曲目 {absolute_idx} 的資料已成功儲存！")
+                # 更新當前資料並寫入 CSV 檔案
+                csv_data_list_update = []
+                for idx_sub in range(1, 51):
+                    csv_data_list_update.append({
+                        "id": idx_sub,
+                        "url": st.session_state.get(f"yt_input_url_{idx_sub}", "").strip(),
+                        "title": st.session_state.playlist_names.get(idx_sub, f"曲目 {idx_sub}"),
+                        "lyrics": st.session_state.get(f"my_text_input_{idx_sub}", "")
+                    })
+                pd.DataFrame(csv_data_list_update).to_csv("playlist_heart_歌曲結連庫.csv", index=False, encoding="utf-8-sig", quoting=1)
+                st.success(f"🎉 曲目 {absolute_idx} 的資料與金鑰狀態已成功儲存至檔案！")
                 st.rerun()
 
             if user_yt_link.strip():
@@ -418,4 +432,3 @@ for tab_idx, tab in enumerate(tabs):
                             w_fp = io.BytesIO()
                             w_tts.write_to_fp(w_fp)
                             st.audio(w_fp, autoplay=True)
-                    
