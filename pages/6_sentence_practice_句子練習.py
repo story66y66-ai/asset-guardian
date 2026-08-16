@@ -228,7 +228,7 @@ for tab_idx, tab in enumerate(tabs):
             )
             st.session_state[url_key] = user_yt_link
 
-            # 💾 儲存按鈕（本地端暫存）
+            # 💾 儲存按鈕（明確加入點擊觸發與狀態儲存）
             if st.button(f"💾 儲存【曲目 {absolute_idx}】的資料", key=f"save_url_{absolute_idx}", use_container_width=True):
                 update_list_all = []
                 for idx_sub in range(1, 51):
@@ -238,8 +238,10 @@ for tab_idx, tab in enumerate(tabs):
                         "title": st.session_state.playlist_names.get(idx_sub, f"曲目 {idx_sub}"),
                         "lyrics": st.session_state.get(f"my_text_input_{idx_sub}", "")
                     })
-                pd.DataFrame(update_list_all).to_csv("playlist_heart_歌曲結連庫.csv", index=False, encoding="utf-8-sig", quoting=1)
-                st.success(f"🎉 曲目 {absolute_idx} 的資料已成功儲存！")
+                df_to_save = pd.DataFrame(update_list_all)
+                df_to_save.to_csv("playlist_heart_歌曲結連庫.csv", index=False, encoding="utf-8-sig", quoting=1)
+                st.success(f"🎉 【曲目 {absolute_idx}】的資料已成功儲存完成！")
+                st.balloons()
                 st.rerun()
 
             if user_yt_link.strip():
