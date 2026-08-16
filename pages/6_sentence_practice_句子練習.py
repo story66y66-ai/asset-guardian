@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import glob
 import os
+import base64
+import requests
 from gtts import gTTS
 import io
 import re
@@ -75,6 +77,50 @@ st.markdown("""
     }
     </style>
     """, unsafe_allow_html=True)
+
+# === GitHub API 自動同步上傳函式 ===
+def save_to_github_via_api(df_to_upload, commit_message="Update playlist_heart_歌曲結連庫.csv via Streamlit"):
+    try:
+        if "GITHUB_TOKEN" not in st.secrets or "GITHUB_REPO" not in st.secrets:
+            return False, "未設定 GITHUB_TOKEN 或 GITHUB_REPO 密鑰。"
+        
+        token = st.secrets["GITHUB_TOKEN"]
+        repo = st.secrets["GITHUB_REPO"]
+        file_path = "playlist_heart_歌曲結連庫.csv"
+        
+        url = f"https://api.github.com/repos/{repo}/contents/{file_path}"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json"
+        }
+        
+        # 1. 取得檔案目前的 SHA (GitHub API 更新檔案必須帶有原本的 sha)
+        res = requests.get(url, headers=headers)
+        sha = None
+        if res.status_code == 200:
+            sha = res.json().get("sha")
+            
+        # 2. 將 DataFrame 轉成 CSV 字串並編碼成 Base64
+        csv_str = df_to_upload.to_csv(index=False, encoding="utf-8-sig", quoting=1)
+        content_encoded = base64.b64encode(csv_str.encode("utf-8-sig")).decode("utf-8")
+        
+        # 3. 準備 PUT 請求資料
+        payload = {
+            "message": commit_message,
+            "content": content_encoded,
+            "branch": "main"
+        }
+        if sha:
+            payload["sha"] = sha
+            
+        put_res = requests.put(url, headers=headers, json=payload)
+        if put_res.status_code in [200, 201]:
+            return True, "成功同步至 GitHub！"
+        else:
+            return False, f"GitHub 回應錯誤: {put_res.text}"
+    except Exception as e:
+        return False, str(e)
+
 
 st.title("📖 澄玄大學 - 自訂文字與歌詞語音朗讀工坊")
 
@@ -159,7 +205,7 @@ if "current_page" not in st.session_state:
 
 st.write("")
 
-# 匯出 CSV 按鈕區與自動儲存邏輯
+# 建立匯出 DataFrame
 csv_data_list = []
 for idx in range(1, 51):
     csv_data_list.append({
@@ -214,8 +260,20 @@ for tab_idx, tab in enumerate(tabs):
             new_track_name = st.text_input(f"曲目 {absolute_idx} 名稱：", value=curr_name, key=f"rename_track_{absolute_idx}")
             if new_track_name != curr_name:
                 st.session_state.playlist_names[absolute_idx] = new_track_name
-                # 自動寫入檔案儲存
-                df_export.to_csv("playlist_heart_歌曲結連庫.csv", index=False, encoding="utf-8-sig", quoting=1)
+                # 自動打包並透過 API 存回 GitHub
+                update_list = []
+                for idx_sub in range(1, 51):
+                    update_list.append({
+                        "id": idx_sub,
+                        "url": st.session_state.get(f"yt_input_url_{idx_sub}", "").strip(),
+                        "title": st.session_state.playlist_names.get(idx_sub, f"曲目 {idx_sub}"),
+                        "lyrics": st.session_state.get(f"my_text_input_{idx_sub}", "")
+                    })
+                success, msg = save_to_github_via_api(pd.DataFrame(update_list), f"Update track {absolute_idx} name")
+                if success:
+                    st.success("🎉 曲目名稱修改成功，並已自動同步至 GitHub！")
+                else:
+                    st.warning(f"本地已更新，但 GitHub 同步提示：{msg}")
                 st.rerun()
 
         left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
@@ -229,19 +287,26 @@ for tab_idx, tab in enumerate(tabs):
             )
             st.session_state[url_key] = user_yt_link
 
-            # 💾 儲存按鈕（具備 Token / 資料寫入檔案功能）
+            # 💾 儲存按鈕（透過 Token 自動推送到 GitHub）
             if st.button(f"💾 儲存【曲目 {absolute_idx}】的資料", key=f"save_url_{absolute_idx}", use_container_width=True):
-                # 更新當前資料並寫入 CSV 檔案
-                csv_data_list_update = []
+                update_list_all = []
                 for idx_sub in range(1, 51):
-                    csv_data_list_update.append({
+                    update_list_all.append({
                         "id": idx_sub,
                         "url": st.session_state.get(f"yt_input_url_{idx_sub}", "").strip(),
                         "title": st.session_state.playlist_names.get(idx_sub, f"曲目 {idx_sub}"),
                         "lyrics": st.session_state.get(f"my_text_input_{idx_sub}", "")
                     })
-                pd.DataFrame(csv_data_list_update).to_csv("playlist_heart_歌曲結連庫.csv", index=False, encoding="utf-8-sig", quoting=1)
-                st.success(f"🎉 曲目 {absolute_idx} 的資料與金鑰狀態已成功儲存至檔案！")
+                df_final_update = pd.DataFrame(update_list_all)
+                
+                # 同時寫入本地暫存與 GitHub API
+                df_final_update.to_csv("playlist_heart_歌曲結連庫.csv", index=False, encoding="utf-8-sig", quoting=1)
+                success, msg = save_to_github_via_api(df_final_update, f"Save track {absolute_idx} data via Streamlit")
+                
+                if success:
+                    st.success(f"🎉 曲目 {absolute_idx} 的資料已成功儲存並同步至 GitHub 倉庫！")
+                else:
+                    st.warning(f"⚠️ 本地已儲存，但 GitHub 自動同步失敗：{msg}")
                 st.rerun()
 
             if user_yt_link.strip():
