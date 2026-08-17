@@ -63,21 +63,27 @@ st.title("🥋 澄玄大學 - 太極學院")
 
 # 初始化狀態
 if "taiji_data" not in st.session_state:
-    st.session_state.taiji_data = {i: {"title": f"套路 {i}", "lyrics": "", "video_urls": ["", "", "", "", "",""]} for i in range(1, 11)}
+    st.session_state.taiji_data = {i: {"title": f"套路 {i}", "lyrics": "", "video_urls": ["", "", "", "", "", ""]} for i in range(1, 11)}
 
 if "selected_idx" not in st.session_state:
     st.session_state.selected_idx = 1
 
 TAIJI_CSV_FILE = "taiji_recipes_太極學院.csv"
 
-# 讀取 CSV
+# 讀取 CSV (改用安全的分號 ; 切割網址，避免 YouTube 網址內的逗號或參數干擾)
 if os.path.exists(TAIJI_CSV_FILE):
     try:
         df = pd.read_csv(TAIJI_CSV_FILE, encoding="utf-8-sig")
         for _, row in df.iterrows():
             idx_val = int(row['id'])
             if 1 <= idx_val <= 10:
-                raw_urls = str(row['video_url']).split(',') if pd.notna(row['video_url']) else []
+                raw_url_str = str(row['video_url']) if pd.notna(row['video_url']) else ""
+                # 同時支援分號或逗號切割
+                if ";" in raw_url_str:
+                    raw_urls = raw_url_str.split(';')
+                else:
+                    raw_urls = raw_url_str.split(',')
+                
                 urls = []
                 for i in range(6):
                     if i < len(raw_urls):
@@ -98,7 +104,8 @@ def save_to_csv():
         "id": i, 
         "title": st.session_state.taiji_data[i]['title'], 
         "lyrics": st.session_state.taiji_data[i]['lyrics'], 
-        "video_url": ",".join([url.strip() for url in st.session_state.taiji_data[i]['video_urls']])
+        # 改用分號 ";" 儲存多個網址，徹底解決逗號衝突問題
+        "video_url": ";".join([url.strip() for url in st.session_state.taiji_data[i]['video_urls'] if url.strip()])
     } for i in range(1, 11)])
     df_new.to_csv(TAIJI_CSV_FILE, index=False, encoding="utf-8-sig")
 
