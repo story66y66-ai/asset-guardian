@@ -104,7 +104,7 @@ def save_to_csv():
 
 # 介面渲染：選擇套路
 st.markdown("### 🔍 請點選要練習的套路：")
-row1, row2 = st.columns(5), st.columns(5)
+row1, row2 = st.columns(6), st.columns(6)
 for i in range(1, 11):
     with (row1 + row2)[i-1]:
         if st.button(f"{i}. {st.session_state.taiji_data[i]['title']}", key=f"nav_btn_{i}"):
@@ -120,7 +120,7 @@ with st.container():
     
     st.markdown("🎥 參考影片（最多 6 部，請直接貼上網址）：")
     new_urls = []
-    for i in range(5):
+    for i in range(6):
         current_val = st.session_state.taiji_data[idx]["video_urls"][i] if i < len(st.session_state.taiji_data[idx]["video_urls"]) else ""
         url_input = st.text_input(f"影片網址 {i+1}", value=current_val, key=f"ind_url_{idx}_{i}")
         new_urls.append(url_input)
