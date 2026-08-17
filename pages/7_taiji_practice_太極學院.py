@@ -63,7 +63,7 @@ st.title("🥋 澄玄大學 - 太極學院")
 
 # 初始化狀態
 if "taiji_data" not in st.session_state:
-    st.session_state.taiji_data = {i: {"title": f"套路 {i}", "lyrics": "", "video_urls": ["", "", "", "", ""]} for i in range(1, 11)}
+    st.session_state.taiji_data = {i: {"title": f"套路 {i}", "lyrics": "", "video_urls": ["", "", "", "", "",""]} for i in range(1, 11)}
 
 if "selected_idx" not in st.session_state:
     st.session_state.selected_idx = 1
@@ -79,7 +79,7 @@ if os.path.exists(TAIJI_CSV_FILE):
             if 1 <= idx_val <= 10:
                 raw_urls = str(row['video_url']).split(',') if pd.notna(row['video_url']) else []
                 urls = []
-                for i in range(5):
+                for i in range(6):
                     if i < len(raw_urls):
                         urls.append(raw_urls[i].strip())
                     else:
@@ -118,7 +118,7 @@ with st.container():
     
     new_title = st.text_input("設定套路名稱：", value=st.session_state.taiji_data[idx]["title"], key=f"input_title_{idx}")
     
-    st.markdown("🎥 參考影片（最多 5 部，請直接貼上網址）：")
+    st.markdown("🎥 參考影片（最多 6 部，請直接貼上網址）：")
     new_urls = []
     for i in range(5):
         current_val = st.session_state.taiji_data[idx]["video_urls"][i] if i < len(st.session_state.taiji_data[idx]["video_urls"]) else ""
