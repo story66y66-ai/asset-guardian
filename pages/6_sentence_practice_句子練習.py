@@ -198,7 +198,11 @@ st.write("")
 start_idx = (current_page - 1) * 10 + 1
 end_idx = current_page * 10
 
-tab_titles = [f"第 {idx} 首\n{st.session_state.playlist_names[idx]}" for idx in range(start_idx, end_idx + 1)]
+tab_titles = []
+for idx in range(start_idx, end_idx + 1):
+    current_name = st.session_state.playlist_names.get(idx, f"曲目 {idx}")
+    tab_titles.append(f"第 {idx} 首\n{current_name}")
+
 tabs = st.tabs(tab_titles)
 
 for tab_idx, tab in enumerate(tabs):
