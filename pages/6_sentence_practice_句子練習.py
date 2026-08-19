@@ -332,6 +332,8 @@ for tab_idx, tab in enumerate(tabs):
         st.subheader("✍️ 逐句英文輸入測驗與朗讀練習：")
         
         lines = [line.strip() for line in user_input_text.split('\n') if line.strip()]
+if len(lines) > 1:
+    lines = lines[1:]
         
         pairs = []
         i = 0
