@@ -32,12 +32,17 @@ def load_recipes():
     except:
         return pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement", "video_urls"])
 
-# 智慧排版函數
+# 智慧排版函數（已擴充所有烘焙及拉麵材料關鍵字）
 def smart_format_ingredients(text):
     if not pd.notna(text) or not str(text).strip(): return ""
     t = str(text).replace("• ", "").replace("\n", " ").strip()
-    keywords = ["配方一", "配方二", "材料準備", "中筋麵粉", "高筋麵粉", "低筋麵粉", "清水", "全脂鮮乳", "雞蛋", "速發酵母", "砂糖", "植物油", "無鹽奶油"]
-    for kw in keywords: t = t.replace(kw, f"\n• {kw}")
+    keywords = [
+        "配方一", "配方二", "材料準備", "中筋麵粉", "高筋麵粉", "低筋麵粉", 
+        "清水", "全脂鮮乳", "雞蛋", "速發酵母", "砂糖", "植物油", "無鹽奶油",
+        "鹽", "微溫水", "拉麵劑", "蓬灰", "全蛋液", "冰水", "蜂蜜", "脫脂奶粉", "鮮酵母", "蛋黃", "黃油"
+    ]
+    for kw in keywords: 
+        t = t.replace(kw, f"\n• {kw}")
     return "\n".join([line.strip() for line in t.split("\n") if line.strip()])
 
 def smart_format_steps(text):
