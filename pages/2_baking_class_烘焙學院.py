@@ -32,7 +32,15 @@ def load_recipes():
     except:
         return pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement", "video_urls"])
 
-# 智慧排版函數（已擴充所有烘焙及拉麵材料關鍵字）
+# 清理 YouTube 網址的小工具（自動去除多餘的 ?si= 等參數）
+def clean_youtube_url(url):
+    if not pd.notna(url) or not str(url).strip(): return ""
+    u = str(url).strip()
+    if "?" in u:
+        u = u.split("?")[0]
+    return u
+
+# 智慧排版函數
 def smart_format_ingredients(text):
     if not pd.notna(text) or not str(text).strip(): return ""
     t = str(text).replace("• ", "").replace("\n", " ").strip()
@@ -77,7 +85,6 @@ if st.session_state["active_tab"] == 0:
                 val = st.session_state["input_videos"][i] if i < len(st.session_state["input_videos"]) else ""
                 new_vids.append(st.text_input(f"影片 {i+1}", value=val, key=f"vid_{i}"))
         
-        # 再次加倍高度的輸入框（材料 400、步驟 600、注意事項 400、改良做法 400）
         st.session_state["input_ingredients"] = st.text_area("⚖️ 材料", value=st.session_state["input_ingredients"], height=400)
         st.session_state["input_steps"] = st.text_area("👩‍🍳 步驟", value=st.session_state["input_steps"], height=600)
         st.session_state["input_notes"] = st.text_area("📌 注意事項", value=st.session_state["input_notes"], height=400)
@@ -96,7 +103,18 @@ if st.session_state["active_tab"] == 0:
             df = load_recipes()
             if st.session_state["edit_index"] is not None:
                 df = df.drop(st.session_state["edit_index"]).reset_index(drop=True)
-            new_row = pd.DataFrame([{"name": recipe_name, "ingredients": st.session_state["input_ingredients"], "steps": st.session_state["input_steps"], "notes": st.session_state["input_notes"], "improvement": st.session_state["input_improvement"], "video_urls": ",".join(new_vids)}])
+            
+            # 儲存時自動過濾並清理所有影片網址
+            cleaned_vids = [clean_youtube_url(v) for v in new_vids]
+            
+            new_row = pd.DataFrame([{
+                "name": recipe_name, 
+                "ingredients": st.session_state["input_ingredients"], 
+                "steps": st.session_state["input_steps"], 
+                "notes": st.session_state["input_notes"], 
+                "improvement": st.session_state["input_improvement"], 
+                "video_urls": ",".join(cleaned_vids)
+            }])
             pd.concat([df, new_row], ignore_index=True).to_csv(CSV_FILE, index=False, encoding="utf-8-sig")
             st.success("儲存成功！")
             st.rerun()
@@ -106,9 +124,11 @@ else:
     for index, row in df.iterrows():
         with st.expander(f"🍞 {row['name']}"):
             vids = str(row['video_urls']).split(',') if pd.notna(row['video_urls']) else []
-            cols = st.columns(min(len([v for v in vids if v.strip()]), 5) or 1)
-            for i, v in enumerate(vids):
-                if v.strip(): cols[i%len(cols)].video(v.strip())
+            valid_vids = [clean_youtube_url(v) for v in vids if v.strip()]
+            
+            cols = st.columns(min(len(valid_vids), 5) or 1)
+            for i, v in enumerate(valid_vids):
+                if v: cols[i%len(cols)].video(v)
             
             st.text(row['ingredients'])
             st.text(row['steps'])
