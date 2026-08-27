@@ -8,7 +8,7 @@ st.set_page_config(page_title="烘焙教室 - 澄玄大學", layout="wide", page
 if "input_name" not in st.session_state:
     st.session_state.update({
         "input_name": "", "input_ingredients": "", "input_steps": "", 
-        "input_notes": "", "input_improvement": "", "input_videos": [""]*5, 
+        "input_notes": "", "input_improvement": "", "input_videos_text": "", 
         "edit_index": None, "active_tab": 0
     })
 
@@ -75,19 +75,18 @@ st.session_state["active_tab"] = tab_options.index(tab_selection)
 if st.session_state["active_tab"] == 0:
     st.subheader("✏️ 新增/修改烘焙配方")
 
-    # 🎥 參考影片（移到表單外面，這樣打字時就能即時連動與預覽）
-    st.markdown("🎥 參考影片（最多 5 部）")
-    cols_vid = st.columns(5)
-    for i in range(5):
-        with cols_vid[i]:
-            st.session_state["input_videos"][i] = st.text_input(
-                f"影片 {i+1}", 
-                value=st.session_state["input_videos"][i], 
-                key=f"vid_{i}"
-            )
+    # 🎥 參考影片改用大輸入框：一行貼一個網址，無限擴充！
+    st.markdown("🎥 參考影片（每行貼一個網址，想貼幾部就貼幾部）")
+    st.session_state["input_videos_text"] = st.text_area(
+        "影片網址清單", 
+        value=st.session_state["input_videos_text"], 
+        height=100,
+        placeholder="https://youtu.be/...\nhttps://youtu.be/..."
+    )
     
-    # 即時顯示影片預覽
-    valid_preview_vids = [clean_youtube_url(v) for v in st.session_state["input_videos"] if v.strip()]
+    # 即時預覽影片
+    raw_vids = [v.strip() for v in st.session_state["input_videos_text"].split("\n") if v.strip()]
+    valid_preview_vids = [clean_youtube_url(v) for v in raw_vids if v.strip()]
     if valid_preview_vids:
         st.markdown("📺 **影片預覽：**")
         prev_cols = st.columns(min(len(valid_preview_vids), 5) or 1)
@@ -124,7 +123,8 @@ if st.session_state["active_tab"] == 0:
             if st.session_state["edit_index"] is not None:
                 df = df.drop(st.session_state["edit_index"]).reset_index(drop=True)
             
-            cleaned_vids = [clean_youtube_url(v) for v in st.session_state["input_videos"]]
+            # 把多行網址用逗號串起來存入 CSV
+            cleaned_vids = [clean_youtube_url(v) for v in st.session_state["input_videos_text"].split("\n") if v.strip()]
             
             new_row = pd.DataFrame([{
                 "name": recipe_name, 
@@ -140,21 +140,26 @@ if st.session_state["active_tab"] == 0:
 
 else:
     df = load_recipes()
+    # 自動加上流水編號 (從 1 開始算)
     for index, row in df.iterrows():
-        with st.expander(f"🍞 {row['name']}"):
+        recipe_num = index + 1
+        with st.expander(f"{recipe_num}. 🍞 {row['name']}"):
             vids = str(row['video_urls']).split(',') if pd.notna(row['video_urls']) else []
             valid_vids = [clean_youtube_url(v) for v in vids if v.strip()]
             
-            cols = st.columns(min(len(valid_vids), 5) or 1)
-            for i, v in enumerate(valid_vids):
-                if v: cols[i%len(cols)].video(v)
+            if valid_vids:
+                cols = st.columns(min(len(valid_vids), 5) or 1)
+                for i, v in enumerate(valid_vids):
+                    if v: cols[i%len(cols)].video(v)
             
             st.text(row['ingredients'])
             st.text(row['steps'])
             if st.button("✏️ 帶入編輯", key=f"edit_{index}"):
+                # 將逗號分隔的網址還原成換行格式帶回編輯區
+                vid_text_val = "\n".join([v.strip() for v in vids if v.strip()])
                 st.session_state.update({
                     "input_name": row['name'], "input_ingredients": row['ingredients'], 
                     "input_steps": row['steps'], "input_notes": row['notes'], 
-                    "input_videos": (vids + [""]*5)[:5], "edit_index": index, "active_tab": 0
+                    "input_videos_text": vid_text_val, "edit_index": index, "active_tab": 0
                 })
                 st.rerun()
