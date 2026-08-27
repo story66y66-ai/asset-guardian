@@ -32,7 +32,7 @@ def load_recipes():
     except:
         return pd.DataFrame(columns=["name", "ingredients", "steps", "notes", "improvement", "video_urls"])
 
-# 清理 YouTube 網址的小工具（自動去除多餘的 ?si= 等參數）
+# 清理 YouTube 網址的小工具
 def clean_youtube_url(url):
     if not pd.notna(url) or not str(url).strip(): return ""
     u = str(url).strip()
@@ -74,38 +74,57 @@ st.session_state["active_tab"] = tab_options.index(tab_selection)
 
 if st.session_state["active_tab"] == 0:
     st.subheader("✏️ 新增/修改烘焙配方")
+
+    # 🎥 參考影片（移到表單外面，這樣打字時就能即時連動與預覽）
+    st.markdown("🎥 參考影片（最多 5 部）")
+    cols_vid = st.columns(5)
+    for i in range(5):
+        with cols_vid[i]:
+            st.session_state["input_videos"][i] = st.text_input(
+                f"影片 {i+1}", 
+                value=st.session_state["input_videos"][i], 
+                key=f"vid_{i}"
+            )
+    
+    # 即時顯示影片預覽
+    valid_preview_vids = [clean_youtube_url(v) for v in st.session_state["input_videos"] if v.strip()]
+    if valid_preview_vids:
+        st.markdown("📺 **影片預覽：**")
+        prev_cols = st.columns(min(len(valid_preview_vids), 5) or 1)
+        for i, v in enumerate(valid_preview_vids):
+            if v: prev_cols[i%len(prev_cols)].video(v)
+
+    st.write("---")
+
     with st.form("recipe_form"):
         recipe_name = st.text_input("📝 烘焙名稱", value=st.session_state["input_name"])
-        
-        st.markdown("🎥 參考影片（最多 5 部）")
-        cols_vid = st.columns(5)
-        new_vids = []
-        for i in range(5):
-            with cols_vid[i]:
-                val = st.session_state["input_videos"][i] if i < len(st.session_state["input_videos"]) else ""
-                new_vids.append(st.text_input(f"影片 {i+1}", value=val, key=f"vid_{i}"))
         
         st.session_state["input_ingredients"] = st.text_area("⚖️ 材料", value=st.session_state["input_ingredients"], height=400)
         st.session_state["input_steps"] = st.text_area("👩‍🍳 步驟", value=st.session_state["input_steps"], height=600)
         st.session_state["input_notes"] = st.text_area("📌 注意事項", value=st.session_state["input_notes"], height=400)
         st.session_state["input_improvement"] = st.text_area("💡 改良做法", value=st.session_state["input_improvement"], height=400)
         
-        if st.form_submit_button("✨ 一鍵自動排版"):
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            submit_format = st.form_submit_button("✨ 一鍵自動排版")
+        with col_btn2:
+            submit_save = st.form_submit_button("💾 儲存配方")
+
+        if submit_format:
             st.session_state.update({
-                "input_name": recipe_name, "input_videos": new_vids, 
+                "input_name": recipe_name, 
                 "input_ingredients": smart_format_ingredients(st.session_state["input_ingredients"]),
                 "input_steps": smart_format_steps(st.session_state["input_steps"]),
                 "input_notes": smart_format_notes(st.session_state["input_notes"])
             })
             st.rerun()
 
-        if st.form_submit_button("💾 儲存配方"):
+        if submit_save:
             df = load_recipes()
             if st.session_state["edit_index"] is not None:
                 df = df.drop(st.session_state["edit_index"]).reset_index(drop=True)
             
-            # 儲存時自動過濾並清理所有影片網址
-            cleaned_vids = [clean_youtube_url(v) for v in new_vids]
+            cleaned_vids = [clean_youtube_url(v) for v in st.session_state["input_videos"]]
             
             new_row = pd.DataFrame([{
                 "name": recipe_name, 
