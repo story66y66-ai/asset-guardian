@@ -159,14 +159,15 @@ if "current_page" not in st.session_state:
 
 st.write("")
 
-# 建立匯出 DataFrame
+# 建立匯出 DataFrame（安全處理換行與雙引號）
 csv_data_list = []
 for idx in range(1, 51):
+    raw_lyrics = st.session_state.get(f"my_text_input_{idx}", "")
     csv_data_list.append({
         "id": idx,
         "url": st.session_state.get(f"yt_input_url_{idx}", "").strip(),
         "title": st.session_state.playlist_names.get(idx, f"曲目 {idx}"),
-        "lyrics": st.session_state.get(f"my_text_input_{idx}", "")
+        "lyrics": raw_lyrics
     })
 
 df_export = pd.DataFrame(csv_data_list)
@@ -198,14 +199,12 @@ st.write("")
 start_idx = (current_page - 1) * 10 + 1
 end_idx = min(current_page * 10, 50)
 
-# === 改良版：將分頁改為每行 5 個（1~5 首第一行，6~10 首第二行） ===
 top_tabs_indices = list(range(start_idx, min(start_idx + 5, end_idx + 1)))
 bottom_tabs_indices = list(range(start_idx + 5, end_idx + 1)) if end_idx >= start_idx + 5 else []
 
 if "active_tab_idx" not in st.session_state:
     st.session_state.active_tab_idx = start_idx
 
-# 確保當前啟動的分頁落在目前的頁面範圍內
 if not (start_idx <= st.session_state.active_tab_idx <= end_idx):
     st.session_state.active_tab_idx = start_idx
 
@@ -233,7 +232,6 @@ if bottom_tabs_indices:
 st.write("")
 absolute_idx = st.session_state.active_tab_idx
 
-# 顯示選中的分頁內容
 url_key = f"yt_input_url_{absolute_idx}"
 text_key = f"my_text_input_{absolute_idx}"
 
@@ -248,7 +246,6 @@ with st.expander(f"✏️ 修改【曲目 {absolute_idx}】的歌名或用途"):
 
 left_col, right_col = st.columns([1, 1.2], vertical_alignment="top")
 
-# 左側：YouTube 影片與網址區
 with left_col:
     user_yt_link = st.text_input(
         f"請在此貼上 YouTube 或 Shorts 網址：",
@@ -257,7 +254,6 @@ with left_col:
     )
     st.session_state[url_key] = user_yt_link
 
-    # 💾 儲存按鈕
     if st.button(f"💾 儲存【曲目 {absolute_idx}】的資料", key=f"save_url_{absolute_idx}", use_container_width=True):
         update_list_all = []
         for idx_sub in range(1, 51):
@@ -294,7 +290,6 @@ with left_col:
         except Exception as e:
             st.error(f"影片載入發生錯誤：{e}")
 
-# 右側：歌詞文字框與朗讀區
 with right_col:
     title_col, btn_col = st.columns([3, 1.4], vertical_alignment="center")
     with title_col:
@@ -353,7 +348,6 @@ with right_col:
 
 st.divider()
 
-# === 逐句英文輸入測驗區 ===
 st.subheader("✍️ 逐句英文輸入測驗與朗讀練習：")
 
 lines = [line.strip() for line in user_input_text.split('\n') if line.strip()]
@@ -441,7 +435,6 @@ else:
 
 st.divider()
 
-# 單字解析區
 if user_input_text.strip():
     st.subheader("🔍 歌詞單字解析、KK音標與個別發音：")
     words_in_text = re.findall(r"[a-zA-Z]+(?:'[a-zA-Z]+)?", user_input_text)
