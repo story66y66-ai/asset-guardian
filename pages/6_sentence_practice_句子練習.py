@@ -98,7 +98,7 @@ def load_and_merge_data():
     
     for f in all_files:
         try:
-            df = pd.read_csv(f, encoding='utf-8-sig')
+            df = pd.read_csv(f, encoding='utf-8-sig', on_bad_lines='skip')
             df.columns = df.columns.str.strip()
             for col in expected_cols:
                 if col not in df.columns:
@@ -138,10 +138,10 @@ for idx in range(1, 51):
     if f"my_text_input_{idx}" not in st.session_state:
         st.session_state[f"my_text_input_{idx}"] = ""
 
-# 自動讀取已儲存的資料庫檔案
+# 自動讀取已儲存的資料庫檔案（加入防呆解析）
 if os.path.exists("playlist_heart_歌曲結連庫.csv"):
     try:
-        saved_df = pd.read_csv("playlist_heart_歌曲結連庫.csv", encoding='utf-8-sig')
+        saved_df = pd.read_csv("playlist_heart_歌曲結連庫.csv", encoding='utf-8-sig', on_bad_lines='skip')
         for _, row in saved_df.iterrows():
             idx_val = int(row['id'])
             if 1 <= idx_val <= 50:
@@ -159,7 +159,7 @@ if "current_page" not in st.session_state:
 
 st.write("")
 
-# 建立匯出 DataFrame
+# 建立匯出 DataFrame（強制所有欄位加上引號包覆，避免多行歌詞造成 CSV 斷裂）
 csv_data_list = []
 for idx in range(1, 51):
     csv_data_list.append({
@@ -198,7 +198,6 @@ st.write("")
 start_idx = (current_page - 1) * 10 + 1
 end_idx = min(current_page * 10, 50)
 
-# 💡 修正：讓分頁裡面的橫向分頁標籤正確顯示當頁的 10 首曲目名稱
 tab_titles = []
 for idx in range(start_idx, end_idx + 1):
     current_name = st.session_state.playlist_names.get(idx, f"曲目 {idx}")
