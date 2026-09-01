@@ -196,8 +196,9 @@ current_page = st.session_state.current_page
 st.write("")
 
 start_idx = (current_page - 1) * 10 + 1
-end_idx = current_page * 10
+end_idx = min(current_page * 10, 50)
 
+# 💡 修正：讓分頁裡面的橫向分頁標籤正確顯示當頁的 10 首曲目名稱
 tab_titles = []
 for idx in range(start_idx, end_idx + 1):
     current_name = st.session_state.playlist_names.get(idx, f"曲目 {idx}")
@@ -232,7 +233,7 @@ for tab_idx, tab in enumerate(tabs):
             )
             st.session_state[url_key] = user_yt_link
 
-            # 💾 儲存按鈕（明確加入點擊觸發與狀態儲存）
+            # 💾 儲存按鈕
             if st.button(f"💾 儲存【曲目 {absolute_idx}】的資料", key=f"save_url_{absolute_idx}", use_container_width=True):
                 update_list_all = []
                 for idx_sub in range(1, 51):
@@ -328,7 +329,7 @@ for tab_idx, tab in enumerate(tabs):
 
         st.divider()
 
-        # === 逐句英文輸入測驗區（含中文自動提示與清除鍵） ===
+        # === 逐句英文輸入測驗區 ===
         st.subheader("✍️ 逐句英文輸入測驗與朗讀練習：")
         
         lines = [line.strip() for line in user_input_text.split('\n') if line.strip()]
@@ -416,10 +417,9 @@ for tab_idx, tab in enumerate(tabs):
 
         st.divider()
 
-        # 單字解析區 - 修正處
+        # 單字解析區
         if user_input_text.strip():
             st.subheader("🔍 歌詞單字解析、KK音標與個別發音：")
-            # 修正解析邏輯，改用非字母符號拆分，避免抓不到特殊符號旁的單字
             words_in_text = re.findall(r"[a-zA-Z]+(?:'[a-zA-Z]+)?", user_input_text)
             unique_words = []
             for w in words_in_text:
