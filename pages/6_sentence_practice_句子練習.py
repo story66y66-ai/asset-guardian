@@ -198,11 +198,6 @@ st.write("")
 start_idx = (current_page - 1) * 10 + 1
 end_idx = min(current_page * 10, 50)
 
-tab_titles = []
-for idx in range(start_idx, end_idx + 1):
-    current_name = st.session_state.playlist_names.get(idx, f"曲目 {idx}")
-    tab_titles.append(f"第 {idx} 首\n{current_name}")
-
 # === 改良版：將分頁改為每行 5 個（1~5 首第一行，6~10 首第二行） ===
 top_tabs_indices = list(range(start_idx, min(start_idx + 5, end_idx + 1)))
 bottom_tabs_indices = list(range(start_idx + 5, end_idx + 1)) if end_idx >= start_idx + 5 else []
@@ -220,7 +215,7 @@ for i, idx in enumerate(top_tabs_indices):
     with cols_top[i]:
         current_name = st.session_state.playlist_names.get(idx, f"曲目 {idx}")
         btn_label = f"👉 第 {idx} 首\n{current_name}" if st.session_state.active_tab_idx == idx else f"第 {idx} 首\n{current_name}"
-        if st.button(btn_label, key=f"tab_btn_{idx}", use_keyword=True if "use_keyword" in globals() else None, use_container_width=True):
+        if st.button(btn_label, key=f"tab_btn_{idx}", use_container_width=True):
             st.session_state.active_tab_idx = idx
             st.rerun()
 
