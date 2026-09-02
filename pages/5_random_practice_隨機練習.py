@@ -9,35 +9,47 @@ import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide")
 
-# 全域注入 CSS：大幅放大所有文字、輸入框、表格內的字體大小與行高
+# ==================== 全域放大 CSS (強力修復放大版) ====================
 st.markdown("""
     <style>
-    /* 放大所有一般文字與標題 */
+    /* 1. 大幅放大整頁所有一般文字與標題 (從 20px 提升到 24px) */
     html, body, [class*="css"] {
-        font-size: 20px !important;
-    }
-    /* 放大輸入框的標題文字 */
-    .stTextInput label {
         font-size: 24px !important;
+    }
+    
+    /* 2. 放大 Streamlit 標題文字 (h1, h2, h3) */
+    h1 {
+        font-size: 42px !important;
+    }
+    h2 {
+        font-size: 36px !important;
+    }
+    h3 {
+        font-size: 30px !important;
+    }
+
+    /* 3. 放大輸入框的標題文字 */
+    .stTextInput label {
+        font-size: 28px !important;
         font-weight: bold !important;
         color: #ffffff !important;
     }
-    /* 放大輸入框裡面打出來的字與高度 */
+    
+    /* 4. 放大輸入框裡面打出來的字與輸入框高度 */
     .stTextInput input {
-        font-size: 24px !important;
-        height: 55px !important;
+        font-size: 28px !important;
+        height: 65px !important;
     }
-    /* 放大表格內的所有文字、標題與行高 */
-    dataframe, [data-testid="stDataFrame"] {
-        font-size: 22px !important;
+    
+    /* 5. 強力放大表格 (DataFrame) 內的所有文字、標題與儲存格 */
+    div[data-testid="stDataFrame"] *, div[data-testid="stDataFrame"] th, div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] span {
+        font-size: 26px !important;
     }
-    [data-testid="stDataFrame"] div, [data-testid="stDataFrame"] span, [data-testid="stDataFrame"] th, [data-testid="stDataFrame"] td {
-        font-size: 22px !important;
-    }
-    /* 調整表格儲存格的上下空間，讓大字體看起來更舒適 */
-    [data-testid="stDataFrame"] td {
-        padding-top: 15px !important;
-        padding-bottom: 15px !important;
+    
+    /* 6. 增加表格儲存格的上下空間，讓大字體排版超舒適 */
+    div[data-testid="stDataFrame"] td {
+        padding-top: 18px !important;
+        padding-bottom: 18px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -109,10 +121,10 @@ if search_input.strip():
         st.markdown(f"### ✨ 查詢結果：")
         st.markdown(f"""
         <div style="background-color: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 8px solid #4CAF50; color: #000000;">
-            <p style="font-size: 26px; margin: 12px 0;"><b>英文單字：</b> <span style="color: #1f77b4; font-size: 32px;"><b>{real_word}</b></span></p>
-            <p style="font-size: 26px; margin: 12px 0;"><b>中文翻譯：</b> <span style="font-size: 28px;"><b>{word_trans if word_trans else '(暫無翻譯)'}</b></span></p>
-            <p style="font-size: 26px; margin: 12px 0;"><b>KK 音標：</b> <span style="font-size: 28px;"><b>/{word_kk}/</b></span></p>
-            <p style="font-size: 26px; margin: 12px 0;"><b>所屬級別：</b> <span style="color: #d9534f; font-size: 30px;"><b>Level {matched_level}</b></span></p>
+            <p style="font-size: 28px; margin: 12px 0;"><b>英文單字：</b> <span style="color: #1f77b4; font-size: 34px;"><b>{real_word}</b></span></p>
+            <p style="font-size: 28px; margin: 12px 0;"><b>中文翻譯：</b> <span style="font-size: 30px;"><b>{word_trans if word_trans else '(暫無翻譯)'}</b></span></p>
+            <p style="font-size: 28px; margin: 12px 0;"><b>KK 音標：</b> <span style="font-size: 30px;"><b>/{word_kk}/</b></span></p>
+            <p style="font-size: 28px; margin: 12px 0;"><b>所屬級別：</b> <span style="color: #d9534f; font-size: 32px;"><b>Level {matched_level}</b></span></p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -142,10 +154,10 @@ if search_input.strip():
                     window.speechSynthesis.speak(utterance);
                 " style="
                     background-color: #f0f2f6; color: #262730; border: 1px solid #d6d6d8;
-                    padding: 14px 18px; border-radius: 8px; font-size: 20px; font-weight: bold;
+                    padding: 16px 20px; border-radius: 8px; font-size: 24px; font-weight: bold;
                     cursor: pointer; width: 100%;
                 ">🐢 0.4倍超慢速發音</button>
-            """, height=70)
+            """, height=80)
             
         st.divider()
         
@@ -156,9 +168,9 @@ if search_input.strip():
         
         if quiz_input.strip():
             if quiz_input.strip().lower() == real_word.lower():
-                st.markdown(f"<span style='font-size: 24px; color: #28a745; font-weight: bold;'>🎉 太厲害了！完全拼寫正確，您已經記住這個單字了！它位於 Level {matched_level} 喔！</span>", unsafe_allow_html=True)
+                st.markdown(f"<span style='font-size: 26px; color: #28a745; font-weight: bold;'>🎉 太厲害了！完全拼寫正確，您已經記住這個單字了！它位於 Level {matched_level} 喔！</span>", unsafe_allow_html=True)
             else:
-                st.markdown(f"<span style='font-size: 24px; color: #ff4b4b; font-weight: bold;'>❌ 拼寫有誤唷！正確答案是：`{real_word}`（屬於 Level {matched_level}），再加油練習一次！</span>", unsafe_allow_html=True)
+                st.markdown(f"<span style='font-size: 26px; color: #ff4b4b; font-weight: bold;'>❌ 拼寫有誤唷！正確答案是：`{real_word}`（屬於 Level {matched_level}），再加油練習一次！</span>", unsafe_allow_html=True)
                 
     else:
         st.warning(f"⚠️ 在資料庫中找不到「{search_input}」這個單字，請確認拼字或檢查 `words_*.csv` 庫中是否有收錄喔！")
@@ -177,16 +189,16 @@ if target_filter:
     filtered_df = df[df['word'].str.contains(target_filter, case=False, na=False)]
     if not filtered_df.empty:
         st.markdown(f"""
-        <div style="background-color: #262730; padding: 15px; border-radius: 8px; border-left: 6px solid #ff4b4b; margin-bottom: 10px;">
-            <p style="font-size: 24px; color: #ffffff; margin: 0;">🎯 <b>已自動為您定位並找出包含「<span style="color: #4CAF50;">{target_filter}</span>」的單字與對應 Level：</b></p>
+        <div style="background-color: #262730; padding: 18px; border-radius: 8px; border-left: 6px solid #ff4b4b; margin-bottom: 10px;">
+            <p style="font-size: 26px; color: #ffffff; margin: 0;">🎯 <b>已自動為您定位並找出包含「<span style="color: #4CAF50;">{target_filter}</span>」的單字與對應 Level：</b></p>
         </div>
         """, unsafe_allow_html=True)
         st.dataframe(filtered_df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
     else:
-        st.markdown("<p style='font-size: 22px; color: #ffa500;'>💡 目前上方查詢的單字在總覽中找不到對應項目，以下顯示完整清單：</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 24px; color: #ffa500;'>💡 目前上方查詢的單字在總覽中找不到對應項目，以下顯示完整清單：</p>", unsafe_allow_html=True)
         st.dataframe(df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
 else:
-    st.markdown("<p style='font-size: 22px;'>📌 <b>目前顯示完整單字庫清單（只要在上方輸入單字，這裡就會自動幫您過濾出來喔！）：</b></p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 24px;'>📌 <b>目前顯示完整單字庫清單（只要在上方輸入單字，這裡就會自動幫您過濾出來喔！）：</b></p>", unsafe_allow_html=True)
     st.dataframe(df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
 
 st.divider()
@@ -204,7 +216,7 @@ if sentence_input.strip():
     
     st.markdown(f"""
     <div style="background-color: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 8px solid #ff9800; color: #000000;">
-        <p style="font-size: 26px; margin: 12px 0;"><b>輸入的句子：</b> <span style="color: #d9534f; font-size: 30px;"><b>{target_sentence}</b></span></p>
+        <p style="font-size: 28px; margin: 12px 0;"><b>輸入的句子：</b> <span style="color: #d9534f; font-size: 32px;"><b>{target_sentence}</b></span></p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -234,17 +246,15 @@ if sentence_input.strip():
                 window.speechSynthesis.speak(utterance);
             " style="
                 background-color: #f0f2f6; color: #262730; border: 1px solid #d6d6d8;
-                padding: 14px 18px; border-radius: 8px; font-size: 20px; font-weight: bold;
+                padding: 16px 20px; border-radius: 8px; font-size: 24px; font-weight: bold;
                 cursor: pointer; width: 100%;
             ">🐢 0.4倍超慢速整句朗讀</button>
-        """, height=70)
+        """, height=80)
         
     st.divider()
     
-    # 🌟 嚴格依照句子中單字出現的「先後順序」來排列顯示
     st.markdown("### 🧩 句子智慧單字解析總表（依句子前後順序排列）")
     
-    # 抓出句子中的所有英文單字（保留先後順序，去除重複）
     words_in_sentence = re.findall(r'\b[a-zA-Z]+\b', target_sentence.lower())
     unique_sentence_words = []
     for w in words_in_sentence:
@@ -252,7 +262,6 @@ if sentence_input.strip():
             unique_sentence_words.append(w)
             
     if unique_sentence_words:
-        # 建立一個暫時的對應表，用來強制依照句子裡的單字順序排序
         temp_rows = []
         for w in unique_sentence_words:
             if w in word_dict:
@@ -267,25 +276,24 @@ if sentence_input.strip():
         if temp_rows:
             matched_sentence_df = pd.DataFrame(temp_rows)
             st.markdown(f"""
-            <div style="background-color: #262730; padding: 15px; border-radius: 8px; border-left: 6px solid #4CAF50; margin-bottom: 10px;">
-                <p style="font-size: 24px; color: #ffffff; margin: 0;">🎯 <b>已依照句子順序排列單字與中文翻譯：</b></p>
+            <div style="background-color: #262730; padding: 18px; border-radius: 8px; border-left: 6px solid #4CAF50; margin-bottom: 10px;">
+                <p style="font-size: 26px; color: #ffffff; margin: 0;">🎯 <b>已依照句子順序排列單字與中文翻譯：</b></p>
             </div>
             """, unsafe_allow_html=True)
             st.dataframe(matched_sentence_df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
         else:
-            st.markdown("<p style='font-size: 22px; color: #ffa500;'>💡 我們的單字庫中暫時沒有收錄這個句子裡的拆解單字。</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size: 24px; color: #ffa500;'>💡 我們的單字庫中暫時沒有收錄這個句子裡的拆解單字。</p>", unsafe_allow_html=True)
             
     st.divider()
     
-    # 整句自我默寫與拼寫挑戰
     st.markdown("### ✍️ 整句默寫記憶自我挑戰")
     sent_quiz = st.text_input("請在下方重新輸入剛才練習的完整句子，測試自己有沒有完全記住：", key="sent_quiz_input")
     
     if sent_quiz.strip():
         if sent_quiz.strip().lower() == target_sentence.lower():
-            st.markdown("<span style='font-size: 24px; color: #28a745; font-weight: bold;'>🎉 太強了！整句完全拼寫正確，您的記憶力太棒了！</span>", unsafe_allow_html=True)
+            st.markdown("<span style='font-size: 26px; color: #28a745; font-weight: bold;'>🎉 太強了！整句完全拼寫正確，您的記憶力太棒了！</span>", unsafe_allow_html=True)
         else:
-            st.markdown(f"<span style='font-size: 24px; color: #ff4b4b; font-weight: bold;'>❌ 有點小誤差喔！正確的句子是：`{target_sentence}`，再對照一下練幾次吧！</span>", unsafe_allow_html=True)
+            st.markdown(f"<span style='font-size: 26px; color: #ff4b4b; font-weight: bold;'>❌ 有點小誤差喔！正確的句子是：`{target_sentence}`，再對照一下練幾次吧！</span>", unsafe_allow_html=True)
 
 else:
     st.info("💡 請在上方句子輸入框打入任何想練習的英文對話、諺語或片語（例如：There is a book on the desk.），系統就會自動依序把單字排好並對照中文意思與 Level 喔！")
