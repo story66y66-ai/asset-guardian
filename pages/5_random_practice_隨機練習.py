@@ -193,14 +193,14 @@ st.divider()
 
 # ==================== 第二階段：整句 / 片語自主輸入與朗讀挑戰區 ====================
 st.markdown("### 💬 第二階段：整句 / 片語自主輸入與雙速朗讀挑戰")
-st.markdown("💡 *在這裡您可以輸入一整句英文句子或常用片語，系統會自動拆解句子中的單字，並在下方列出它們的中文翻譯與 Level 喔！*")
+st.markdown("💡 *在這裡您可以輸入一整句英文句子或常用片語，系統會自動依照句子出現的順序拆解單字，並在下方列出對應的中文翻譯喔！*")
 
 sentence_input = st.text_input("請在此輸入您想練習的英文句子或片語：", key="sentence_input_field")
 
 if sentence_input.strip():
     target_sentence = sentence_input.strip()
     
-    st.success("🎉 句子已成功載入並進行單字智慧拆解！")
+    st.success("🎉 句子已成功載入並依序進行單字智慧解析！")
     
     st.markdown(f"""
     <div style="background-color: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 8px solid #ff9800; color: #000000;">
@@ -241,31 +241,39 @@ if sentence_input.strip():
         
     st.divider()
     
-    # 🌟 智慧拆解句子中的單字，並從資料庫中把牠們找出來顯示在下方表格！
-    st.markdown("### 🧩 句子智慧單字解析總表")
+    # 🌟 嚴格依照句子中單字出現的「先後順序」來排列顯示
+    st.markdown("### 🧩 句子智慧單字解析總表（依句子前後順序排列）")
     
-    # 用正規表達式把句子中的英文單字抓出來（轉成小寫）
+    # 抓出句子中的所有英文單字（保留先後順序，去除重複）
     words_in_sentence = re.findall(r'\b[a-zA-Z]+\b', target_sentence.lower())
-    # 去除重複並保持順序
     unique_sentence_words = []
     for w in words_in_sentence:
         if w not in unique_sentence_words:
             unique_sentence_words.append(w)
             
-    # 在總資料庫中篩選出有包含在句子裡的單字
     if unique_sentence_words:
-        # 用 isin 或 str.lower 比對
-        matched_sentence_df = df[df['word'].str.strip().str.lower().isin(unique_sentence_words)]
-        
-        if not matched_sentence_df.empty:
+        # 建立一個暫時的對應表，用來強制依照句子裡的單字順序排序
+        temp_rows = []
+        for w in unique_sentence_words:
+            if w in word_dict:
+                info = word_dict[w]
+                temp_rows.append({
+                    "word": info["original_word"],
+                    "trans": info["trans"],
+                    "kk": info["kk"],
+                    "level": info["level"]
+                })
+                
+        if temp_rows:
+            matched_sentence_df = pd.DataFrame(temp_rows)
             st.markdown(f"""
             <div style="background-color: #262730; padding: 15px; border-radius: 8px; border-left: 6px solid #4CAF50; margin-bottom: 10px;">
-                <p style="font-size: 24px; color: #ffffff; margin: 0;">🎯 <b>成功從資料庫中對照並解析出以下句子中的單字與中文意思：</b></p>
+                <p style="font-size: 24px; color: #ffffff; margin: 0;">🎯 <b>已依照句子順序排列單字與中文翻譯：</b></p>
             </div>
             """, unsafe_allow_html=True)
             st.dataframe(matched_sentence_df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
         else:
-            st.markdown("<p style='font-size: 22px; color: #ffa500;'>💡 我們的單字庫中暫時沒有收錄這個句子裡的拆解單字，您可以嘗試輸入其他常見單字組成的句子喔！</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size: 22px; color: #ffa500;'>💡 我們的單字庫中暫時沒有收錄這個句子裡的拆解單字。</p>", unsafe_allow_html=True)
             
     st.divider()
     
@@ -280,4 +288,4 @@ if sentence_input.strip():
             st.markdown(f"<span style='font-size: 24px; color: #ff4b4b; font-weight: bold;'>❌ 有點小誤差喔！正確的句子是：`{target_sentence}`，再對照一下練幾次吧！</span>", unsafe_allow_html=True)
 
 else:
-    st.info("💡 請在上方句子輸入框打入任何想練習的英文對話、諺語或片語（例如：There is a book on the desk.），系統就會自動幫您把句子裡的單字抓出來對照中文意思與 Level 喔！")
+    st.info("💡 請在上方句子輸入框打入任何想練習的英文對話、諺語或片語（例如：There is a book on the desk.），系統就會自動依序把單字排好並對照中文意思與 Level 喔！")
