@@ -53,7 +53,7 @@ for _, row in df.iterrows():
 st.divider()
 
 # ==================== 第一階段：澄玄自己輸入單字來查詢、看 KK、聽發音 ====================
-st.subheader("🔍 第一階段：自主輸入單字查詢與發音練習")
+st.markdown("### 🔍 第一階段：自主輸入單字查詢與發音練習")
 search_input = st.text_input("請在此輸入您想查詢或學習的英文單字：", key="search_word_input")
 
 if search_input.strip():
@@ -67,14 +67,18 @@ if search_input.strip():
         
         st.success(f"🎉 成功從資料庫找到單字！")
         
-        # 清楚列出單字、中文、KK音標
+        # 放大顯示查詢結果（超大字體）
         st.markdown(f"### ✨ 查詢結果：")
-        st.markdown(f"- **英文單字**：`{real_word}`")
-        st.markdown(f"- **中文翻譯**：`{word_trans if word_trans else '(暫無翻譯)'}`")
-        st.markdown(f"- **KK 音標**：`/{word_kk}/`" if word_kk else "- **KK 音標**：(暫無 KK 音標)")
+        st.markdown(f"""
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 6px solid #4CAF50; color: #000000;">
+            <p style="font-size: 24px; margin: 10px 0;"><b>英文單字：</b> <span style="color: #1f77b4; font-size: 28px;"><b>{real_word}</b></span></p>
+            <p style="font-size: 24px; margin: 10px 0;"><b>中文翻譯：</b> <span style="font-size: 26px;"><b>{word_trans if word_trans else '(暫無翻譯)'}</b></span></p>
+            <p style="font-size: 24px; margin: 10px 0;"><b>KK 音標：</b> <span style="font-size: 26px;"><b>/{word_kk}/</b></span></p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        st.write("---")
-        st.write("🔊 **請選擇發音速度來熟悉它：**")
+        st.write("")
+        st.markdown("#### 🔊 請選擇發音速度來熟悉它：")
         
         col_audio1, col_audio2 = st.columns(2)
         
@@ -101,30 +105,30 @@ if search_input.strip():
                     window.speechSynthesis.speak(utterance);
                 " style="
                     background-color: #f0f2f6; color: #262730; border: 1px solid #d6d6d8;
-                    padding: 8px 16px; border-radius: 6px; font-size: 16px; font-weight: bold;
+                    padding: 12px 16px; border-radius: 6px; font-size: 18px; font-weight: bold;
                     cursor: pointer; width: 100%;
                 ">🐢 0.4倍超慢速發音</button>
-            """, height=50)
+            """, height=60)
             
         st.divider()
         
         # ==================== 第二階段：背誦測驗輸入框 ====================
-        st.subheader("✍️ 第二階段：背誦記憶自我挑戰")
+        st.markdown("### ✍️ 第二階段：背誦記憶自我挑戰")
         st.markdown(f"💡 *剛剛已經看過與聽過這個單字了，請在下方輸入框閉眼或憑記憶拼寫一次看看，測試自己背起來了沒！*")
         
         quiz_input = st.text_input(f"請重新輸入剛剛查詢的英文單字（{word_trans}）：", key=f"quiz_input_{real_word}")
         
         if quiz_input.strip():
             if quiz_input.strip().lower() == real_word.lower():
-                st.markdown(f"<span style='font-size: 20px; color: #28a745; font-weight: bold;'>🎉 太厲害了！完全拼寫正確，您已經記住這個單字了！</span>", unsafe_allow_html=True)
+                st.markdown(f"<span style='font-size: 22px; color: #28a745; font-weight: bold;'>🎉 太厲害了！完全拼寫正確，您已經記住這個單字了！</span>", unsafe_allow_html=True)
             else:
-                st.markdown(f"<span style='font-size: 20px; color: #ff4b4b; font-weight: bold;'>❌ 拼寫有誤唷！正確答案是：`{real_word}`，再加油練習一次！</span>", unsafe_allow_html=True)
+                st.markdown(f"<span style='font-size: 22px; color: #ff4b4b; font-weight: bold;'>❌ 拼寫有誤唷！正確答案是：`{real_word}`，再加油練習一次！</span>", unsafe_allow_html=True)
                 
     else:
         st.warning(f"⚠️ 在資料庫中找不到「{search_input}」這個單字，請確認拼字或檢查 `words_*.csv` 庫中是否有收錄喔！")
 
 else:
-    st.info("💡 請在上方輸入框中打入您想練習的英文單字（例如：apple, book 等），程式就會自動幫您調出中文、KK音標與雙速發音按鈕囉！")
+    st.info("💡 請在上方輸入框中打入您想練習的英文單字（例如：apple, book 等），程式就會自動幫您調出超大字體的中文、KK音標與雙速發音按鈕囉！")
 
 # 備用總覽
 with st.expander("查看完整單字庫總覽"):
