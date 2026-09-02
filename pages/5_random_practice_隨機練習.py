@@ -4,10 +4,11 @@ import glob
 import os
 from gtts import gTTS
 import io
+import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide")
 
-st.title("🎲 隨機挑戰 - 語言學院")
+st.title("📖 澄玄大學 - 自主單字查詢與背誦挑戰學院")
 
 # 1. 讀取並合併所有 words_*.csv 檔案
 @st.cache_data
@@ -41,81 +42,90 @@ if df.empty:
     st.error("⚠️ 找不到任何 words_*.csv 單字庫檔案，請確認 GitHub 倉庫中是否有上傳這些檔案！")
     st.stop()
 
-# 2. 初始化隨機題庫與索引
-if 'shuffled_df' not in st.session_state:
-    st.session_state.shuffled_df = df.sample(frac=1).reset_index(drop=True)
-    st.session_state.target_index = 0
+# 建立一個方便查詢的字典
+word_dict = {}
+for _, row in df.iterrows():
+    w_str = str(row['word']).strip().lower()
+    trans_str = str(row['trans']) if pd.notna(row['trans']) else ""
+    kk_str = str(row['kk']) if pd.notna(row['kk']) else ""
+    word_dict[w_str] = {"original_word": str(row['word']).strip(), "trans": trans_str, "kk": kk_str}
 
-# 換一題按鈕
-if st.button("🔄 重新隨機抽一題"):
-    st.session_state.shuffled_df = df.sample(frac=1).reset_index(drop=True)
-    st.session_state.target_index = 0
-    st.rerun()
+st.divider()
 
-if st.session_state.target_index >= len(st.session_state.shuffled_df):
-    st.session_state.target_index = 0
+# ==================== 第一階段：澄玄自己輸入單字來查詢、看 KK、聽發音 ====================
+st.subheader("🔍 第一階段：自主輸入單字查詢與發音練習")
+search_input = st.text_input("請在此輸入您想查詢或學習的英文單字：", key="search_word_input")
 
-current_row = st.session_state.shuffled_df.iloc[st.session_state.target_index]
-target_word = str(current_row['word']).strip()
-target_trans = str(current_row['trans']).strip()
-target_kk = str(current_row['kk']).strip()
-
-# 3. 畫面顯示區
-st.subheader("請根據中文意思，在下方輸入框拼寫出對應的英文單字：")
-st.info(f"**📝 中文意思：** {target_trans}")
-
-# 關鍵設計：用目前題目的索引編號當作 key，切換題目時輸入框會自動變成全新的空白欄位！
-user_input_key = f"user_answer_input_{st.session_state.target_index}"
-user_input = st.text_input(
-    "請輸入英文單字：", 
-    placeholder="請在此直接輸入英文單字...", 
-    key=user_input_key
-)
-
-# 4. 判斷對錯與互動邏輯
-if user_input:
-    if user_input.strip().lower() == target_word.lower():
-        st.success(f"🎉 答對了！太棒了！")
-        st.markdown(f"**正確單字：** `{target_word}`")
-        st.markdown(f"**KK 音標：** `/{target_kk}/`" if target_kk else "**KK 音標：** (暫無)")
+if search_input.strip():
+    search_key = search_input.strip().lower()
+    
+    if search_key in word_dict:
+        target_info = word_dict[search_key]
+        real_word = target_info["original_word"]
+        word_trans = target_info["trans"]
+        word_kk = target_info["kk"]
         
-        # 發音按鈕區 (正常速度與慢速)
-        col1, col2 = st.columns(2)
+        st.success(f"🎉 成功從資料庫找到單字！")
         
-        with col1:
-            st.write("🔊 **正常速度發音**")
-            try:
-                tts_normal = gTTS(text=target_word, lang='en', slow=False)
-                fp_normal = io.BytesIO()
-                tts_normal.write_to_fp(fp_normal)
-                st.audio(fp_normal, format='audio/mp3')
-            except Exception as e:
-                st.error(f"語音錯誤：{e}")
+        # 清楚列出單字、中文、KK音標
+        st.markdown(f"### ✨ 查詢結果：")
+        st.markdown(f"- **英文單字**：`{real_word}`")
+        st.markdown(f"- **中文翻譯**：`{word_trans if word_trans else '(暫無翻譯)'}`")
+        st.markdown(f"- **KK 音標**：`/{word_kk}/`" if word_kk else "- **KK 音標**：(暫無 KK 音標)")
+        
+        st.write("---")
+        st.write("🔊 **請選擇發音速度來熟悉它：**")
+        
+        col_audio1, col_audio2 = st.columns(2)
+        
+        # 正常速度 (gTTS)
+        with col_audio1:
+            if st.button("🔊 正常速度發音", key="play_normal_btn"):
+                try:
+                    tts = gTTS(text=real_word, lang='en', slow=False)
+                    fp = io.BytesIO()
+                    tts.write_to_fp(fp)
+                    st.audio(fp, format='audio/mp3', autoplay=True)
+                except Exception as e:
+                    st.error(f"發音錯誤：{e}")
+                    
+        # 0.4倍慢速 (JavaScript SpeechSynthesis)
+        with col_audio2:
+            safe_word_js = real_word.replace("'", "\\'")
+            components.html(f"""
+                <button onclick="
+                    const utterance = new SpeechSynthesisUtterance('{safe_word_js}');
+                    utterance.lang = 'en-US';
+                    utterance.rate = 0.4;
+                    window.speechSynthesis.cancel();
+                    window.speechSynthesis.speak(utterance);
+                " style="
+                    background-color: #f0f2f6; color: #262730; border: 1px solid #d6d6d8;
+                    padding: 8px 16px; border-radius: 6px; font-size: 16px; font-weight: bold;
+                    cursor: pointer; width: 100%;
+                ">🐢 0.4倍超慢速發音</button>
+            """, height=50)
             
-        with col2:
-            st.write("🐢 **慢速發音**")
-            try:
-                tts_slow = gTTS(text=target_word, lang='en', slow=True)
-                fp_slow = io.BytesIO()
-                tts_slow.write_to_fp(fp_slow)
-                st.audio(fp_slow, format='audio/mp3')
-            except Exception as e:
-                st.error(f"語音錯誤：{e}")
-            
-        # 下一題按鈕（點擊後自動跳到下一題，輸入框會完全自動清空並準備好）
-        if st.button("下一題 ➡️"):
-            st.session_state.target_index = (st.session_state.target_index + 1) % len(st.session_state.shuffled_df)
-            st.rerun()
-            
+        st.divider()
+        
+        # ==================== 第二階段：背誦測驗輸入框 ====================
+        st.subheader("✍️ 第二階段：背誦記憶自我挑戰")
+        st.markdown(f"💡 *剛剛已經看過與聽過這個單字了，請在下方輸入框閉眼或憑記憶拼寫一次看看，測試自己背起來了沒！*")
+        
+        quiz_input = st.text_input(f"請重新輸入剛剛查詢的英文單字（{word_trans}）：", key=f"quiz_input_{real_word}")
+        
+        if quiz_input.strip():
+            if quiz_input.strip().lower() == real_word.lower():
+                st.markdown(f"<span style='font-size: 20px; color: #28a745; font-weight: bold;'>🎉 太厲害了！完全拼寫正確，您已經記住這個單字了！</span>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<span style='font-size: 20px; color: #ff4b4b; font-weight: bold;'>❌ 拼寫有誤唷！正確答案是：`{real_word}`，再加油練習一次！</span>", unsafe_allow_html=True)
+                
     else:
-        st.error("❌ 拼寫錯誤，再試一次看看！")
-        if st.checkbox("💡 需要 KK 音標提示嗎？", key=f"hint_{st.session_state.target_index}"):
-            st.info(f"提示 - KK 音標：/{target_kk}/" if target_kk else "提示：此單字暫無 KK 音標")
+        st.warning(f"⚠️ 在資料庫中找不到「{search_input}」這個單字，請確認拼字或檢查 `words_*.csv` 庫中是否有收錄喔！")
 
-# 備用：檢視目前的隨機清單總覽
-with st.expander("查看目前的隨機單字清單總覽"):
-    st.dataframe(
-        st.session_state.shuffled_df[['word', 'trans', 'kk', 'level']], 
-        use_container_width=True, 
-        hide_index=True
-    )
+else:
+    st.info("💡 請在上方輸入框中打入您想練習的英文單字（例如：apple, book 等），程式就會自動幫您調出中文、KK音標與雙速發音按鈕囉！")
+
+# 備用總覽
+with st.expander("查看完整單字庫總覽"):
+    st.dataframe(df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
