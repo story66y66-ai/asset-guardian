@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import glob
 import os
+import re
 from gtts import gTTS
 import io
 import streamlit.components.v1 as components
@@ -105,7 +106,6 @@ if search_input.strip():
         
         st.success(f"🎉 成功從資料庫找到單字！")
         
-        # 放大顯示查詢結果（含 Level 等級顯示）
         st.markdown(f"### ✨ 查詢結果：")
         st.markdown(f"""
         <div style="background-color: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 8px solid #4CAF50; color: #000000;">
@@ -121,7 +121,6 @@ if search_input.strip():
         
         col_audio1, col_audio2 = st.columns(2)
         
-        # 正常速度 (gTTS)
         with col_audio1:
             if st.button("🔊 正常速度發音", key="play_normal_btn"):
                 try:
@@ -132,7 +131,6 @@ if search_input.strip():
                 except Exception as e:
                     st.error(f"發音錯誤：{e}")
                     
-        # 0.4倍慢速 (JavaScript SpeechSynthesis)
         with col_audio2:
             safe_word_js = real_word.replace("'", "\\'")
             components.html(f"""
@@ -151,7 +149,6 @@ if search_input.strip():
             
         st.divider()
         
-        # ==================== 背誦測驗輸入框 ====================
         st.markdown("### ✍️ 單字記憶自我挑戰")
         st.markdown(f"💡 *剛剛已經看過與聽過這個單字了，請在下方輸入框閉眼或憑記憶拼寫一次看看，測試自己背起來了沒！*")
         
@@ -172,7 +169,7 @@ else:
 st.divider()
 
 # ==================== 智慧總覽與自動連動定位區 ====================
-st.markdown("### 📚 完整單字庫總覽（與上方查詢自動連動）")
+st.markdown("### 📚 完整單字庫總覽（與上方單字查詢自動連動）")
 
 target_filter = search_input.strip()
 
@@ -196,16 +193,15 @@ st.divider()
 
 # ==================== 第二階段：整句 / 片語自主輸入與朗讀挑戰區 ====================
 st.markdown("### 💬 第二階段：整句 / 片語自主輸入與雙速朗讀挑戰")
-st.markdown("💡 *在這裡您可以輸入一整句英文句子或常用片語，進行整句朗讀與複誦練習！*")
+st.markdown("💡 *在這裡您可以輸入一整句英文句子或常用片語，系統會自動拆解句子中的單字，並在下方列出它們的中文翻譯與 Level 喔！*")
 
 sentence_input = st.text_input("請在此輸入您想練習的英文句子或片語：", key="sentence_input_field")
 
 if sentence_input.strip():
     target_sentence = sentence_input.strip()
     
-    st.success("🎉 句子已成功載入！")
+    st.success("🎉 句子已成功載入並進行單字智慧拆解！")
     
-    # 顯示句子結果區塊
     st.markdown(f"""
     <div style="background-color: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 8px solid #ff9800; color: #000000;">
         <p style="font-size: 26px; margin: 12px 0;"><b>輸入的句子：</b> <span style="color: #d9534f; font-size: 30px;"><b>{target_sentence}</b></span></p>
@@ -217,7 +213,6 @@ if sentence_input.strip():
     
     col_sent1, col_sent2 = st.columns(2)
     
-    # 正常速度整句發音 (gTTS)
     with col_sent1:
         if st.button("🔊 正常速度整句朗讀", key="play_sent_normal"):
             try:
@@ -228,7 +223,6 @@ if sentence_input.strip():
             except Exception as e:
                 st.error(f"發音錯誤：{e}")
                 
-    # 0.4倍慢速整句發音 (JavaScript SpeechSynthesis)
     with col_sent2:
         safe_sent_js = target_sentence.replace("'", "\\'")
         components.html(f"""
@@ -247,16 +241,43 @@ if sentence_input.strip():
         
     st.divider()
     
+    # 🌟 智慧拆解句子中的單字，並從資料庫中把牠們找出來顯示在下方表格！
+    st.markdown("### 🧩 句子智慧單字解析總表")
+    
+    # 用正規表達式把句子中的英文單字抓出來（轉成小寫）
+    words_in_sentence = re.findall(r'\b[a-zA-Z]+\b', target_sentence.lower())
+    # 去除重複並保持順序
+    unique_sentence_words = []
+    for w in words_in_sentence:
+        if w not in unique_sentence_words:
+            unique_sentence_words.append(w)
+            
+    # 在總資料庫中篩選出有包含在句子裡的單字
+    if unique_sentence_words:
+        # 用 isin 或 str.lower 比對
+        matched_sentence_df = df[df['word'].str.strip().str.lower().isin(unique_sentence_words)]
+        
+        if not matched_sentence_df.empty:
+            st.markdown(f"""
+            <div style="background-color: #262730; padding: 15px; border-radius: 8px; border-left: 6px solid #4CAF50; margin-bottom: 10px;">
+                <p style="font-size: 24px; color: #ffffff; margin: 0;">🎯 <b>成功從資料庫中對照並解析出以下句子中的單字與中文意思：</b></p>
+            </div>
+            """, unsafe_allow_html=True)
+            st.dataframe(matched_sentence_df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
+        else:
+            st.markdown("<p style='font-size: 22px; color: #ffa500;'>💡 我們的單字庫中暫時沒有收錄這個句子裡的拆解單字，您可以嘗試輸入其他常見單字組成的句子喔！</p>", unsafe_allow_html=True)
+            
+    st.divider()
+    
     # 整句自我默寫與拼寫挑戰
     st.markdown("### ✍️ 整句默寫記憶自我挑戰")
     sent_quiz = st.text_input("請在下方重新輸入剛才練習的完整句子，測試自己有沒有完全記住：", key="sent_quiz_input")
     
     if sent_quiz.strip():
-        # 這裡用標準化去頭尾與忽略大小寫來比對
         if sent_quiz.strip().lower() == target_sentence.lower():
             st.markdown("<span style='font-size: 24px; color: #28a745; font-weight: bold;'>🎉 太強了！整句完全拼寫正確，您的記憶力太棒了！</span>", unsafe_allow_html=True)
         else:
             st.markdown(f"<span style='font-size: 24px; color: #ff4b4b; font-weight: bold;'>❌ 有點小誤差喔！正確的句子是：`{target_sentence}`，再對照一下練幾次吧！</span>", unsafe_allow_html=True)
 
 else:
-    st.info("💡 請在上方句子輸入框打入任何想練習的英文對話、諺語或片語（例如：Practice makes perfect.），即可享受專屬的整句雙速朗讀與默寫挑戰！")
+    st.info("💡 請在上方句子輸入框打入任何想練習的英文對話、諺語或片語（例如：There is a book on the desk.），系統就會自動幫您把句子裡的單字抓出來對照中文意思與 Level 喔！")
