@@ -303,7 +303,11 @@ if sentence_input.strip():
     sent_quiz = st.text_input("請在下方重新輸入剛才練習的完整句子，測試自己有沒有完全記住：", key="sent_quiz_input")
     
     if sent_quiz.strip():
-        if sent_quiz.strip().lower() == target_sentence.lower():
+        # 自動忽略大小寫與標點符號差異的寬鬆比對
+        clean_quiz = re.sub(r'[^\w\s]', '', sent_quiz.strip().lower())
+        clean_target = re.sub(r'[^\w\s]', '', target_sentence.strip().lower())
+        
+        if clean_quiz == clean_target:
             st.markdown("<span style='font-size: 28px; color: #28a745; font-weight: bold;'>🎉 太強了！整句完全拼寫正確，您的記憶力太棒了！</span>", unsafe_allow_html=True)
         else:
             st.markdown(f"<span style='font-size: 28px; color: #ff4b4b; font-weight: bold;'>❌ 有點小誤差喔！正確的句子是：`{target_sentence}`，再對照一下練幾次吧！</span>", unsafe_allow_html=True)
