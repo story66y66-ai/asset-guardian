@@ -26,13 +26,24 @@ st.markdown("""
     h2 { font-size: 40px !important; }
     h3 { font-size: 34px !important; }
 
-    /* 4. 強力放大表格 (DataFrame) 內的所有文字、標題與儲存格 */
-    div[data-testid="stDataFrame"] *, div[data-testid="stDataFrame"] th, div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] span {
-        font-size: 26px !important;
+    /* 4. 極致放大表格 (DataFrame) 內的所有文字、標題與儲存格 */
+    div[data-testid="stDataFrame"] {
+        font-size: 32px !important;
     }
-    div[data-testid="stDataFrame"] td {
-        padding-top: 15px !important;
-        padding-bottom: 15px !important;
+    div[data-testid="stDataFrame"] div, 
+    div[data-testid="stDataFrame"] span, 
+    div[data-testid="stDataFrame"] p, 
+    div[data-testid="stDataFrame"] div[role="gridcell"], 
+    div[data-testid="stDataFrame"] div[role="columnheader"] {
+        font-size: 30px !important;
+    }
+    div[data-testid="stDataFrame"] th {
+        font-size: 32px !important;
+        font-weight: bold !important;
+    }
+    div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] div[role="gridcell"] {
+        padding-top: 20px !important;
+        padding-bottom: 20px !important;
     }
 
     /* 5. 超級放大輸入框文字與高度 */
@@ -115,7 +126,7 @@ if not df.empty:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
-        key="vocab_click_table_v38"
+        key="vocab_click_table_v39"
     )
 
     if len(event.selection.rows) > 0:
@@ -145,14 +156,14 @@ if not df.empty:
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("➕ 把此字加入清單", key="add_to_list_v38"):
+        if st.button("➕ 把此字加入清單", key="add_to_list_v39"):
             if selected_word not in st.session_state.selected_vocab_list:
                 if len(st.session_state.selected_vocab_list) < 3:
                     st.session_state.selected_vocab_list.append(selected_word)
                 else:
                     st.warning("最多只能選 3 個單字喔！您可以點擊右側清除重新選擇。")
     with col2:
-        if st.button("🗑️ 清除目前的清單", key="clear_list_v38"):
+        if st.button("🗑️ 清除目前的清單", key="clear_list_v39"):
             st.session_state.selected_vocab_list = []
             st.success("已清除目前選擇的單字清單！")
 
@@ -176,13 +187,13 @@ if not df.empty:
                 
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v38_{idx}_{w}")
+                    level_choice = st.selectbox("📚 程度：", ["初階", "中階", "高階"], key=f"lvl_v39_{idx}_{w}")
                 with c2:
-                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v38_{idx}_{w}")
+                    type_choice = st.selectbox("🔄 句型：", ["肯定句", "否定句", "疑問句"], key=f"typ_v39_{idx}_{w}")
                 with c3:
-                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v38_{idx}_{w}")
+                    scene_choice = st.selectbox("🌐 場合：", ["日常生活", "職場商務", "旅遊社交"], key=f"scn_v39_{idx}_{w}")
                 
-                state_key = f"grammar_v38_{w}_{level_choice}_{type_choice}_{scene_choice}"
+                state_key = f"grammar_v39_{w}_{level_choice}_{type_choice}_{scene_choice}"
                 
                 if state_key not in st.session_state:
                     w_lower = w.lower()
@@ -317,7 +328,7 @@ if not df.empty:
                 st.markdown(f"**💡 內建文法示範：** {highlighted_demo}", unsafe_allow_html=True)
                 st.markdown(f"*(中文：{demo_chi})*", unsafe_allow_html=True)
                 
-                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v38_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
+                if st.button(f"🔊 聽 [{w}] 內建示範句發音", key=f"audio_v39_{idx}_{w}_{level_choice}_{type_choice}_{scene_choice}"):
                     tts = gTTS(text=demo_eng, lang='en')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
@@ -352,7 +363,6 @@ if not df.empty:
                         st.session_state[clear_flag_key] = True
                         st.rerun()
 
-                # 藍色質感按鈕超連結
                 current_text = st.session_state.get(user_chinese_key, "").strip()
                 if current_text:
                     encoded_text = urllib.parse.quote(current_text)
