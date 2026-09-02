@@ -8,6 +8,27 @@ import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide")
 
+# 全域注入 CSS：大幅放大所有文字、輸入框標題、輸入框內打字的字體大小
+st.markdown("""
+    <style>
+    /* 放大所有一般文字與標題 */
+    html, body, [class*="css"] {
+        font-size: 20px !important;
+    }
+    /* 放大輸入框的標題文字 */
+    .stTextInput label {
+        font-size: 24px !important;
+        font-weight: bold !important;
+        color: #ffffff !important;
+    }
+    /* 放大輸入框裡面打出來的字與高度 */
+    .stTextInput input {
+        font-size: 24px !important;
+        height: 55px !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 st.title("📖 澄玄大學 - 自主單字查詢與背誦挑戰學院")
 
 # 1. 讀取並合併所有 words_*.csv 檔案
@@ -67,13 +88,13 @@ if search_input.strip():
         
         st.success(f"🎉 成功從資料庫找到單字！")
         
-        # 放大顯示查詢結果（超大字體）
+        # 放大顯示查詢結果（超大字體區塊）
         st.markdown(f"### ✨ 查詢結果：")
         st.markdown(f"""
-        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 6px solid #4CAF50; color: #000000;">
-            <p style="font-size: 24px; margin: 10px 0;"><b>英文單字：</b> <span style="color: #1f77b4; font-size: 28px;"><b>{real_word}</b></span></p>
-            <p style="font-size: 24px; margin: 10px 0;"><b>中文翻譯：</b> <span style="font-size: 26px;"><b>{word_trans if word_trans else '(暫無翻譯)'}</b></span></p>
-            <p style="font-size: 24px; margin: 10px 0;"><b>KK 音標：</b> <span style="font-size: 26px;"><b>/{word_kk}/</b></span></p>
+        <div style="background-color: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 8px solid #4CAF50; color: #000000;">
+            <p style="font-size: 26px; margin: 12px 0;"><b>英文單字：</b> <span style="color: #1f77b4; font-size: 32px;"><b>{real_word}</b></span></p>
+            <p style="font-size: 26px; margin: 12px 0;"><b>中文翻譯：</b> <span style="font-size: 28px;"><b>{word_trans if word_trans else '(暫無翻譯)'}</b></span></p>
+            <p style="font-size: 26px; margin: 12px 0;"><b>KK 音標：</b> <span style="font-size: 28px;"><b>/{word_kk}/</b></span></p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -105,10 +126,10 @@ if search_input.strip():
                     window.speechSynthesis.speak(utterance);
                 " style="
                     background-color: #f0f2f6; color: #262730; border: 1px solid #d6d6d8;
-                    padding: 12px 16px; border-radius: 6px; font-size: 18px; font-weight: bold;
+                    padding: 14px 18px; border-radius: 8px; font-size: 20px; font-weight: bold;
                     cursor: pointer; width: 100%;
                 ">🐢 0.4倍超慢速發音</button>
-            """, height=60)
+            """, height=70)
             
         st.divider()
         
@@ -120,9 +141,9 @@ if search_input.strip():
         
         if quiz_input.strip():
             if quiz_input.strip().lower() == real_word.lower():
-                st.markdown(f"<span style='font-size: 22px; color: #28a745; font-weight: bold;'>🎉 太厲害了！完全拼寫正確，您已經記住這個單字了！</span>", unsafe_allow_html=True)
+                st.markdown(f"<span style='font-size: 24px; color: #28a745; font-weight: bold;'>🎉 太厲害了！完全拼寫正確，您已經記住這個單字了！</span>", unsafe_allow_html=True)
             else:
-                st.markdown(f"<span style='font-size: 22px; color: #ff4b4b; font-weight: bold;'>❌ 拼寫有誤唷！正確答案是：`{real_word}`，再加油練習一次！</span>", unsafe_allow_html=True)
+                st.markdown(f"<span style='font-size: 24px; color: #ff4b4b; font-weight: bold;'>❌ 拼寫有誤唷！正確答案是：`{real_word}`，再加油練習一次！</span>", unsafe_allow_html=True)
                 
     else:
         st.warning(f"⚠️ 在資料庫中找不到「{search_input}」這個單字，請確認拼字或檢查 `words_*.csv` 庫中是否有收錄喔！")
