@@ -8,7 +8,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide")
 
-# 全域注入 CSS：大幅放大所有文字、輸入框標題、輸入框內打字的字體大小
+# 全域注入 CSS：大幅放大所有文字、輸入框、表格內的字體大小與行高
 st.markdown("""
     <style>
     /* 放大所有一般文字與標題 */
@@ -25,6 +25,18 @@ st.markdown("""
     .stTextInput input {
         font-size: 24px !important;
         height: 55px !important;
+    }
+    /* 放大表格內的所有文字、標題與行高 */
+    dataframe, [data-testid="stDataFrame"] {
+        font-size: 22px !important;
+    }
+    [data-testid="stDataFrame"] div, [data-testid="stDataFrame"] span, [data-testid="stDataFrame"] th, [data-testid="stDataFrame"] td {
+        font-size: 22px !important;
+    }
+    /* 調整表格儲存格的上下空間，讓大字體看起來更舒適 */
+    [data-testid="stDataFrame"] td {
+        padding-top: 15px !important;
+        padding-bottom: 15px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -162,17 +174,21 @@ st.divider()
 # ==================== 智慧總覽與自動連動定位區 ====================
 st.markdown("### 📚 完整單字庫總覽（與上方查詢自動連動）")
 
-# 自動以上方輸入的單字作為篩選條件，下方表格直接鎖定該單字與其 Level！
 target_filter = search_input.strip()
 
 if target_filter:
     filtered_df = df[df['word'].str.contains(target_filter, case=False, na=False)]
     if not filtered_df.empty:
-        st.markdown(f"🎯 **已自動為您定位並找出包含「`{target_filter}`」的單字與對應 Level：**")
+        # 將提示文字放大並加上顯眼的框與顏色
+        st.markdown(f"""
+        <div style="background-color: #262730; padding: 15px; border-radius: 8px; border-left: 6px solid #ff4b4b; margin-bottom: 10px;">
+            <p style="font-size: 24px; color: #ffffff; margin: 0;">🎯 <b>已自動為您定位並找出包含「<span style="color: #4CAF50;">{target_filter}</span>」的單字與對應 Level：</b></p>
+        </div>
+        """, unsafe_allow_html=True)
         st.dataframe(filtered_df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
     else:
-        st.info("💡 目前上方查詢的單字在總覽中找不到對應項目，以下顯示完整清單：")
+        st.markdown("<p style='font-size: 22px; color: #ffa500;'>💡 目前上方查詢的單字在總覽中找不到對應項目，以下顯示完整清單：</p>", unsafe_allow_html=True)
         st.dataframe(df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
 else:
-    st.markdown("📌 **目前顯示完整單字庫清單（只要在上方輸入單字，這裡就會自動幫您過濾出來喔！）：**")
+    st.markdown("<p style='font-size: 22px;'>📌 <b>目前顯示完整單字庫清單（只要在上方輸入單字，這裡就會自動幫您過濾出來喔！）：</b></p>", unsafe_allow_html=True)
     st.dataframe(df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
