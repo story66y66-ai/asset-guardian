@@ -8,15 +8,61 @@ import re
 import base64
 import urllib.parse
 
+st.set_page_config(layout="wide")
+
 st.markdown("""
     <style>
+    /* 1. 大幅放大整頁所有一般文字 */
+    html, body, [class*="css"] {
+        font-size: 26px !important;
+    }
+    
+    /* 2. 放大側邊欄 (Sidebar) 文字 */
     [data-testid="stSidebar"] { font-size: 28px !important; }
     [data-testid="stSidebar"] div, [data-testid="stSidebar"] a { font-size: 28px !important; }
+    
+    /* 3. 放大 Streamlit 標題文字 (h1, h2, h3) */
+    h1 { font-size: 46px !important; }
+    h2 { font-size: 40px !important; }
+    h3 { font-size: 34px !important; }
+
+    /* 4. 強力放大表格 (DataFrame) 內的所有文字、標題與儲存格 */
+    div[data-testid="stDataFrame"] *, div[data-testid="stDataFrame"] th, div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] span {
+        font-size: 26px !important;
+    }
+    div[data-testid="stDataFrame"] td {
+        padding-top: 15px !important;
+        padding-bottom: 15px !important;
+    }
+
+    /* 5. 超級放大輸入框文字與高度 */
+    .stTextInput label {
+        font-size: 30px !important;
+        font-weight: bold !important;
+    }
+    .stTextInput input { 
+        font-size: 28px !important; 
+        color: #000000 !important; 
+        font-weight: bold !important; 
+        height: 65px !important;
+    }
+
+    /* 6. 放大下拉選單 (selectbox) 文字 */
+    .stSelectbox label {
+        font-size: 30px !important;
+        font-weight: bold !important;
+    }
+    
+    /* 7. 放大按鈕文字與 padding */
+    div.stButton > button { 
+        font-size: 24px !important; 
+        padding: 12px 24px !important; 
+        font-weight: bold !important;
+    }
+
     .red-word { color: #ff2b2b !important; font-weight: bold !important; }
-    .stTextInput input { font-size: 28px !important; color: #000000 !important; font-weight: bold !important; }
-    div.stButton > button { font-size: 22px !important; padding: 10px 20px !important; }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 st.title("📖 澄玄大學 - 語言學院 & 中英任意門造句工坊")
 
@@ -313,13 +359,13 @@ if not df.empty:
                     target_url = f"https://translate.google.com/?sl=zh-TW&tl=en&text={encoded_text}&op=translate"
                     st.markdown(
                         f'<a href="{target_url}" target="_blank" style="text-decoration: none;">'
-                        f'<div style="background-color: #2b6cb0; color: white; padding: 10px 20px; border-radius: 5px; text-align: center; font-weight: bold; font-size: 18px;">'
+                        f'<div style="background-color: #2b6cb0; color: white; padding: 14px 24px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 22px;">'
                         f'🚀 點擊直接開啟 Google 翻譯任意門</div></a>',
                         unsafe_allow_html=True
                     )
                 else:
                     st.markdown(
-                        f'<div style="background-color: #555555; color: #cccccc; padding: 10px 20px; border-radius: 5px; text-align: center; font-weight: bold; font-size: 18px; cursor: not-allowed;">'
+                        f'<div style="background-color: #555555; color: #cccccc; padding: 14px 24px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 22px; cursor: not-allowed;">'
                         f'🚀 請先在上方輸入中文，即可開啟任意門</div>',
                         unsafe_allow_html=True
                     )
