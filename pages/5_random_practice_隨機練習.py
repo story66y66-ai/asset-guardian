@@ -69,13 +69,16 @@ for _, row in df.iterrows():
     w_str = str(row['word']).strip().lower()
     trans_str = str(row['trans']) if pd.notna(row['trans']) else ""
     kk_str = str(row['kk']) if pd.notna(row['kk']) else ""
-    word_dict[w_str] = {"original_word": str(row['word']).strip(), "trans": trans_str, "kk": kk_str}
+    level_str = str(row['level']) if pd.notna(row['level']) else ""
+    word_dict[w_str] = {"original_word": str(row['word']).strip(), "trans": trans_str, "kk": kk_str, "level": level_str}
 
 st.divider()
 
 # ==================== 第一階段：澄玄自己輸入單字來查詢、看 KK、聽發音 ====================
 st.markdown("### 🔍 第一階段：自主輸入單字查詢與發音練習")
 search_input = st.text_input("請在此輸入您想查詢或學習的英文單字：", key="search_word_input")
+
+matched_level = ""
 
 if search_input.strip():
     search_key = search_input.strip().lower()
@@ -85,16 +88,18 @@ if search_input.strip():
         real_word = target_info["original_word"]
         word_trans = target_info["trans"]
         word_kk = target_info["kk"]
+        matched_level = target_info["level"]
         
         st.success(f"🎉 成功從資料庫找到單字！")
         
-        # 放大顯示查詢結果（超大字體區塊）
+        # 放大顯示查詢結果（含 Level 等級顯示）
         st.markdown(f"### ✨ 查詢結果：")
         st.markdown(f"""
         <div style="background-color: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 8px solid #4CAF50; color: #000000;">
             <p style="font-size: 26px; margin: 12px 0;"><b>英文單字：</b> <span style="color: #1f77b4; font-size: 32px;"><b>{real_word}</b></span></p>
             <p style="font-size: 26px; margin: 12px 0;"><b>中文翻譯：</b> <span style="font-size: 28px;"><b>{word_trans if word_trans else '(暫無翻譯)'}</b></span></p>
             <p style="font-size: 26px; margin: 12px 0;"><b>KK 音標：</b> <span style="font-size: 28px;"><b>/{word_kk}/</b></span></p>
+            <p style="font-size: 26px; margin: 12px 0;"><b>所屬級別：</b> <span style="color: #d9534f; font-size: 30px;"><b>Level {matched_level}</b></span></p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -141,16 +146,27 @@ if search_input.strip():
         
         if quiz_input.strip():
             if quiz_input.strip().lower() == real_word.lower():
-                st.markdown(f"<span style='font-size: 24px; color: #28a745; font-weight: bold;'>🎉 太厲害了！完全拼寫正確，您已經記住這個單字了！</span>", unsafe_allow_html=True)
+                st.markdown(f"<span style='font-size: 24px; color: #28a745; font-weight: bold;'>🎉 太厲害了！完全拼寫正確，您已經記住這個單字了！它位於 Level {matched_level} 喔！</span>", unsafe_allow_html=True)
             else:
-                st.markdown(f"<span style='font-size: 24px; color: #ff4b4b; font-weight: bold;'>❌ 拼寫有誤唷！正確答案是：`{real_word}`，再加油練習一次！</span>", unsafe_allow_html=True)
+                st.markdown(f"<span style='font-size: 24px; color: #ff4b4b; font-weight: bold;'>❌ 拼寫有誤唷！正確答案是：`{real_word}`（屬於 Level {matched_level}），再加油練習一次！</span>", unsafe_allow_html=True)
                 
     else:
         st.warning(f"⚠️ 在資料庫中找不到「{search_input}」這個單字，請確認拼字或檢查 `words_*.csv` 庫中是否有收錄喔！")
 
 else:
-    st.info("💡 請在上方輸入框中打入您想練習的英文單字（例如：apple, book 等），程式就會自動幫您調出超大字體的中文、KK音標與雙速發音按鈕囉！")
+    st.info("💡 請在上方輸入框中打入您想練習的英文單字（例如：apple, book 等），程式就會自動幫您調出超大字體的中文、KK音標、Level 級別與雙速發音按鈕囉！")
 
-# 備用總覽
-with st.expander("查看完整單字庫總覽"):
+st.divider()
+
+# ==================== 智慧總覽區 ====================
+st.markdown("### 📚 完整單字庫總覽與查詢定位")
+
+# 讓澄玄可以選擇要直接搜尋對應單字，或者顯示全部
+filter_word = st.text_input("🔎 [快速定位篩選器] 輸入單字關鍵字，直接在下方表格找出它與 Level：", value=search_input.strip() if search_input.strip() else "", key="table_filter_input")
+
+if filter_word:
+    filtered_df = df[df['word'].str.contains(filter_word, case=False, na=False)]
+    st.markdown(f"📌 **為您找到包含「`{filter_word}`」的單字共 {len(filtered_df)} 筆：**")
+    st.dataframe(filtered_df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
+else:
     st.dataframe(df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
