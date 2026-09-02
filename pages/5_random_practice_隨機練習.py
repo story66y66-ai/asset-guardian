@@ -79,6 +79,7 @@ st.markdown("### 🔍 第一階段：自主輸入單字查詢與發音練習")
 search_input = st.text_input("請在此輸入您想查詢或學習的英文單字：", key="search_word_input")
 
 matched_level = ""
+real_word = ""
 
 if search_input.strip():
     search_key = search_input.strip().lower()
@@ -158,15 +159,20 @@ else:
 
 st.divider()
 
-# ==================== 智慧總覽區 ====================
-st.markdown("### 📚 完整單字庫總覽與查詢定位")
+# ==================== 智慧總覽與自動連動定位區 ====================
+st.markdown("### 📚 完整單字庫總覽（與上方查詢自動連動）")
 
-# 讓澄玄可以選擇要直接搜尋對應單字，或者顯示全部
-filter_word = st.text_input("🔎 [快速定位篩選器] 輸入單字關鍵字，直接在下方表格找出它與 Level：", value=search_input.strip() if search_input.strip() else "", key="table_filter_input")
+# 自動以上方輸入的單字作為篩選條件，下方表格直接鎖定該單字與其 Level！
+target_filter = search_input.strip()
 
-if filter_word:
-    filtered_df = df[df['word'].str.contains(filter_word, case=False, na=False)]
-    st.markdown(f"📌 **為您找到包含「`{filter_word}`」的單字共 {len(filtered_df)} 筆：**")
-    st.dataframe(filtered_df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
+if target_filter:
+    filtered_df = df[df['word'].str.contains(target_filter, case=False, na=False)]
+    if not filtered_df.empty:
+        st.markdown(f"🎯 **已自動為您定位並找出包含「`{target_filter}`」的單字與對應 Level：**")
+        st.dataframe(filtered_df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
+    else:
+        st.info("💡 目前上方查詢的單字在總覽中找不到對應項目，以下顯示完整清單：")
+        st.dataframe(df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
 else:
+    st.markdown("📌 **目前顯示完整單字庫清單（只要在上方輸入單字，這裡就會自動幫您過濾出來喔！）：**")
     st.dataframe(df[['word', 'trans', 'kk', 'level']], use_container_width=True, hide_index=True)
