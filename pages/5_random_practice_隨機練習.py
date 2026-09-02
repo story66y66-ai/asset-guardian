@@ -5,6 +5,7 @@ import os
 import re
 from gtts import gTTS
 import io
+import urllib.parse
 import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide")
@@ -209,11 +210,28 @@ if sentence_input.strip():
     
     st.success("🎉 句子已成功載入並依序進行單字智慧解析！")
     
-    st.markdown(f"""
-    <div style="background-color: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 8px solid #ff9800; color: #000000;">
-        <p style="font-size: 30px; margin: 12px 0;"><b>輸入的句子：</b> <span style="color: #d9534f; font-size: 36px;"><b>{target_sentence}</b></span></p>
-    </div>
-    """, unsafe_allow_html=True)
+    # 建立 Google 翻譯連結
+    encoded_sentence = urllib.parse.quote(target_sentence)
+    g_translate_url = f"https://translate.google.com/?sl=en&tl=zh-TW&text={encoded_sentence}&op=translate"
+    
+    # 顯示句子與 Google 翻譯任意門按鈕
+    col_info1, col_info2 = st.columns([3, 1])
+    with col_info1:
+        st.markdown(f"""
+        <div style="background-color: #f8f9fa; padding: 25px; border-radius: 12px; border-left: 8px solid #ff9800; color: #000000;">
+            <p style="font-size: 30px; margin: 12px 0;"><b>輸入的句子：</b> <span style="color: #d9534f; font-size: 36px;"><b>{target_sentence}</b></span></p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with col_info2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <a href="{g_translate_url}" target="_blank" style="
+            display: inline-block; background-color: #4285F4; color: white; 
+            padding: 22px 25px; border-radius: 10px; font-size: 24px; font-weight: bold; 
+            text-decoration: none; text-align: center; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        ">🚪 Google 翻譯任意門</a>
+        """, unsafe_allow_html=True)
     
     st.write("")
     st.markdown("#### 🔊 請選擇整句朗讀速度：")
