@@ -9,7 +9,7 @@ st.set_page_config(layout="wide")
 
 st.title("🎲 隨機挑戰 - 語言學院")
 
-# 1. 使用與句子練習相同的「全覆蓋讀取詞庫函式」，完美解決找不到 words.csv 的問題
+# 1. 讀取並合併所有 words_*.csv 檔案
 @st.cache_data
 def load_and_merge_data():
     expected_cols = ["word", "trans", "kk", "level"]
@@ -37,7 +37,6 @@ def load_and_merge_data():
 
 df = load_and_merge_data()
 
-# 檢查資料庫是否為空
 if df.empty:
     st.error("⚠️ 找不到任何 words_*.csv 單字庫檔案，請確認 GitHub 倉庫中是否有上傳這些檔案！")
     st.stop()
@@ -53,7 +52,6 @@ if st.button("🔄 重新隨機抽一題"):
     st.session_state.target_index = 0
     st.rerun()
 
-# 確保索引不超過範圍
 if st.session_state.target_index >= len(st.session_state.shuffled_df):
     st.session_state.target_index = 0
 
@@ -66,8 +64,13 @@ target_kk = str(current_row['kk']).strip()
 st.subheader("請根據中文意思，在下方輸入框拼寫出對應的英文單字：")
 st.info(f"**📝 中文意思：** {target_trans}")
 
-# 使用者輸入框
-user_input = st.text_input("請輸入英文單字：", key="user_answer_input")
+# 關鍵設計：用目前題目的索引編號當作 key，切換題目時輸入框會自動變成全新的空白欄位！
+user_input_key = f"user_answer_input_{st.session_state.target_index}"
+user_input = st.text_input(
+    "請輸入英文單字：", 
+    placeholder="請在此直接輸入英文單字...", 
+    key=user_input_key
+)
 
 # 4. 判斷對錯與互動邏輯
 if user_input:
@@ -99,16 +102,14 @@ if user_input:
             except Exception as e:
                 st.error(f"語音錯誤：{e}")
             
-        # 下一題按鈕
+        # 下一題按鈕（點擊後自動跳到下一題，輸入框會完全自動清空並準備好）
         if st.button("下一題 ➡️"):
             st.session_state.target_index = (st.session_state.target_index + 1) % len(st.session_state.shuffled_df)
-            # 清空輸入框狀態或重新整理
             st.rerun()
             
     else:
         st.error("❌ 拼寫錯誤，再試一次看看！")
-        # 提供貼心小提示
-        if st.checkbox("💡 需要 KK 音標提示嗎？"):
+        if st.checkbox("💡 需要 KK 音標提示嗎？", key=f"hint_{st.session_state.target_index}"):
             st.info(f"提示 - KK 音標：/{target_kk}/" if target_kk else "提示：此單字暫無 KK 音標")
 
 # 備用：檢視目前的隨機清單總覽
