@@ -97,7 +97,7 @@ st.divider()
 
 # ==================== 第一階段：澄玄自己輸入單字來查詢、看 KK、聽發音 ====================
 st.markdown("### 🔍 第一階段：自主輸入單字查詢與發音練習")
-search_input = st.text_input("請在此輸入您想查詢或學習的英文單字：", key="search_word_input")
+search_input = st.text_input("請在此輸入您想查詢或學習的英文單字：", key="search_word_input_unique")
 
 matched_level = ""
 real_word = ""
@@ -130,7 +130,7 @@ if search_input.strip():
         col_audio1, col_audio2 = st.columns(2)
         
         with col_audio1:
-            if st.button("🔊 正常速度發音", key="play_normal_btn"):
+            if st.button("🔊 正常速度發音", key="play_normal_btn_word"):
                 try:
                     tts = gTTS(text=real_word, lang='en', slow=False)
                     fp = io.BytesIO()
@@ -160,7 +160,7 @@ if search_input.strip():
         st.markdown("### ✍️ 單字記憶自我挑戰")
         st.markdown(f"💡 *剛剛已經看過與聽過這個單字了，請在下方輸入框閉眼或憑記憶拼寫一次看看，測試自己背起來了沒！*")
         
-        quiz_input = st.text_input(f"請重新輸入剛剛查詢的英文單字（{word_trans}）：", key=f"quiz_input_{real_word}")
+        quiz_input = st.text_input(f"請重新輸入剛剛查詢的英文單字（{word_trans}）：", key=f"quiz_input_word_{real_word}")
         
         if quiz_input.strip():
             if quiz_input.strip().lower() == real_word.lower():
@@ -203,7 +203,8 @@ st.divider()
 st.markdown("### 💬 第二階段：整句 / 片語自主輸入與雙速朗讀挑戰")
 st.markdown("💡 *在這裡您可以輸入一整句英文句子或常用片語，系統會自動依照句子出現的順序拆解單字，並在下方列出對應的中文翻譯喔！*")
 
-sentence_input = st.text_input("請在此輸入您想練習的英文句子或片語：", key="sentence_input_field")
+# 獨立且唯一的 key 確保句子輸入框正常運作
+sentence_input = st.text_input("請在此輸入您想練習的英文句子或片語：", key="sentence_input_field_unique")
 
 if sentence_input.strip():
     target_sentence = sentence_input.strip()
@@ -239,7 +240,7 @@ if sentence_input.strip():
     col_sent1, col_sent2 = st.columns(2)
     
     with col_sent1:
-        if st.button("🔊 正常速度整句朗讀", key="play_sent_normal"):
+        if st.button("🔊 正常速度整句朗讀", key="play_sent_normal_unique"):
             try:
                 tts = gTTS(text=target_sentence, lang='en', slow=False)
                 fp = io.BytesIO()
@@ -300,7 +301,8 @@ if sentence_input.strip():
     st.divider()
     
     st.markdown("### ✍️ 整句默寫記憶自我挑戰")
-    sent_quiz = st.text_input("請在下方重新輸入剛才練習的完整句子，測試自己有沒有完全記住：", key="sent_quiz_input")
+    # 獨立且唯一的 key 確保默寫輸入框不會跟上方句子混淆
+    sent_quiz = st.text_input("請在下方重新輸入剛才練習的完整句子，測試自己有沒有完全記住：", key="sent_quiz_input_field_unique")
     
     if sent_quiz.strip():
         # 自動忽略大小寫與標點符號差異的寬鬆比對
