@@ -74,7 +74,7 @@ st.markdown("""
         border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 16px; border: none; width: 100%;
     }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 st.title("📖 澄玄大學 - 自訂文字與歌詞語音朗讀工坊")
 
@@ -159,7 +159,7 @@ if "current_page" not in st.session_state:
 
 st.write("")
 
-# 建立匯出 DataFrame（安全處理換行與雙引號）
+# 建立匯出 DataFrame
 csv_data_list = []
 for idx in range(1, 51):
     raw_lyrics = st.session_state.get(f"my_text_input_{idx}", "")
@@ -367,6 +367,9 @@ while i < len(lines):
         pairs.append((eng_line, zh_hint))
     i += 1
 
+def clear_text_state(key):
+    st.session_state[key] = ""
+
 if pairs:
     for line_idx, (eng_sentence, zh_hint) in enumerate(pairs):
         st.markdown(f"---")
@@ -405,11 +408,6 @@ if pairs:
         
         ans_key = f"ans_input_{absolute_idx}_{line_idx}"
         
-        def make_clear_callback(k):
-            def clear_func():
-                st.session_state[k] = ""
-            return clear_func
-
         with cols[2]:
             user_answer = st.text_input(
                 f"請輸入第 {line_idx + 1} 句英文：",
@@ -419,7 +417,7 @@ if pairs:
             )
         
         with cols[3]:
-            st.button(f"🗑️ 清除", key=f"clear_line_{absolute_idx}_{line_idx}", on_click=make_clear_callback(ans_key))
+            st.button(f"🗑️ 清除", key=f"clear_line_{absolute_idx}_{line_idx}", on_click=clear_text_state, args=(ans_key,))
         
         if user_answer.strip():
             clean_target = re.sub(r'[\(\（].*?[\)\）]', '', eng_sentence).strip()
@@ -454,7 +452,7 @@ if user_input_text.strip():
             with cols[0]:
                 st.markdown(f"<span style='font-size: 22px;'>🔹 **{w}** &nbsp; ` {kk_display} ` &nbsp; <span style='color:gray;'>{trans_display}</span></span>", unsafe_allow_html=True)
             with cols[1]:
-                if st.button(f"🔊 聽發音", key=f"word_audio_{absolute_idx}_{w_idx}_{w}"):
+                if st.button(f"🔊 聽發音", key=f"word_audio_{absolute_idx}_{w_idx}"):
                     w_tts = gTTS(text=w, lang='en')
                     w_fp = io.BytesIO()
                     w_tts.write_to_fp(w_fp)
